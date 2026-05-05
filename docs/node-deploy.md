@@ -22,6 +22,12 @@ The server reads `PORT` and `HOST`:
 PORT=3000 HOST=0.0.0.0 npm start
 ```
 
+On hosts that ask for an entry file, use:
+
+```bash
+server.js
+```
+
 ## Required Environment Variables
 
 Set these in the Node host environment:
