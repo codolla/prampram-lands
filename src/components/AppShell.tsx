@@ -1,0 +1,288 @@
+import { type ReactNode } from "react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Link, useLocation } from "@tanstack/react-router";
+import {
+  LayoutDashboard,
+  Users,
+  Map as MapIcon,
+  Landmark,
+  Receipt,
+  CreditCard,
+  LogOut,
+  ShieldCheck,
+  BarChart3,
+  MessageSquare,
+  UserCog,
+  Mail,
+  Tags,
+  Layers,
+  Globe2,
+  MapPinned,
+  Wallet,
+} from "lucide-react";
+import { useAuth, roleLabel } from "@/lib/auth";
+import logoUrl from "@/assets/logo.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const NAV = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/landowners", label: "Landowners", icon: Users },
+  { to: "/lands", label: "Lands", icon: Landmark },
+  { to: "/map", label: "Map", icon: MapIcon },
+  { to: "/land-mapping", label: "Land mapping", icon: Globe2 },
+  { to: "/bills", label: "Bills", icon: Receipt },
+  { to: "/payments", label: "Payments", icon: CreditCard },
+  { to: "/payroll", label: "Payroll", icon: Wallet },
+  { to: "/reports", label: "Reports", icon: BarChart3 },
+] as const;
+
+function AppSidebarInner() {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const location = useLocation();
+  const { roles } = useAuth();
+  const isAdmin = roles.includes("admin");
+
+  const isActive = (path: string) =>
+    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border/60">
+        <div className="flex items-center gap-2.5 px-2 py-3.5">
+          <img
+            src={logoUrl}
+            alt="Prampram Customary Lands Secretariat"
+            className="h-10 w-10 shrink-0 rounded-md bg-white/95 object-contain p-1 shadow-sm ring-1 ring-sidebar-border/60"
+          />
+          {!collapsed && (
+            <div className="flex flex-col leading-tight">
+              <span className="font-serif text-base font-semibold tracking-tight text-sidebar-foreground">
+                Prampram
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/65">
+                Lands Secretariat
+              </span>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV.map((item) => (
+                <SidebarMenuItem key={item.to}>
+                  <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
+                    <Link to={item.to} preload="render">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/settings/users")}
+                    tooltip="Users & Roles"
+                  >
+                    <Link to="/settings/users" preload="render">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>Users & Roles</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/settings/rent-packages")}
+                    tooltip="Rent Packages"
+                  >
+                    <Link to="/settings/rent-packages" preload="render">
+                      <Tags className="h-4 w-4" />
+                      <span>Rent Packages</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/settings/land-types")}
+                    tooltip="Land Types"
+                  >
+                    <Link to="/settings/land-types" preload="render">
+                      <Layers className="h-4 w-4" />
+                      <span>Land Types</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/settings/zones")}
+                    tooltip="Staff Zones"
+                  >
+                    <Link to="/settings/zones" preload="render">
+                      <MapPinned className="h-4 w-4" />
+                      <span>Staff Zones</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/settings/sms")}
+                    tooltip="SMS Settings"
+                  >
+                    <Link to="/settings/sms" preload="render">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>SMS Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/settings/email")}
+                    tooltip="Email Domain"
+                  >
+                    <Link to="/settings/email" preload="render">
+                      <Mail className="h-4 w-4" />
+                      <span>Email Domain</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border">
+        <UserMenu />
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function UserMenu() {
+  const { user, profile, roles, signOut } = useAuth();
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const meta = (user?.user_metadata ?? {}) as { full_name?: string; phone?: string };
+  const phone = profile?.phone ?? meta.phone ?? user?.phone ?? null;
+  const email = profile?.email ?? user?.email ?? null;
+  const displayName =
+    profile?.full_name?.trim() || meta.full_name?.trim() || phone || email || "User";
+  const avatarUrl = profile?.avatar_url ?? null;
+  const initials = (displayName || email || "U")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 2)
+    .toUpperCase();
+  const primaryRole = roles[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm text-sidebar-foreground hover:bg-sidebar-accent">
+          <Avatar className="h-8 w-8 ring-1 ring-sidebar-border/50">
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
+            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-[11px] font-semibold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="flex flex-1 flex-col overflow-hidden leading-tight">
+              <span className="truncate text-xs font-semibold">{displayName}</span>
+              <span className="truncate text-[11px] text-sidebar-foreground/70">
+                {primaryRole ? roleLabel(primaryRole) : "No role"}
+              </span>
+            </div>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="text-xs">
+          <div className="font-semibold">{displayName}</div>
+          {phone && <div className="text-muted-foreground">{phone}</div>}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/settings/profile">
+            <UserCog className="mr-2 h-4 w-4" />
+            My profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => signOut()}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function AppShell({
+  title,
+  actions,
+  children,
+}: {
+  title?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebarInner />
+        <div className="flex flex-1 flex-col">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-5 backdrop-blur-md md:px-8">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex items-baseline gap-2">
+              <h1 className="font-serif text-xl font-semibold tracking-tight">
+                {title ?? "Customary Lands Secretariat"}
+              </h1>
+            </div>
+            <div className="ml-auto flex items-center gap-2">{actions}</div>
+          </header>
+          <main className="flex-1 px-5 py-6 md:px-8 md:py-8">{children}</main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+export { Button };
