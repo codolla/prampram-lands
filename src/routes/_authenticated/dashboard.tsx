@@ -49,6 +49,11 @@ function DashboardPage() {
     setResetting(true);
     try {
       const res = await reseed();
+      if (!res || res.ok !== true || !res.counts) {
+        throw new Error(
+          "Reset failed: server response was invalid. This feature requires the app to run as a Node.js server (TanStack Start SSR), not as a static Vite site.",
+        );
+      }
       toast.success("Database reset", {
         description: `Reseeded ${res.counts.lands} lands, ${res.counts.bills} bills, ${res.counts.payments} payments.`,
       });
