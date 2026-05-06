@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
-import { createReadStream, existsSync, statSync } from "node:fs";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
+import { extname, relative, resolve, sep } from "node:path";
 import { Readable } from "node:stream";
 import serverEntry from "../dist/server/server.js";
 
@@ -25,34 +25,59 @@ const mimeTypes = new Map([
   [".woff2", "font/woff2"],
 ]);
 
-function resolveStaticPath(pathname) {
-  const decoded = decodeURIComponent(pathname);
-  const normalized = normalize(decoded).replace(/^(\.\.(\/|\\|$))+/, "");
-  const filePath = resolve(clientDir, `.${sep}${normalized}`);
-
-  if (!filePath.startsWith(`${clientDir}${sep}`) && filePath !== clientDir) {
+function safeDecodePathname(pathname) {
+  try {
+    return decodeURIComponent(pathname);
+  } catch {
     return null;
   }
-
-  if (!existsSync(filePath) || !statSync(filePath).isFile()) {
-    return null;
-  }
-
-  return filePath;
 }
 
-function serveStatic(req, res, filePath) {
+function buildStaticFileMap(rootDir) {
+  if (!existsSync(rootDir)) return new Map();
+
+  const map = new Map();
+  const stack = [rootDir];
+
+  while (stack.length > 0) {
+    const currentDir = stack.pop();
+    const entries = readdirSync(currentDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const absPath = resolve(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(absPath);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+
+      const rel = relative(rootDir, absPath).split(sep).join("/");
+      map.set(`/${rel}`, absPath);
+    }
+  }
+
+  return map;
+}
+
+const staticFileMap = buildStaticFileMap(clientDir);
+
+function serveStatic(res, filePath, pathname) {
   const ext = extname(filePath);
-  const immutable = filePath.includes(`${sep}assets${sep}`);
+  const immutable = pathname.includes("/assets/");
 
   res.statusCode = 200;
   res.setHeader("Content-Type", mimeTypes.get(ext) || "application/octet-stream");
-  res.setHeader(
-    "Cache-Control",
-    immutable ? "public, max-age=31536000, immutable" : "no-cache",
-  );
+  res.setHeader("Cache-Control", immutable ? "public, max-age=31536000, immutable" : "no-cache");
 
-  createReadStream(filePath).pipe(res);
+  const stream = createReadStream(filePath);
+  stream.on("error", () => {
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    }
+    res.end("Internal Server Error");
+  });
+  stream.pipe(res);
 }
 
 async function readRequestBody(req) {
@@ -82,15 +107,30 @@ function writeHeaders(res, headers) {
   }
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     const protocol = req.headers["x-forwarded-proto"] || "http";
     const hostHeader = req.headers.host || `localhost:${port}`;
     const url = new URL(req.url || "/", `${protocol}://${hostHeader}`);
-    const staticPath = resolveStaticPath(url.pathname);
+    const pathname = safeDecodePathname(url.pathname);
 
+    if (!pathname) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.end("Bad Request");
+      return;
+    }
+
+    if (pathname === "/health" || pathname === "/healthz") {
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ ok: true }));
+      return;
+    }
+
+    const staticPath = staticFileMap.get(pathname);
     if (staticPath) {
-      serveStatic(req, res, staticPath);
+      serveStatic(res, staticPath, pathname);
       return;
     }
 
@@ -118,6 +158,21 @@ createServer(async (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.end("Internal Server Error");
   }
-}).listen(port, host, () => {
+});
+
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 70_000;
+
+function shutdown() {
+  server.close(() => {
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
+server.listen(port, host, () => {
   console.log(`PCLS Node server listening on http://${host}:${port}`);
 });
