@@ -8,14 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/skeletons";
-import {
-  ShieldCheck,
-  UserPlus,
-  KeyRound,
-  Pencil,
-  Trash2,
-  Loader2,
-} from "lucide-react";
+import { ShieldCheck, UserPlus, KeyRound, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -32,6 +25,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -47,7 +48,15 @@ export const Route = createFileRoute("/_authenticated/settings/users")({
   component: UsersPage,
 });
 
-const ROLES: AppRole[] = ["admin", "staff", "finance"];
+const ROLES: AppRole[] = ["admin", "manager", "frontdesk", "staff", "finance"];
+
+const ROLE_LABEL: Record<AppRole, string> = {
+  admin: "Admin",
+  manager: "Manager",
+  frontdesk: "FrontDesk",
+  staff: "Staff",
+  finance: "Finance",
+};
 
 type UserRow = {
   id: string;
@@ -100,7 +109,11 @@ function UsersPage() {
   const toggleRole = useMutation({
     mutationFn: async ({ userId, role, has }: { userId: string; role: AppRole; has: boolean }) => {
       if (has) {
-        const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", role);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
@@ -131,9 +144,7 @@ function UsersPage() {
     <AppShell
       title="Users & Roles"
       actions={
-        <CreateUserDialog
-          onCreated={() => qc.invalidateQueries({ queryKey: ["users-roles"] })}
-        />
+        <CreateUserDialog onCreated={() => qc.invalidateQueries({ queryKey: ["users-roles"] })} />
       }
     >
       <Card>
@@ -175,33 +186,46 @@ function UsersPage() {
                         {u.roles.length === 0 ? (
                           <span className="text-xs text-muted-foreground">No role</span>
                         ) : (
-                          u.roles.map((r) => <Badge key={r} variant="secondary" className="capitalize">{r}</Badge>)
+                          u.roles.map((r) => (
+                            <Badge key={r} variant="secondary">
+                              {ROLE_LABEL[r]}
+                            </Badge>
+                          ))
                         )}
                       </div>
                     </td>
                     <td className="py-2 text-right">
                       <div className="flex flex-wrap justify-end gap-1">
-                        {ROLES.map((r) => {
-                          const has = u.roles.includes(r);
-                          return (
-                            <Button
-                              key={r}
-                              size="sm"
-                              variant={has ? "default" : "outline"}
-                              onClick={() =>
-                                toggleRole.mutate({
-                                  userId: u.id,
-                                  role: r,
-                                  has,
-                                })
-                              }
-                              disabled={toggleRole.isPending}
-                              className="capitalize"
-                            >
-                              {r}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline" disabled={toggleRole.isPending}>
+                              Roles
                             </Button>
-                          );
-                        })}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Assign roles</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {ROLES.map((r) => {
+                              const has = u.roles.includes(r);
+                              return (
+                                <DropdownMenuCheckboxItem
+                                  key={r}
+                                  checked={has}
+                                  onCheckedChange={() =>
+                                    toggleRole.mutate({
+                                      userId: u.id,
+                                      role: r,
+                                      has,
+                                    })
+                                  }
+                                  disabled={toggleRole.isPending}
+                                >
+                                  {ROLE_LABEL[r]}
+                                </DropdownMenuCheckboxItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <EditUserDialog
                           user={u}
                           onSaved={() =>
@@ -286,8 +310,7 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
         <DialogHeader>
           <DialogTitle>Create user</DialogTitle>
           <DialogDescription>
-            The new user will be confirmed automatically and can sign in
-            immediately.
+            The new user will be confirmed automatically and can sign in immediately.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -321,29 +344,18 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label htmlFor="new-name">Full name</Label>
-              <Input
-                id="new-name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
+              <Input id="new-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="new-phone">Phone</Label>
-              <Input
-                id="new-phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+              <Input id="new-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
           </div>
           <div className="grid gap-2">
             <Label>Roles</Label>
             <div className="flex flex-wrap gap-3">
               {ROLES.map((r) => (
-                <label
-                  key={r}
-                  className="flex items-center gap-2 text-sm capitalize"
-                >
+                <label key={r} className="flex items-center gap-2 text-sm capitalize">
                   <Checkbox
                     checked={selectedRoles.includes(r)}
                     onCheckedChange={(v) => toggleRole(r, v === true)}
@@ -355,25 +367,16 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
           </div>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={create.isPending}
-          >
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={create.isPending}>
             Cancel
           </Button>
           <Button
             onClick={() => create.mutate()}
             disabled={
-              create.isPending ||
-              !email.trim() ||
-              password.length < 8 ||
-              selectedRoles.length === 0
+              create.isPending || !email.trim() || password.length < 8 || selectedRoles.length === 0
             }
           >
-            {create.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create user
           </Button>
         </DialogFooter>
@@ -382,13 +385,7 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function EditUserDialog({
-  user,
-  onSaved,
-}: {
-  user: UserRow;
-  onSaved: () => void;
-}) {
+function EditUserDialog({ user, onSaved }: { user: UserRow; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState(user.full_name ?? "");
   const [phone, setPhone] = useState(user.phone ?? "");
@@ -458,10 +455,7 @@ function EditUserDialog({
           />
           <div className="grid gap-2">
             <Label>Full name</Label>
-            <Input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </div>
           <div className="grid gap-2">
             <Label>Phone</Label>
@@ -469,25 +463,15 @@ function EditUserDialog({
           </div>
           <div className="grid gap-2">
             <Label>Email</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={save.isPending}
-          >
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={save.isPending}>
             Cancel
           </Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
-            {save.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </DialogFooter>
@@ -496,13 +480,7 @@ function EditUserDialog({
   );
 }
 
-function ResetPasswordDialog({
-  userId,
-  email,
-}: {
-  userId: string;
-  email: string | null;
-}) {
+function ResetPasswordDialog({ userId, email }: { userId: string; email: string | null }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
 
@@ -532,8 +510,7 @@ function ResetPasswordDialog({
         <DialogHeader>
           <DialogTitle>Reset password</DialogTitle>
           <DialogDescription>
-            Set a new password for {email ?? "this user"}. Share it with them
-            securely.
+            Set a new password for {email ?? "this user"}. Share it with them securely.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
@@ -548,20 +525,11 @@ function ResetPasswordDialog({
           />
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={reset.isPending}
-          >
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={reset.isPending}>
             Cancel
           </Button>
-          <Button
-            onClick={() => reset.mutate()}
-            disabled={reset.isPending || password.length < 8}
-          >
-            {reset.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+          <Button onClick={() => reset.mutate()} disabled={reset.isPending || password.length < 8}>
+            {reset.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Reset password
           </Button>
         </DialogFooter>
@@ -580,8 +548,7 @@ function DeleteUserDialog({
   onDeleted: () => void;
 }) {
   const del = useMutation({
-    mutationFn: () =>
-      callAdminUsers({ action: "delete_user", user_id: userId }),
+    mutationFn: () => callAdminUsers({ action: "delete_user", user_id: userId }),
     onSuccess: () => {
       toast.success("User deleted");
       onDeleted();
@@ -605,8 +572,7 @@ function DeleteUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete user?</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently removes {email ?? "this user"} and their access.
-            This cannot be undone.
+            This permanently removes {email ?? "this user"} and their access. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -619,9 +585,7 @@ function DeleteUserDialog({
             disabled={del.isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {del.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {del.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
