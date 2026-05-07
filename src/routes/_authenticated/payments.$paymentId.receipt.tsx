@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer, Download } from "lucide-react";
@@ -31,6 +31,8 @@ function ReceiptPage() {
   const { hasAnyRole } = useAuth();
   const defaultFormat: PrintFormat = hasAnyRole(["admin", "manager"]) ? "a4" : "thermal";
   const [printFormat, setPrintFormat] = useState<PrintFormat>(defaultFormat);
+  const [thermalPageHeightMm, setThermalPageHeightMm] = useState<number>(200);
+  const [printing, setPrinting] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["payment-receipt", paymentId],
     queryFn: async () => {
@@ -45,6 +47,51 @@ function ReceiptPage() {
       return data;
     },
   });
+
+  useEffect(() => {
+    if (printFormat !== "thermal") return;
+    const el = receiptRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const px = Math.max(el.scrollHeight, el.getBoundingClientRect().height);
+      const mm = (px * 25.4) / 96;
+      const padded = Math.ceil(mm + 10);
+      setThermalPageHeightMm(Math.min(Math.max(padded, 60), 600));
+    };
+
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [printFormat, data?.id]);
+
+  const handlePrint = () => {
+    if (printing) return;
+    const el = receiptRef.current;
+    setPrinting(true);
+
+    try {
+      if (printFormat === "thermal" && el) {
+        const px = Math.max(el.scrollHeight, el.getBoundingClientRect().height);
+        const mm = (px * 25.4) / 96;
+        const padded = Math.ceil(mm + 10);
+        setThermalPageHeightMm(Math.min(Math.max(padded, 60), 600));
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.print();
+            setTimeout(() => setPrinting(false), 0);
+          });
+        });
+        return;
+      }
+
+      window.print();
+    } finally {
+      if (printFormat !== "thermal") {
+        setTimeout(() => setPrinting(false), 0);
+      }
+    }
+  };
 
   if (isLoading || !data) {
     return (
@@ -109,7 +156,7 @@ function ReceiptPage() {
 `
       : `
 @media print {
-  @page { size: 80mm 200mm; margin: 0; }
+  @page { size: 80mm ${thermalPageHeightMm}mm; margin: 0; }
   html, body { height: auto !important; }
   body { margin: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   #receipt-page { min-height: auto !important; padding: 0 !important; background: #fff !important; }
@@ -144,7 +191,7 @@ function ReceiptPage() {
                 <SelectItem value="a4">A4</SelectItem>
               </SelectContent>
             </Select>
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <Button size="sm" variant="outline" onClick={handlePrint} disabled={printing}>
               <Printer className="mr-1 h-4 w-4" /> Print
             </Button>
             <Button size="sm" onClick={downloadPdf} disabled={downloading}>
