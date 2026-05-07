@@ -1,38 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Landmark,
-  CreditCard,
-  AlertCircle,
-  CheckCircle2,
-  ArrowUpRight,
-  RefreshCw,
-} from "lucide-react";
+import { Landmark, CreditCard, AlertCircle, CheckCircle2, ArrowUpRight } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { AddEmailBanner } from "@/components/AddEmailBanner";
 import { TableSkeleton } from "@/components/skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useServerFn } from "@tanstack/react-start";
-import { resetSeedData } from "@/lib/seed.functions";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -40,33 +17,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const auth = useAuth();
-  const isAdmin = auth.hasRole("admin");
   const canSeeRevenue = auth.hasAnyRole(["admin", "manager"]);
-  const queryClient = useQueryClient();
-  const reseed = useServerFn(resetSeedData);
-  const [resetting, setResetting] = useState(false);
-
-  const handleReset = async () => {
-    setResetting(true);
-    try {
-      const res = await reseed();
-      if (!res || res.ok !== true || !res.counts) {
-        throw new Error(
-          "Reset failed: server response was invalid. This feature requires the app to run as a Node.js server (TanStack Start SSR), not as a static Vite site.",
-        );
-      }
-      toast.success("Database reset", {
-        description: `Reseeded ${res.counts.lands} lands, ${res.counts.bills} bills, ${res.counts.payments} payments.`,
-      });
-      await queryClient.invalidateQueries();
-    } catch (e) {
-      toast.error("Reset failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
-      });
-    } finally {
-      setResetting(false);
-    }
-  };
 
   const stats = useQuery({
     queryKey: ["dashboard-stats", canSeeRevenue],
@@ -169,31 +120,6 @@ function DashboardPage() {
               : "Active land records at a glance."}
           </p>
         </div>
-        {isAdmin && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={resetting}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${resetting ? "animate-spin" : ""}`} />
-                {resetting ? "Resetting…" : "Reset to seed data"}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset to seed data?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This permanently deletes all landowners, lands, rent packages, bills, payments,
-                  ownership history, parcel coordinates and SMS logs, then loads a fresh practice
-                  dataset. User accounts and land types are kept. Use only in non-production
-                  environments.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Yes, wipe and reseed</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

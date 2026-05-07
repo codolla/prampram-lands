@@ -51,6 +51,30 @@ export const resetSeedData = createServerFn({ method: "POST" })
       if (error) throw new Error(`Failed to clear ${table}: ${error.message}`);
     }
 
+    type ActivityClient = {
+      from: (t: "activity_logs") => {
+        insert: (row: {
+          actor_id: string;
+          action: string;
+          entity: string;
+          entity_id: null;
+          message: string;
+          metadata: Record<string, unknown>;
+        }) => Promise<{ error: { message: string } | null }>;
+      };
+    };
+    const activity = db as unknown as ActivityClient;
+    await activity.from("activity_logs").insert({
+      actor_id: userId,
+      action: "reset",
+      entity: "seed",
+      entity_id: null,
+      message: "Reset to fresh seed data",
+      metadata: { scope: "wipe+reseed", keep: ["users", "land_types", "user_roles"] },
+    });
+
+    // Land types — load active ones; insert defaults if empty.
+
     // Land types — load active ones; insert defaults if empty.
     const { data: loadedTypes, error: typesErr } = await db
       .from("land_types")

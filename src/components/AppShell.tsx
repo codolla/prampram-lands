@@ -33,6 +33,7 @@ import {
   Globe2,
   MapPinned,
   Wallet,
+  ScrollText,
 } from "lucide-react";
 import { useAuth, roleLabel } from "@/lib/auth";
 import logoUrl from "@/assets/logo.png";
@@ -90,17 +91,63 @@ const NAV = [
   { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
 ] as const;
 
+const ADMIN_NAV = [
+  {
+    to: "/settings/system",
+    label: "System & Logs",
+    icon: ScrollText,
+    roles: ["admin", "manager"],
+  },
+  {
+    to: "/settings/users",
+    label: "Users & Roles",
+    icon: ShieldCheck,
+    roles: ["admin"],
+  },
+  {
+    to: "/settings/rent-packages",
+    label: "Rent Packages",
+    icon: Tags,
+    roles: ["admin"],
+  },
+  {
+    to: "/settings/land-types",
+    label: "Land Types",
+    icon: Layers,
+    roles: ["admin"],
+  },
+  {
+    to: "/settings/zones",
+    label: "Staff Zones",
+    icon: MapPinned,
+    roles: ["admin"],
+  },
+  {
+    to: "/settings/sms",
+    label: "SMS Settings",
+    icon: MessageSquare,
+    roles: ["admin"],
+  },
+  {
+    to: "/settings/email",
+    label: "Email Domain",
+    icon: Mail,
+    roles: ["admin"],
+  },
+] as const;
+
 function AppSidebarInner() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { roles } = useAuth();
-  const isAdmin = roles.includes("admin");
+  const canSeeAdminGroup = roles.includes("admin") || roles.includes("manager");
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   const navItems = NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
+  const adminItems = ADMIN_NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
 
   return (
     <Sidebar collapsible="icon">
@@ -141,83 +188,21 @@ function AppSidebarInner() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {isAdmin && (
+        {canSeeAdminGroup && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/settings/users")}
-                    tooltip="Users & Roles"
-                  >
-                    <Link to="/settings/users" preload="render">
-                      <ShieldCheck className="h-4 w-4" />
-                      <span>Users & Roles</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/settings/rent-packages")}
-                    tooltip="Rent Packages"
-                  >
-                    <Link to="/settings/rent-packages" preload="render">
-                      <Tags className="h-4 w-4" />
-                      <span>Rent Packages</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/settings/land-types")}
-                    tooltip="Land Types"
-                  >
-                    <Link to="/settings/land-types" preload="render">
-                      <Layers className="h-4 w-4" />
-                      <span>Land Types</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/settings/zones")}
-                    tooltip="Staff Zones"
-                  >
-                    <Link to="/settings/zones" preload="render">
-                      <MapPinned className="h-4 w-4" />
-                      <span>Staff Zones</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/settings/sms")}
-                    tooltip="SMS Settings"
-                  >
-                    <Link to="/settings/sms" preload="render">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>SMS Settings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/settings/email")}
-                    tooltip="Email Domain"
-                  >
-                    <Link to="/settings/email" preload="render">
-                      <Mail className="h-4 w-4" />
-                      <span>Email Domain</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
+                      <Link to={item.to} preload="render">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

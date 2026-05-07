@@ -20,8 +20,20 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { Save, Send } from "lucide-react";
+import { Save, Send, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/format";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/sms")({
   component: SmsSettingsPage,
@@ -61,6 +73,7 @@ function SmsSettingsPage() {
   const [form, setForm] = useState<SettingsForm>(DEFAULT);
   const [rowId, setRowId] = useState<string | null>(null);
   const [testPhone, setTestPhone] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const settings = useQuery({
     queryKey: ["app_settings"],
@@ -131,6 +144,25 @@ function SmsSettingsPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const clear = useMutation({
+    mutationFn: async ({ ids }: { ids: string[] }) => {
+      if (ids.length === 0) return;
+      const { error } = await supabase.from("sms_logs").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("SMS logs cleared");
+      setSelectedIds([]);
+      qc.invalidateQueries({ queryKey: ["sms_logs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    const ids = new Set((logs.data ?? []).map((l) => l.id));
+    setSelectedIds((prev) => prev.filter((id) => ids.has(id)));
+  }, [logs.data]);
 
   if (!isAdmin) {
     return (
@@ -335,8 +367,58 @@ function SmsSettingsPage() {
         </div>
 
         <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="text-base">Recent SMS log</CardTitle>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-base">Recent SMS log</CardTitle>
+              <CardDescription>
+                Select messages to clear them from the log (admin only).
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {(() => {
+                const allIds = (logs.data ?? []).map((l) => l.id);
+                const allSelected =
+                  allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));
+                return (
+                  <>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={(v) => setSelectedIds(v === true ? allIds : [])}
+                        disabled={logs.isLoading || allIds.length === 0}
+                      />
+                      Select all
+                    </label>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={clear.isPending || selectedIds.length === 0}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Clear selected ({selectedIds.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Clear selected SMS logs?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This permanently deletes the selected messages from the SMS log.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => clear.mutate({ ids: selectedIds })}>
+                            Yes, clear
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                );
+              })()}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {logs.isLoading ? (
@@ -347,7 +429,19 @@ function SmsSettingsPage() {
               (logs.data ?? []).map((l) => (
                 <div key={l.id} className="rounded border border-border p-2 text-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{l.phone}</span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Checkbox
+                        checked={selectedIds.includes(l.id)}
+                        onCheckedChange={(v) =>
+                          setSelectedIds((prev) =>
+                            v === true
+                              ? Array.from(new Set([...prev, l.id]))
+                              : prev.filter((id) => id !== l.id),
+                          )
+                        }
+                      />
+                      <span className="truncate font-medium">{l.phone}</span>
+                    </div>
                     <span className={l.status === "sent" ? "text-green-600" : "text-destructive"}>
                       {l.status}
                     </span>

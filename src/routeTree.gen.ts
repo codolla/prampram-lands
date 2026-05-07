@@ -25,6 +25,7 @@ import { Route as AuthenticatedLandownersIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedBillsIndexRouteImport } from './routes/_authenticated/bills.index'
 import { Route as AuthenticatedSettingsZonesRouteImport } from './routes/_authenticated/settings.zones'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
+import { Route as AuthenticatedSettingsSystemRouteImport } from './routes/_authenticated/settings.system'
 import { Route as AuthenticatedSettingsSmsRouteImport } from './routes/_authenticated/settings.sms'
 import { Route as AuthenticatedSettingsRentPackagesRouteImport } from './routes/_authenticated/settings.rent-packages'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings.profile'
@@ -123,6 +124,12 @@ const AuthenticatedSettingsUsersRoute =
   AuthenticatedSettingsUsersRouteImport.update({
     id: '/settings/users',
     path: '/settings/users',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsSystemRoute =
+  AuthenticatedSettingsSystemRouteImport.update({
+    id: '/settings/system',
+    path: '/settings/system',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSettingsSmsRoute =
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/rent-packages': typeof AuthenticatedSettingsRentPackagesRoute
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/settings/system': typeof AuthenticatedSettingsSystemRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/zones': typeof AuthenticatedSettingsZonesRoute
   '/bills/': typeof AuthenticatedBillsIndexRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/rent-packages': typeof AuthenticatedSettingsRentPackagesRoute
   '/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/settings/system': typeof AuthenticatedSettingsSystemRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/zones': typeof AuthenticatedSettingsZonesRoute
   '/bills': typeof AuthenticatedBillsIndexRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/rent-packages': typeof AuthenticatedSettingsRentPackagesRoute
   '/_authenticated/settings/sms': typeof AuthenticatedSettingsSmsRoute
+  '/_authenticated/settings/system': typeof AuthenticatedSettingsSystemRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/zones': typeof AuthenticatedSettingsZonesRoute
   '/_authenticated/bills/': typeof AuthenticatedBillsIndexRoute
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/rent-packages'
     | '/settings/sms'
+    | '/settings/system'
     | '/settings/users'
     | '/settings/zones'
     | '/bills/'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/rent-packages'
     | '/settings/sms'
+    | '/settings/system'
     | '/settings/users'
     | '/settings/zones'
     | '/bills'
@@ -388,6 +400,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/rent-packages'
     | '/_authenticated/settings/sms'
+    | '/_authenticated/settings/system'
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/zones'
     | '/_authenticated/bills/'
@@ -522,6 +535,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/system': {
+      id: '/_authenticated/settings/system'
+      path: '/settings/system'
+      fullPath: '/settings/system'
+      preLoaderRoute: typeof AuthenticatedSettingsSystemRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/sms': {
       id: '/_authenticated/settings/sms'
       path: '/settings/sms'
@@ -640,6 +660,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRentPackagesRoute: typeof AuthenticatedSettingsRentPackagesRoute
   AuthenticatedSettingsSmsRoute: typeof AuthenticatedSettingsSmsRoute
+  AuthenticatedSettingsSystemRoute: typeof AuthenticatedSettingsSystemRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsZonesRoute: typeof AuthenticatedSettingsZonesRoute
   AuthenticatedBillsIndexRoute: typeof AuthenticatedBillsIndexRoute
@@ -670,6 +691,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRentPackagesRoute:
     AuthenticatedSettingsRentPackagesRoute,
   AuthenticatedSettingsSmsRoute: AuthenticatedSettingsSmsRoute,
+  AuthenticatedSettingsSystemRoute: AuthenticatedSettingsSystemRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsZonesRoute: AuthenticatedSettingsZonesRoute,
   AuthenticatedBillsIndexRoute: AuthenticatedBillsIndexRoute,
