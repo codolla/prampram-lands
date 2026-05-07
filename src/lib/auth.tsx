@@ -127,5 +127,9 @@ export function useAuth(): AuthState {
 }
 
 export function roleLabel(role: AppRole): string {
-  return role === "admin" ? "Administrator" : role === "finance" ? "Finance Officer" : "Staff";
+  if (role === "admin") return "Administrator";
+  if (role === "manager") return "Manager";
+  if (role === "frontdesk") return "Front Desk";
+  if (role === "finance") return "Finance Officer";
+  return "Staff";
 }

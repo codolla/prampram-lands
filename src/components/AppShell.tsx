@@ -48,15 +48,46 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/landowners", label: "Landowners", icon: Users },
-  { to: "/lands", label: "Lands", icon: Landmark },
-  { to: "/map", label: "Map", icon: MapIcon },
-  { to: "/land-mapping", label: "Land mapping", icon: Globe2 },
-  { to: "/bills", label: "Bills", icon: Receipt },
-  { to: "/payments", label: "Payments", icon: CreditCard },
-  { to: "/payroll", label: "Payroll", icon: Wallet },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "manager", "staff", "frontdesk", "finance"],
+  },
+  {
+    to: "/frontdesk",
+    label: "Front Desk",
+    icon: UserCog,
+    roles: ["admin", "manager", "frontdesk"],
+  },
+  {
+    to: "/landowners",
+    label: "Landowners",
+    icon: Users,
+    roles: ["admin", "manager", "staff", "frontdesk", "finance"],
+  },
+  {
+    to: "/lands",
+    label: "Lands",
+    icon: Landmark,
+    roles: ["admin", "manager", "staff", "frontdesk", "finance"],
+  },
+  { to: "/map", label: "Map", icon: MapIcon, roles: ["admin", "manager", "staff"] },
+  {
+    to: "/land-mapping",
+    label: "Land mapping",
+    icon: Globe2,
+    roles: ["admin", "manager", "staff"],
+  },
+  {
+    to: "/bills",
+    label: "Bills",
+    icon: Receipt,
+    roles: ["admin", "manager", "staff", "frontdesk", "finance"],
+  },
+  { to: "/payments", label: "Payments", icon: CreditCard, roles: ["admin", "manager"] },
+  { to: "/payroll", label: "Payroll", icon: Wallet, roles: ["admin", "manager"] },
+  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
 ] as const;
 
 function AppSidebarInner() {
@@ -68,6 +99,8 @@ function AppSidebarInner() {
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  const navItems = NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
 
   return (
     <Sidebar collapsible="icon">
@@ -95,7 +128,7 @@ function AppSidebarInner() {
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
                     <Link to={item.to} preload="render">

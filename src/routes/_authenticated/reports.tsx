@@ -3,12 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/skeletons";
 import {
@@ -21,6 +16,7 @@ import {
 import { Download, TrendingUp, AlertTriangle, Receipt } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { BillStatusBadge } from "@/components/StatusBadge";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: ReportsPage,
@@ -32,13 +28,11 @@ type BillRow = {
   amount: number;
   status: "pending" | "partial" | "paid" | "overdue";
   due_date: string;
-  lands:
-    | {
-        land_code: string;
-        plot_number: string | null;
-        landowners: { full_name: string } | null;
-      }
-    | null;
+  lands: {
+    land_code: string;
+    plot_number: string | null;
+    landowners: { full_name: string } | null;
+  } | null;
 };
 
 type PaymentRow = {
@@ -69,11 +63,14 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
 }
 
 function ReportsPage() {
+  const { hasAnyRole } = useAuth();
+  const canSeeReports = hasAnyRole(["admin", "manager"]);
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState<string>(String(currentYear));
 
   const billsQ = useQuery({
     queryKey: ["report-bills", year],
+    enabled: canSeeReports,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bills")
@@ -88,6 +85,7 @@ function ReportsPage() {
 
   const paymentsQ = useQuery({
     queryKey: ["report-payments"],
+    enabled: canSeeReports,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payments")
@@ -144,15 +142,7 @@ function ReportsPage() {
 
   const exportBills = () => {
     const rows: (string | number)[][] = [
-      [
-        "Land code",
-        "Plot",
-        "Owner",
-        "Year",
-        "Amount (GHS)",
-        "Status",
-        "Due date",
-      ],
+      ["Land code", "Plot", "Owner", "Year", "Amount (GHS)", "Status", "Due date"],
     ];
     for (const b of billsQ.data ?? []) {
       rows.push([
@@ -206,9 +196,19 @@ function ReportsPage() {
   ];
 
   const collectionRate =
-    summary.billed > 0
-      ? Math.round((summary.collected / summary.billed) * 100)
-      : 0;
+    summary.billed > 0 ? Math.round((summary.collected / summary.billed) * 100) : 0;
+
+  if (!canSeeReports) {
+    return (
+      <AppShell title="Reports">
+        <Card>
+          <CardContent className="py-8 text-sm text-muted-foreground">
+            Access restricted.
+          </CardContent>
+        </Card>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell
@@ -237,9 +237,7 @@ function ReportsPage() {
         {cards.map((c) => (
           <Card key={c.label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {c.label}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
               <c.icon className={`h-5 w-5 ${c.tone}`} />
             </CardHeader>
             <CardContent>
@@ -251,12 +249,8 @@ function ReportsPage() {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-base">
-            Collection rate · {year}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {summary.count} bills issued for the year
-          </p>
+          <CardTitle className="text-base">Collection rate · {year}</CardTitle>
+          <p className="text-sm text-muted-foreground">{summary.count} bills issued for the year</p>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
@@ -266,9 +260,7 @@ function ReportsPage() {
                 style={{ width: `${Math.min(collectionRate, 100)}%` }}
               />
             </div>
-            <span className="w-14 text-right text-sm font-medium">
-              {collectionRate}%
-            </span>
+            <span className="w-14 text-right text-sm font-medium">{collectionRate}%</span>
           </div>
         </CardContent>
       </Card>
@@ -276,15 +268,11 @@ function ReportsPage() {
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">
-              Collections by billing year
-            </CardTitle>
+            <CardTitle className="text-base">Collections by billing year</CardTitle>
           </CardHeader>
           <CardContent>
             {byYear.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No payments recorded yet.
-              </p>
+              <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
             ) : (
               <ul className="space-y-3">
                 {(() => {
@@ -293,9 +281,7 @@ function ReportsPage() {
                     <li key={y}>
                       <div className="mb-1 flex items-center justify-between text-sm">
                         <span className="font-medium">{y}</span>
-                        <span className="text-muted-foreground">
-                          {formatCurrency(v)}
-                        </span>
+                        <span className="text-muted-foreground">{formatCurrency(v)}</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded bg-muted">
                         <div
@@ -315,9 +301,7 @@ function ReportsPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-base">Top defaulters</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Largest unpaid balances for {year}
-              </p>
+              <p className="text-sm text-muted-foreground">Largest unpaid balances for {year}</p>
             </div>
             <Button variant="outline" size="sm" onClick={exportDefaulters}>
               <Download className="mr-1 h-4 w-4" /> CSV
@@ -325,9 +309,7 @@ function ReportsPage() {
           </CardHeader>
           <CardContent>
             {defaulters.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No outstanding bills. 🎉
-              </p>
+              <p className="text-sm text-muted-foreground">No outstanding bills. 🎉</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -340,18 +322,11 @@ function ReportsPage() {
                 </thead>
                 <tbody>
                   {defaulters.map((d) => (
-                    <tr
-                      key={`${d.owner}-${d.land_code}`}
-                      className="border-b last:border-0"
-                    >
+                    <tr key={`${d.owner}-${d.land_code}`} className="border-b last:border-0">
                       <td className="py-2 font-medium">{d.owner}</td>
-                      <td className="py-2 text-muted-foreground">
-                        {d.land_code}
-                      </td>
+                      <td className="py-2 text-muted-foreground">{d.land_code}</td>
                       <td className="py-2 text-right">{d.count}</td>
-                      <td className="py-2 text-right font-medium">
-                        {formatCurrency(d.total)}
-                      </td>
+                      <td className="py-2 text-right font-medium">{formatCurrency(d.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -369,9 +344,7 @@ function ReportsPage() {
           {billsQ.isLoading ? (
             <TableSkeleton columns={5} rows={6} />
           ) : (billsQ.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No bills issued for {year}.
-            </p>
+            <p className="text-sm text-muted-foreground">No bills issued for {year}.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -387,21 +360,13 @@ function ReportsPage() {
                 <tbody>
                   {(billsQ.data ?? []).map((b) => (
                     <tr key={b.id} className="border-b last:border-0">
-                      <td className="py-2 font-medium">
-                        {b.lands?.land_code ?? "—"}
-                      </td>
-                      <td className="py-2">
-                        {b.lands?.landowners?.full_name ?? "—"}
-                      </td>
-                      <td className="py-2 text-muted-foreground">
-                        {formatDate(b.due_date)}
-                      </td>
+                      <td className="py-2 font-medium">{b.lands?.land_code ?? "—"}</td>
+                      <td className="py-2">{b.lands?.landowners?.full_name ?? "—"}</td>
+                      <td className="py-2 text-muted-foreground">{formatDate(b.due_date)}</td>
                       <td className="py-2">
                         <BillStatusBadge status={b.status} />
                       </td>
-                      <td className="py-2 text-right">
-                        {formatCurrency(b.amount)}
-                      </td>
+                      <td className="py-2 text-right">{formatCurrency(b.amount)}</td>
                     </tr>
                   ))}
                 </tbody>

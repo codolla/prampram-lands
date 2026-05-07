@@ -1,18 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableSkeleton } from "@/components/skeletons";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -42,26 +37,37 @@ export const Route = createFileRoute("/_authenticated/bills/")({
   component: BillsPage,
 });
 
+const PAGE_SIZE = 25;
+
 function BillsPage() {
   const qc = useQueryClient();
   const { hasAnyRole } = useAuth();
-  const canBill = hasAnyRole(["admin", "finance"]);
-  const canRemind = hasAnyRole(["admin", "finance"]);
+  const canBill = hasAnyRole(["admin", "manager"]);
+  const canRemind = hasAnyRole(["admin"]);
   const canDelete = hasAnyRole(["admin"]);
   const sendReminders = useServerFn(sendOverdueReminders);
   const [status, setStatus] = useState<"all" | "pending" | "partial" | "paid" | "overdue">("all");
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [status]);
 
   const bills = useQuery({
-    queryKey: ["bills", status],
+    queryKey: ["bills", status, page],
     queryFn: async () => {
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("bills")
-        .select("id, billing_year, amount, due_date, status, lands(land_code, plot_number)")
+        .select("id, billing_year, amount, due_date, status, lands(land_code, plot_number)", {
+          count: "exact",
+        })
         .order("issued_at", { ascending: false });
       if (status !== "all") q = q.eq("status", status);
-      const { data, error } = await q;
+      const { data, count, error } = await q.range(from, to);
       if (error) throw error;
-      return data;
+      return { rows: data ?? [], count: count ?? 0 };
     },
   });
 
@@ -169,9 +175,7 @@ function BillsPage() {
       return r;
     },
     onSuccess: (r) => {
-      toast.success(
-        `Reminders: ${r.sent} sent, ${r.failed} failed, ${r.skipped} skipped`,
-      );
+      toast.success(`Reminders: ${r.sent} sent, ${r.failed} failed, ${r.skipped} skipped`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -194,120 +198,131 @@ function BillsPage() {
       title="Bills"
       actions={
         <div className="flex items-center gap-2">
-        {canRemind && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => remind.mutate()}
-            disabled={remind.isPending}
-          >
-            <BellRing className="mr-1 h-4 w-4" />
-            {remind.isPending ? "Sending…" : "SMS overdue"}
-          </Button>
-        )}
-        {canBill && (
-          <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+          {canRemind && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => remind.mutate()}
+              disabled={remind.isPending}
+            >
+              <BellRing className="mr-1 h-4 w-4" />
+              {remind.isPending ? "Sending…" : "SMS overdue"}
+            </Button>
+          )}
+          {canBill && (
+            <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Layers className="mr-1 h-4 w-4" /> Bulk generate
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Bulk-generate annual bills</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    Issues a bill at each active land's annual rent. Lands that already have a bill
+                    for this year are skipped.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Billing year</Label>
+                      <Input
+                        type="number"
+                        value={bulk.billing_year}
+                        onChange={(e) => setBulk({ ...bulk, billing_year: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Due date</Label>
+                      <Input
+                        type="date"
+                        value={bulk.due_date}
+                        onChange={(e) => setBulk({ ...bulk, due_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setBulkOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => bulkGenerate.mutate()} disabled={bulkGenerate.isPending}>
+                    {bulkGenerate.isPending ? "Generating…" : "Generate"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Layers className="mr-1 h-4 w-4" /> Bulk generate
+              <Button size="sm">
+                <Plus className="mr-1 h-4 w-4" /> Generate bill
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Bulk-generate annual bills</DialogTitle>
+                <DialogTitle>Generate bill</DialogTitle>
               </DialogHeader>
               <div className="grid gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Issues a bill at each active land's annual rent. Lands that already
-                  have a bill for this year are skipped.
-                </p>
+                <div className="space-y-1">
+                  <Label>Land</Label>
+                  <SearchableSelect
+                    value={form.land_id}
+                    onValueChange={(v) => {
+                      const land = (lands.data ?? []).find((l) => l.id === v);
+                      setForm({
+                        ...form,
+                        land_id: v,
+                        amount: land?.annual_rent_amount?.toString() ?? form.amount,
+                      });
+                    }}
+                    placeholder="Select land…"
+                    searchPlaceholder="Search lands…"
+                    options={(lands.data ?? []).map((l) => ({
+                      value: l.id,
+                      label: l.land_code,
+                    }))}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label>Billing year</Label>
                     <Input
                       type="number"
-                      value={bulk.billing_year}
-                      onChange={(e) =>
-                        setBulk({ ...bulk, billing_year: e.target.value })
-                      }
+                      value={form.billing_year}
+                      onChange={(e) => setForm({ ...form, billing_year: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>Due date</Label>
+                    <Label>Amount (GHS)</Label>
                     <Input
-                      type="date"
-                      value={bulk.due_date}
-                      onChange={(e) =>
-                        setBulk({ ...bulk, due_date: e.target.value })
-                      }
+                      type="number"
+                      value={form.amount}
+                      onChange={(e) => setForm({ ...form, amount: e.target.value })}
                     />
                   </div>
                 </div>
+                <div className="space-y-1">
+                  <Label>Due date</Label>
+                  <Input
+                    type="date"
+                    value={form.due_date}
+                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                  />
+                </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setBulkOpen(false)}>
+                <Button variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={() => bulkGenerate.mutate()}
-                  disabled={bulkGenerate.isPending}
-                >
-                  {bulkGenerate.isPending ? "Generating…" : "Generate"}
+                <Button onClick={() => create.mutate()} disabled={create.isPending}>
+                  {create.isPending ? "Saving…" : "Generate"}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Generate bill</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Generate bill</DialogTitle></DialogHeader>
-            <div className="grid gap-3">
-              <div className="space-y-1">
-                <Label>Land</Label>
-                <SearchableSelect
-                  value={form.land_id}
-                  onValueChange={(v) => {
-                    const land = (lands.data ?? []).find((l) => l.id === v);
-                    setForm({
-                      ...form,
-                      land_id: v,
-                      amount: land?.annual_rent_amount?.toString() ?? form.amount,
-                    });
-                  }}
-                  placeholder="Select land…"
-                  searchPlaceholder="Search lands…"
-                  options={(lands.data ?? []).map((l) => ({
-                    value: l.id,
-                    label: l.land_code,
-                  }))}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Billing year</Label>
-                  <Input type="number" value={form.billing_year} onChange={(e) => setForm({ ...form, billing_year: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Amount (GHS)</Label>
-                  <Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label>Due date</Label>
-                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={() => create.mutate()} disabled={create.isPending}>
-                {create.isPending ? "Saving…" : "Generate"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
         </div>
       }
     >
@@ -315,7 +330,9 @@ function BillsPage() {
         <CardHeader>
           <CardTitle className="text-base">All bills</CardTitle>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="mt-2 w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-2 w-40">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
@@ -328,7 +345,7 @@ function BillsPage() {
         <CardContent>
           {bills.isLoading ? (
             <TableSkeleton columns={6} rows={6} />
-          ) : (bills.data ?? []).length === 0 ? (
+          ) : (bills.data?.rows ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No bills.</p>
           ) : (
             <table className="w-full text-sm">
@@ -343,18 +360,27 @@ function BillsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(bills.data ?? []).map((b) => {
-                  const land = b.lands as unknown as { land_code: string; plot_number: string | null } | null;
+                {(bills.data?.rows ?? []).map((b) => {
+                  const land = b.lands as unknown as {
+                    land_code: string;
+                    plot_number: string | null;
+                  } | null;
                   return (
                     <tr key={b.id} className="border-b last:border-0">
                       <td className="py-2 font-medium">
-                        <Link to="/bills/$billId" params={{ billId: b.id }} className="text-primary hover:underline">
+                        <Link
+                          to="/bills/$billId"
+                          params={{ billId: b.id }}
+                          className="text-primary hover:underline"
+                        >
                           {land?.land_code ?? "—"}
                         </Link>
                       </td>
                       <td className="py-2">{b.billing_year}</td>
                       <td className="py-2">{formatDate(b.due_date)}</td>
-                      <td className="py-2"><BillStatusBadge status={b.status} /></td>
+                      <td className="py-2">
+                        <BillStatusBadge status={b.status} />
+                      </td>
                       <td className="py-2 text-right">{formatCurrency(b.amount)}</td>
                       {canDelete && (
                         <td className="py-2 text-right">
@@ -377,6 +403,36 @@ function BillsPage() {
               </tbody>
             </table>
           )}
+          {(() => {
+            const total = bills.data?.count ?? 0;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (totalPages <= 1) return null;
+            return (
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {total} records
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </AppShell>

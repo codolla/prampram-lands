@@ -83,15 +83,25 @@ async function callAdminUsers(payload: Record<string, unknown>) {
 function UsersPage() {
   const { hasRole, user: currentUser } = useAuth();
   const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
-  const data = useQuery({
-    queryKey: ["users-roles"],
+  const data = useQuery<{ rows: UserRow[]; count: number }>({
+    queryKey: ["users-roles", page],
     queryFn: async () => {
-      const [profilesRes, rolesRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, email, phone, avatar_url"),
-        supabase.from("user_roles").select("user_id, role"),
-      ]);
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const profilesRes = await supabase
+        .from("profiles")
+        .select("id, full_name, email, phone, avatar_url", { count: "exact" })
+        .order("full_name")
+        .range(from, to);
       if (profilesRes.error) throw profilesRes.error;
+      const ids = (profilesRes.data ?? []).map((p) => p.id);
+      const rolesRes =
+        ids.length === 0
+          ? { data: [], error: null as unknown as null }
+          : await supabase.from("user_roles").select("user_id, role").in("user_id", ids);
       if (rolesRes.error) throw rolesRes.error;
       const byUser = new Map<string, AppRole[]>();
       for (const r of rolesRes.data ?? []) {
@@ -99,10 +109,11 @@ function UsersPage() {
         arr.push(r.role as AppRole);
         byUser.set(r.user_id, arr);
       }
-      return (profilesRes.data ?? []).map((p) => ({
+      const rows = (profilesRes.data ?? []).map((p) => ({
         ...p,
         roles: byUser.get(p.id) ?? [],
       })) as UserRow[];
+      return { rows, count: profilesRes.count ?? 0 };
     },
   });
 
@@ -165,7 +176,7 @@ function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {(data.data ?? []).map((u) => (
+                {(data.data?.rows ?? []).map((u) => (
                   <tr key={u.id} className="border-b last:border-0 align-top">
                     <td className="py-2 font-medium">
                       <div className="flex items-center gap-2">
@@ -253,6 +264,36 @@ function UsersPage() {
               </tbody>
             </table>
           )}
+          {(() => {
+            const total = data.data?.count ?? 0;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (totalPages <= 1) return null;
+            return (
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {total} records
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </AppShell>

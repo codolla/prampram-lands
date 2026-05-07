@@ -9,24 +9,46 @@ import { TableSkeleton } from "@/components/skeletons";
 import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/payments/")({
   component: PaymentsPage,
 });
 
+const PAGE_SIZE = 25;
+
+type PaymentRow = {
+  id: string;
+  amount: number;
+  paid_at: string;
+  method: string;
+  receipt_number: string;
+  reference: string | null;
+  bills: { billing_year: number; lands: { land_code: string } } | null;
+};
+
 function PaymentsPage() {
   const qc = useQueryClient();
   const { hasAnyRole } = useAuth();
+  const canSeePayments = hasAnyRole(["admin", "manager"]);
   const canDelete = hasAnyRole(["admin"]);
-  const payments = useQuery({
-    queryKey: ["payments-all"],
+  const [page, setPage] = useState(1);
+  const payments = useQuery<{ rows: PaymentRow[]; count: number }>({
+    queryKey: ["payments-all", page],
+    enabled: canSeePayments,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const ranged = await supabase
         .from("payments")
-        .select("id, amount, paid_at, method, receipt_number, reference, bills(billing_year, lands(land_code))")
-        .order("paid_at", { ascending: false });
-      if (error) throw error;
-      return data;
+        .select(
+          "id, amount, paid_at, method, receipt_number, reference, bills(billing_year, lands(land_code))",
+          { count: "exact" },
+        )
+        .order("paid_at", { ascending: false })
+        .range(from, to);
+      if (ranged.error) throw ranged.error;
+      return { rows: ranged.data ?? [], count: ranged.count ?? 0 };
     },
   });
 
@@ -44,14 +66,28 @@ function PaymentsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (!canSeePayments) {
+    return (
+      <AppShell title="Payments">
+        <Card>
+          <CardContent className="py-8 text-sm text-muted-foreground">
+            Access restricted.
+          </CardContent>
+        </Card>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Payments">
       <Card>
-        <CardHeader><CardTitle className="text-base">All payments</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">All payments</CardTitle>
+        </CardHeader>
         <CardContent>
           {payments.isLoading ? (
             <TableSkeleton columns={6} rows={6} />
-          ) : (payments.data ?? []).length === 0 ? (
+          ) : (payments.data?.rows ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No payments recorded.</p>
           ) : (
             <table className="w-full text-sm">
@@ -67,18 +103,26 @@ function PaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(payments.data ?? []).map((p) => {
-                  const bill = p.bills as unknown as { billing_year: number; lands: { land_code: string } } | null;
+                {(payments.data?.rows ?? []).map((p) => {
+                  const bill = p.bills;
                   return (
                     <tr key={p.id} className="border-b last:border-0">
                       <td className="py-2 font-mono text-xs">
-                        <Link to="/payments/$paymentId/receipt" params={{ paymentId: p.id }} className="text-primary hover:underline">
+                        <Link
+                          to="/payments/$paymentId/receipt"
+                          params={{ paymentId: p.id }}
+                          className="text-primary hover:underline"
+                        >
                           {p.receipt_number}
                         </Link>
                       </td>
                       <td className="py-2">{bill?.lands?.land_code ?? "—"}</td>
                       <td className="py-2">{bill?.billing_year ?? "—"}</td>
-                      <td className="py-2"><Badge variant="secondary" className="uppercase">{p.method}</Badge></td>
+                      <td className="py-2">
+                        <Badge variant="secondary" className="uppercase">
+                          {p.method}
+                        </Badge>
+                      </td>
                       <td className="py-2 text-muted-foreground">{formatDate(p.paid_at)}</td>
                       <td className="py-2 text-right font-medium">{formatCurrency(p.amount)}</td>
                       {canDelete && (
@@ -102,6 +146,36 @@ function PaymentsPage() {
               </tbody>
             </table>
           )}
+          {(() => {
+            const total = payments.data?.count ?? 0;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (totalPages <= 1) return null;
+            return (
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {total} records
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </AppShell>

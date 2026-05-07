@@ -10,13 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ListSkeleton } from "@/components/skeletons";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -37,6 +31,7 @@ type SettingsForm = {
   sms_provider: "arkesel" | "hubtel" | "mnotify";
   sms_sender_id: string;
   reminder_template: string;
+  payment_template: string;
   reminder_cooldown_days: number;
   arkesel_api_key: string;
   hubtel_client_id: string;
@@ -49,6 +44,8 @@ const DEFAULT: SettingsForm = {
   sms_sender_id: "PLS",
   reminder_template:
     "Dear {owner}, your land rate bill {bill} of GHS {amount} for {year} is overdue. Please pay to avoid penalties. Thank you.",
+  payment_template:
+    "Payment received: {owner} paid GHS {amount} for {land} ({year}). Receipt: {receipt}. Thank you.",
   reminder_cooldown_days: 7,
   arkesel_api_key: "",
   hubtel_client_id: "",
@@ -86,6 +83,7 @@ function SmsSettingsPage() {
         sms_provider: (settings.data.sms_provider ?? "arkesel") as SettingsForm["sms_provider"],
         sms_sender_id: settings.data.sms_sender_id ?? "PLS",
         reminder_template: settings.data.reminder_template ?? DEFAULT.reminder_template,
+        payment_template: settings.data.payment_template ?? DEFAULT.payment_template,
         reminder_cooldown_days: settings.data.reminder_cooldown_days ?? 7,
         arkesel_api_key: settings.data.arkesel_api_key ?? "",
         hubtel_client_id: settings.data.hubtel_client_id ?? "",
@@ -111,10 +109,7 @@ function SmsSettingsPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!rowId) throw new Error("Settings row not loaded yet.");
-      const { error } = await supabase
-        .from("app_settings")
-        .update(form)
-        .eq("id", rowId);
+      const { error } = await supabase.from("app_settings").update(form).eq("id", rowId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -157,8 +152,7 @@ function SmsSettingsPage() {
             <CardHeader>
               <CardTitle className="text-base">Provider & sender</CardTitle>
               <CardDescription>
-                Choose your SMS gateway and the sender ID that appears on
-                recipient phones.
+                Choose your SMS gateway and the sender ID that appears on recipient phones.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -189,9 +183,7 @@ function SmsSettingsPage() {
                   <Input
                     maxLength={11}
                     value={form.sms_sender_id}
-                    onChange={(e) =>
-                      setForm({ ...form, sms_sender_id: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, sms_sender_id: e.target.value })}
                   />
                 </div>
               </div>
@@ -203,9 +195,7 @@ function SmsSettingsPage() {
                     type="password"
                     placeholder="api-key from arkesel.com"
                     value={form.arkesel_api_key}
-                    onChange={(e) =>
-                      setForm({ ...form, arkesel_api_key: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, arkesel_api_key: e.target.value })}
                   />
                 </div>
               )}
@@ -216,9 +206,7 @@ function SmsSettingsPage() {
                     <Label>Hubtel Client ID</Label>
                     <Input
                       value={form.hubtel_client_id}
-                      onChange={(e) =>
-                        setForm({ ...form, hubtel_client_id: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, hubtel_client_id: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1">
@@ -243,9 +231,7 @@ function SmsSettingsPage() {
                   <Input
                     type="password"
                     value={form.mnotify_api_key}
-                    onChange={(e) =>
-                      setForm({ ...form, mnotify_api_key: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, mnotify_api_key: e.target.value })}
                   />
                 </div>
               )}
@@ -265,9 +251,7 @@ function SmsSettingsPage() {
                 <Textarea
                   rows={4}
                   value={form.reminder_template}
-                  onChange={(e) =>
-                    setForm({ ...form, reminder_template: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, reminder_template: e.target.value })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -300,10 +284,34 @@ function SmsSettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Test SMS</CardTitle>
+              <CardTitle className="text-base">Payment notification</CardTitle>
               <CardDescription>
-                Send a test message using the saved configuration.
+                Variables: {"{owner}"}, {"{amount}"}, {"{land}"}, {"{year}"}, {"{receipt}"},{" "}
+                {"{method}"}, {"{date}"}
               </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="space-y-1">
+                <Label>Template</Label>
+                <Textarea
+                  rows={4}
+                  value={form.payment_template}
+                  onChange={(e) => setForm({ ...form, payment_template: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                  <Save className="mr-1 h-4 w-4" />
+                  {save.isPending ? "Saving…" : "Save settings"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Test SMS</CardTitle>
+              <CardDescription>Send a test message using the saved configuration.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
               <div className="space-y-1">
@@ -337,28 +345,17 @@ function SmsSettingsPage() {
               <p className="text-sm text-muted-foreground">No messages yet.</p>
             ) : (
               (logs.data ?? []).map((l) => (
-                <div
-                  key={l.id}
-                  className="rounded border border-border p-2 text-xs"
-                >
+                <div key={l.id} className="rounded border border-border p-2 text-xs">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">{l.phone}</span>
-                    <span
-                      className={
-                        l.status === "sent"
-                          ? "text-green-600"
-                          : "text-destructive"
-                      }
-                    >
+                    <span className={l.status === "sent" ? "text-green-600" : "text-destructive"}>
                       {l.status}
                     </span>
                   </div>
                   <div className="text-muted-foreground">
                     {l.provider} · {formatDate(l.created_at)}
                   </div>
-                  <div className="mt-1 line-clamp-2 text-foreground/80">
-                    {l.message}
-                  </div>
+                  <div className="mt-1 line-clamp-2 text-foreground/80">{l.message}</div>
                 </div>
               ))
             )}

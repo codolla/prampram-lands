@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, User } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
@@ -35,23 +30,34 @@ export const Route = createFileRoute("/_authenticated/landowners/")({
   component: LandownersPage,
 });
 
+const PAGE_SIZE = 25;
+
 function LandownersPage() {
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
   const { hasAnyRole } = useAuth();
   const canDelete = hasAnyRole(["admin"]);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["landowners", search],
+    queryKey: ["landowners", search, page],
     queryFn: async () => {
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("landowners")
-        .select("id, full_name, phone, email, address, national_id, avatar_url, created_at")
+        .select("id, full_name, phone, email, address, national_id, avatar_url, created_at", {
+          count: "exact",
+        })
         .order("full_name");
       if (search) q = q.ilike("full_name", `%${search}%`);
-      const { data, error } = await q;
+      const { data, count, error } = await q.range(from, to);
       if (error) throw error;
-      return data;
+      return { rows: data ?? [], count: count ?? 0 };
     },
   });
 
@@ -199,7 +205,7 @@ function LandownersPage() {
         <CardContent>
           {isLoading ? (
             <TableSkeleton columns={5} rows={6} />
-          ) : (data ?? []).length === 0 ? (
+          ) : (data?.rows ?? []).length === 0 ? (
             <EmptyState />
           ) : (
             <div className="overflow-x-auto">
@@ -215,7 +221,7 @@ function LandownersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data ?? []).map((o) => (
+                  {(data?.rows ?? []).map((o) => (
                     <tr key={o.id} className="border-b last:border-0">
                       <td className="py-2 font-medium">
                         <Link
@@ -227,9 +233,7 @@ function LandownersPage() {
                             {o.avatar_url ? (
                               <AvatarImage src={o.avatar_url} alt={o.full_name} />
                             ) : null}
-                            <AvatarFallback>
-                              {o.full_name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
+                            <AvatarFallback>{o.full_name.slice(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           {o.full_name}
                         </Link>
@@ -237,9 +241,7 @@ function LandownersPage() {
                       <td className="py-2">{o.phone || "—"}</td>
                       <td className="py-2">{o.email || "—"}</td>
                       <td className="py-2">{o.national_id || "—"}</td>
-                      <td className="py-2 text-muted-foreground">
-                        {formatDate(o.created_at)}
-                      </td>
+                      <td className="py-2 text-muted-foreground">{formatDate(o.created_at)}</td>
                       {canDelete && (
                         <td className="py-2 text-right">
                           <ConfirmDelete
@@ -261,6 +263,36 @@ function LandownersPage() {
               </table>
             </div>
           )}
+          {(() => {
+            const total = data?.count ?? 0;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (totalPages <= 1) return null;
+            return (
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {total} records
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </AppShell>

@@ -16,6 +16,7 @@ export type Database = {
           hubtel_client_secret: string | null;
           id: string;
           mnotify_api_key: string | null;
+          payment_template: string;
           reminder_cooldown_days: number;
           reminder_template: string;
           sms_provider: string;
@@ -29,6 +30,7 @@ export type Database = {
           hubtel_client_secret?: string | null;
           id?: string;
           mnotify_api_key?: string | null;
+          payment_template?: string;
           reminder_cooldown_days?: number;
           reminder_template?: string;
           sms_provider?: string;
@@ -42,6 +44,7 @@ export type Database = {
           hubtel_client_secret?: string | null;
           id?: string;
           mnotify_api_key?: string | null;
+          payment_template?: string;
           reminder_cooldown_days?: number;
           reminder_template?: string;
           sms_provider?: string;
@@ -325,7 +328,7 @@ export type Database = {
           gps_lat?: number | null;
           gps_lng?: number | null;
           id?: string;
-          land_code: string;
+          land_code?: string;
           land_type_id: string;
           location_description?: string | null;
           notes?: string | null;

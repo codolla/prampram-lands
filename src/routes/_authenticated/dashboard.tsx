@@ -41,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const auth = useAuth();
   const isAdmin = auth.hasRole("admin");
+  const canSeeRevenue = auth.hasAnyRole(["admin", "manager"]);
   const queryClient = useQueryClient();
   const reseed = useServerFn(resetSeedData);
   const [resetting, setResetting] = useState(false);
@@ -68,11 +69,21 @@ function DashboardPage() {
   };
 
   const stats = useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", canSeeRevenue],
     queryFn: async () => {
-      const [{ count: lands }, { count: activeLands }, paymentsRes, billsRes] = await Promise.all([
+      const [{ count: lands }, { count: activeLands }] = await Promise.all([
         supabase.from("lands").select("*", { count: "exact", head: true }),
         supabase.from("lands").select("*", { count: "exact", head: true }).eq("status", "active"),
+      ]);
+      if (!canSeeRevenue) {
+        return {
+          lands: lands ?? 0,
+          activeLands: activeLands ?? 0,
+          collected: 0,
+          outstanding: 0,
+        };
+      }
+      const [paymentsRes, billsRes] = await Promise.all([
         supabase.from("payments").select("amount"),
         supabase
           .from("bills")
@@ -91,7 +102,8 @@ function DashboardPage() {
   });
 
   const recent = useQuery({
-    queryKey: ["recent-payments"],
+    queryKey: ["recent-payments", canSeeRevenue],
+    enabled: canSeeRevenue,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payments")
@@ -120,20 +132,24 @@ function DashboardPage() {
       tone: "text-primary",
       bg: "from-primary/10 to-primary/0",
     },
-    {
-      label: "Revenue Collected",
-      value: formatCurrency(stats.data?.collected ?? 0),
-      icon: CreditCard,
-      tone: "text-accent-foreground",
-      bg: "from-accent/25 to-accent/0",
-    },
-    {
-      label: "Outstanding",
-      value: formatCurrency(stats.data?.outstanding ?? 0),
-      icon: AlertCircle,
-      tone: "text-destructive",
-      bg: "from-destructive/10 to-destructive/0",
-    },
+    ...(canSeeRevenue
+      ? ([
+          {
+            label: "Revenue Collected",
+            value: formatCurrency(stats.data?.collected ?? 0),
+            icon: CreditCard,
+            tone: "text-accent-foreground",
+            bg: "from-accent/25 to-accent/0",
+          },
+          {
+            label: "Outstanding",
+            value: formatCurrency(stats.data?.outstanding ?? 0),
+            icon: AlertCircle,
+            tone: "text-destructive",
+            bg: "from-destructive/10 to-destructive/0",
+          },
+        ] as const)
+      : []),
   ];
 
   return (
@@ -148,7 +164,9 @@ function DashboardPage() {
             A snapshot of the Secretariat today
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Active land records, revenue collected and outstanding ground rent at a glance.
+            {canSeeRevenue
+              ? "Active land records, revenue collected and outstanding ground rent at a glance."
+              : "Active land records at a glance."}
           </p>
         </div>
         {isAdmin && (
@@ -201,83 +219,85 @@ function DashboardPage() {
         ))}
       </div>
 
-      <Card className="mt-8 border-border/70 shadow-editorial">
-        <CardHeader className="flex flex-row items-end justify-between">
-          <div>
-            <CardTitle className="font-serif text-xl font-semibold">Recent payments</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Latest receipts issued by the Secretariat.
-            </p>
-          </div>
-          <Link
-            to="/payments"
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            View all <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {recent.isLoading ? (
-            <TableSkeleton columns={6} rows={5} />
-          ) : (recent.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/70 text-left text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    <th className="pb-3 font-medium">Receipt</th>
-                    <th className="pb-3 font-medium">Land</th>
-                    <th className="pb-3 font-medium">Year</th>
-                    <th className="pb-3 font-medium">Method</th>
-                    <th className="pb-3 text-right font-medium">Amount</th>
-                    <th className="pb-3 font-medium">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(recent.data ?? []).map((p) => {
-                    const bill = p.bills as unknown as {
-                      id: string;
-                      billing_year: number;
-                      lands: { land_code: string; plot_number: string | null } | null;
-                    } | null;
-                    return (
-                      <tr
-                        key={p.id}
-                        className="border-b border-border/50 last:border-0 hover:bg-muted/40"
-                      >
-                        <td className="py-3 font-mono text-xs">
-                          <Link
-                            to="/payments/$paymentId/receipt"
-                            params={{ paymentId: p.id }}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            {p.receipt_number}
-                          </Link>
-                        </td>
-                        <td className="py-3 font-medium">{bill?.lands?.land_code ?? "—"}</td>
-                        <td className="py-3">{bill?.billing_year ?? "—"}</td>
-                        <td className="py-3">
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] uppercase tracking-wide"
-                          >
-                            {p.method}
-                          </Badge>
-                        </td>
-                        <td className="py-3 text-right font-mono font-medium tabular-nums">
-                          {formatCurrency(p.amount)}
-                        </td>
-                        <td className="py-3 text-muted-foreground">{formatDate(p.paid_at)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+      {canSeeRevenue && (
+        <Card className="mt-8 border-border/70 shadow-editorial">
+          <CardHeader className="flex flex-row items-end justify-between">
+            <div>
+              <CardTitle className="font-serif text-xl font-semibold">Recent payments</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Latest receipts issued by the Secretariat.
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <Link
+              to="/payments"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              View all <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {recent.isLoading ? (
+              <TableSkeleton columns={6} rows={5} />
+            ) : (recent.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/70 text-left text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      <th className="pb-3 font-medium">Receipt</th>
+                      <th className="pb-3 font-medium">Land</th>
+                      <th className="pb-3 font-medium">Year</th>
+                      <th className="pb-3 font-medium">Method</th>
+                      <th className="pb-3 text-right font-medium">Amount</th>
+                      <th className="pb-3 font-medium">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(recent.data ?? []).map((p) => {
+                      const bill = p.bills as unknown as {
+                        id: string;
+                        billing_year: number;
+                        lands: { land_code: string; plot_number: string | null } | null;
+                      } | null;
+                      return (
+                        <tr
+                          key={p.id}
+                          className="border-b border-border/50 last:border-0 hover:bg-muted/40"
+                        >
+                          <td className="py-3 font-mono text-xs">
+                            <Link
+                              to="/payments/$paymentId/receipt"
+                              params={{ paymentId: p.id }}
+                              className="font-medium text-primary hover:underline"
+                            >
+                              {p.receipt_number}
+                            </Link>
+                          </td>
+                          <td className="py-3 font-medium">{bill?.lands?.land_code ?? "—"}</td>
+                          <td className="py-3">{bill?.billing_year ?? "—"}</td>
+                          <td className="py-3">
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] uppercase tracking-wide"
+                            >
+                              {p.method}
+                            </Badge>
+                          </td>
+                          <td className="py-3 text-right font-mono font-medium tabular-nums">
+                            {formatCurrency(p.amount)}
+                          </td>
+                          <td className="py-3 text-muted-foreground">{formatDate(p.paid_at)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </AppShell>
   );
 }

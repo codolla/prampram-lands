@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TableSkeleton } from "@/components/skeletons";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -45,12 +40,19 @@ export const Route = createFileRoute("/_authenticated/lands/")({
 
 type Status = "all" | "active" | "disputed" | "leased";
 
+const PAGE_SIZE = 25;
+
 function LandsPage() {
   const qc = useQueryClient();
   const { user, hasAnyRole } = useAuth();
   const canDelete = hasAnyRole(["admin"]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<Status>("all");
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, status]);
 
   const owners = useQuery({
     queryKey: ["landowners-mini"],
@@ -79,25 +81,27 @@ function LandsPage() {
   });
 
   const lands = useQuery({
-    queryKey: ["lands", search, status],
+    queryKey: ["lands", search, status, page],
     queryFn: async () => {
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("lands")
         .select(
           "id, land_code, plot_number, size_value, size_unit, status, annual_rent_amount, location_description, current_owner_id, landowners(full_name)",
+          { count: "exact" },
         )
         .order("land_code");
       if (search) q = q.or(`land_code.ilike.%${search}%,plot_number.ilike.%${search}%`);
       if (status !== "all") q = q.eq("status", status);
-      const { data, error } = await q;
+      const { data, count, error } = await q.range(from, to);
       if (error) throw error;
-      return data;
+      return { rows: data ?? [], count: count ?? 0 };
     },
   });
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    land_code: "",
     plot_number: "",
     size_value: "",
     size_unit: "acres" as "acres" | "hectares",
@@ -151,7 +155,6 @@ function LandsPage() {
     setImages([]);
     setPreviews([]);
     setForm({
-      land_code: "",
       plot_number: "",
       size_value: "",
       size_unit: "acres",
@@ -168,25 +171,25 @@ function LandsPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!form.land_code.trim()) throw new Error("Land code is required");
       if (!form.land_type_id) throw new Error("Land type is required");
       setUploadProgress({ current: 0, total: images.length, fileName: "", stage: "saving" });
-      const { data: inserted, error } = await supabase.from("lands").insert({
-        land_code: form.land_code.trim(),
-        plot_number: form.plot_number || null,
-        size_value: form.size_value ? Number(form.size_value) : null,
-        size_unit: form.size_unit,
-        location_description: form.location_description || null,
-        gps_lat: form.gps_lat ? Number(form.gps_lat) : null,
-        gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
-        status: form.status,
-        current_owner_id: form.current_owner_id || null,
-        annual_rent_amount: form.annual_rent_amount
-          ? Number(form.annual_rent_amount)
-          : 0,
-        notes: form.notes || null,
-        land_type_id: form.land_type_id,
-      }).select("id").single();
+      const { data: inserted, error } = await supabase
+        .from("lands")
+        .insert({
+          plot_number: form.plot_number || null,
+          size_value: form.size_value ? Number(form.size_value) : null,
+          size_unit: form.size_unit,
+          location_description: form.location_description || null,
+          gps_lat: form.gps_lat ? Number(form.gps_lat) : null,
+          gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
+          status: form.status,
+          current_owner_id: form.current_owner_id || null,
+          annual_rent_amount: form.annual_rent_amount ? Number(form.annual_rent_amount) : 0,
+          notes: form.notes || null,
+          land_type_id: form.land_type_id,
+        })
+        .select("id, land_code")
+        .single();
       if (error) throw error;
 
       // Upload images (if any) and link as documents
@@ -205,7 +208,10 @@ function LandsPage() {
           const { error: upErr } = await supabase.storage
             .from("land-documents")
             .upload(path, file, { contentType: file.type });
-          if (upErr) { failed++; continue; }
+          if (upErr) {
+            failed++;
+            continue;
+          }
           const { error: docErr } = await supabase.from("documents").insert({
             land_id: newLandId,
             kind: "other",
@@ -226,9 +232,12 @@ function LandsPage() {
         if (failed > 0) toast.warning(`${failed} image(s) failed to upload`);
       }
       setUploadProgress((p) => ({ ...p, stage: "done" }));
+      return inserted;
     },
-    onSuccess: () => {
-      toast.success("Land registered");
+    onSuccess: (inserted) => {
+      toast.success("Land registered", {
+        description: inserted?.land_code ? `Land code: ${inserted.land_code}` : undefined,
+      });
       setOpen(false);
       resetForm();
       setUploadProgress({ current: 0, total: 0, fileName: "", stage: "idle" });
@@ -258,7 +267,13 @@ function LandsPage() {
     <AppShell
       title="Lands"
       actions={
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+        <Dialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="mr-1 h-4 w-4" /> Register land
@@ -273,33 +288,76 @@ function LandsPage() {
             </DialogHeader>
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
-                <FieldInput label="Land code *" value={form.land_code} onChange={(v) => setForm({ ...form, land_code: v })} />
-                <FieldInput label="Plot number" value={form.plot_number} onChange={(v) => setForm({ ...form, plot_number: v })} />
+                <div className="space-y-1">
+                  <Label>Land code</Label>
+                  <Input value="Auto-generated" readOnly disabled />
+                </div>
+                <FieldInput
+                  label="Plot number"
+                  value={form.plot_number}
+                  onChange={(v) => setForm({ ...form, plot_number: v })}
+                />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <FieldInput label="Size" value={form.size_value} onChange={(v) => setForm({ ...form, size_value: v })} type="number" />
+                <FieldInput
+                  label="Size"
+                  value={form.size_value}
+                  onChange={(v) => setForm({ ...form, size_value: v })}
+                  type="number"
+                />
                 <div className="space-y-1">
                   <Label>Unit</Label>
-                  <Select value={form.size_unit} onValueChange={(v) => setForm({ ...form, size_unit: v as typeof form.size_unit })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.size_unit}
+                    onValueChange={(v) =>
+                      setForm({ ...form, size_unit: v as typeof form.size_unit })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="acres">Acres</SelectItem>
                       <SelectItem value="hectares">Hectares</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <FieldInput label="Annual rent (GHS)" value={form.annual_rent_amount} onChange={(v) => setForm({ ...form, annual_rent_amount: v })} type="number" />
+                <FieldInput
+                  label="Annual rent (GHS)"
+                  value={form.annual_rent_amount}
+                  onChange={(v) => setForm({ ...form, annual_rent_amount: v })}
+                  type="number"
+                />
               </div>
-              <FieldInput label="Location description" value={form.location_description} onChange={(v) => setForm({ ...form, location_description: v })} />
+              <FieldInput
+                label="Location description"
+                value={form.location_description}
+                onChange={(v) => setForm({ ...form, location_description: v })}
+              />
               <div className="grid grid-cols-2 gap-3">
-                <FieldInput label="GPS latitude" value={form.gps_lat} onChange={(v) => setForm({ ...form, gps_lat: v })} type="number" />
-                <FieldInput label="GPS longitude" value={form.gps_lng} onChange={(v) => setForm({ ...form, gps_lng: v })} type="number" />
+                <FieldInput
+                  label="GPS latitude"
+                  value={form.gps_lat}
+                  onChange={(v) => setForm({ ...form, gps_lat: v })}
+                  type="number"
+                />
+                <FieldInput
+                  label="GPS longitude"
+                  value={form.gps_lng}
+                  onChange={(v) => setForm({ ...form, gps_lng: v })}
+                  type="number"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.status}
+                    onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="disputed">Disputed</SelectItem>
@@ -324,7 +382,9 @@ function LandsPage() {
                   <Label>Current owner</Label>
                   <SearchableSelect
                     value={form.current_owner_id || "__none__"}
-                    onValueChange={(v) => setForm({ ...form, current_owner_id: v === "__none__" ? "" : v })}
+                    onValueChange={(v) =>
+                      setForm({ ...form, current_owner_id: v === "__none__" ? "" : v })
+                    }
                     placeholder="Select…"
                     searchPlaceholder="Search owners…"
                     options={[
@@ -336,7 +396,11 @@ function LandsPage() {
               </div>
               <div className="space-y-1">
                 <Label>Notes</Label>
-                <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <Textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Land photos (optional)</Label>
@@ -348,14 +412,24 @@ function LandsPage() {
                     accept="image/*"
                     multiple
                     className="hidden"
-                    onChange={(e) => { addImages(e.target.files); e.target.value = ""; }}
+                    onChange={(e) => {
+                      addImages(e.target.files);
+                      e.target.value = "";
+                    }}
                   />
                 </label>
                 {previews.length > 0 && (
                   <div className="grid grid-cols-4 gap-2">
                     {previews.map((src, i) => (
-                      <div key={src} className="group relative aspect-square overflow-hidden rounded-md border">
-                        <img src={src} alt={images[i]?.name ?? "preview"} className="h-full w-full object-cover" />
+                      <div
+                        key={src}
+                        className="group relative aspect-square overflow-hidden rounded-md border"
+                      >
+                        <img
+                          src={src}
+                          alt={images[i]?.name ?? "preview"}
+                          className="h-full w-full object-cover"
+                        />
                         <button
                           type="button"
                           onClick={() => removeImage(i)}
@@ -402,12 +476,22 @@ function LandsPage() {
                   className="h-1.5"
                 />
                 {uploadProgress.fileName && uploadProgress.stage === "uploading" && (
-                  <p className="truncate text-xs text-muted-foreground">{uploadProgress.fileName}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {uploadProgress.fileName}
+                  </p>
                 )}
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setOpen(false); resetForm(); }}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
               <Button onClick={() => create.mutate()} disabled={create.isPending}>
                 {create.isPending ? "Saving…" : "Register"}
               </Button>
@@ -430,7 +514,9 @@ function LandsPage() {
               />
             </div>
             <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
@@ -443,7 +529,7 @@ function LandsPage() {
         <CardContent>
           {lands.isLoading ? (
             <TableSkeleton columns={7} rows={6} />
-          ) : (lands.data ?? []).length === 0 ? (
+          ) : (lands.data?.rows ?? []).length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
               <Landmark className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">No lands match.</p>
@@ -463,7 +549,7 @@ function LandsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(lands.data ?? []).map((l) => {
+                  {(lands.data?.rows ?? []).map((l) => {
                     const owner = l.landowners as unknown as { full_name: string } | null;
                     return (
                       <tr key={l.id} className="border-b last:border-0">
@@ -481,7 +567,9 @@ function LandsPage() {
                         <td className="py-2">
                           {l.size_value ? `${l.size_value} ${l.size_unit}` : "—"}
                         </td>
-                        <td className="py-2"><LandStatusBadge status={l.status} /></td>
+                        <td className="py-2">
+                          <LandStatusBadge status={l.status} />
+                        </td>
                         <td className="py-2 text-right">{formatCurrency(l.annual_rent_amount)}</td>
                         {canDelete && (
                           <td className="py-2 text-right">
@@ -505,13 +593,53 @@ function LandsPage() {
               </table>
             </div>
           )}
+          {(() => {
+            const total = lands.data?.count ?? 0;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (totalPages <= 1) return null;
+            return (
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages} · {total} records
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </AppShell>
   );
 }
 
-function FieldInput({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function FieldInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
   return (
     <div className="space-y-1">
       <Label>{label}</Label>

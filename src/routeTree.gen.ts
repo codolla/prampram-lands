@@ -16,6 +16,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedLandMappingRouteImport } from './routes/_authenticated/land-mapping'
 import { Route as AuthenticatedLand3dRouteImport } from './routes/_authenticated/land-3d'
+import { Route as AuthenticatedFrontdeskRouteImport } from './routes/_authenticated/frontdesk'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPayrollIndexRouteImport } from './routes/_authenticated/payroll.index'
 import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments.index'
@@ -72,6 +73,11 @@ const AuthenticatedLandMappingRoute =
 const AuthenticatedLand3dRoute = AuthenticatedLand3dRouteImport.update({
   id: '/land-3d',
   path: '/land-3d',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFrontdeskRoute = AuthenticatedFrontdeskRouteImport.update({
+  id: '/frontdesk',
+  path: '/frontdesk',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/frontdesk': typeof AuthenticatedFrontdeskRoute
   '/land-3d': typeof AuthenticatedLand3dRoute
   '/land-mapping': typeof AuthenticatedLandMappingRoute
   '/map': typeof AuthenticatedMapRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/frontdesk': typeof AuthenticatedFrontdeskRoute
   '/land-3d': typeof AuthenticatedLand3dRoute
   '/land-mapping': typeof AuthenticatedLandMappingRoute
   '/map': typeof AuthenticatedMapRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/frontdesk': typeof AuthenticatedFrontdeskRoute
   '/_authenticated/land-3d': typeof AuthenticatedLand3dRoute
   '/_authenticated/land-mapping': typeof AuthenticatedLandMappingRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/dashboard'
+    | '/frontdesk'
     | '/land-3d'
     | '/land-mapping'
     | '/map'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/dashboard'
+    | '/frontdesk'
     | '/land-3d'
     | '/land-mapping'
     | '/map'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/dashboard'
+    | '/_authenticated/frontdesk'
     | '/_authenticated/land-3d'
     | '/_authenticated/land-mapping'
     | '/_authenticated/map'
@@ -445,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/land-3d'
       fullPath: '/land-3d'
       preLoaderRoute: typeof AuthenticatedLand3dRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/frontdesk': {
+      id: '/_authenticated/frontdesk'
+      path: '/frontdesk'
+      fullPath: '/frontdesk'
+      preLoaderRoute: typeof AuthenticatedFrontdeskRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
@@ -606,6 +625,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFrontdeskRoute: typeof AuthenticatedFrontdeskRoute
   AuthenticatedLand3dRoute: typeof AuthenticatedLand3dRoute
   AuthenticatedLandMappingRoute: typeof AuthenticatedLandMappingRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
@@ -634,6 +654,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFrontdeskRoute: AuthenticatedFrontdeskRoute,
   AuthenticatedLand3dRoute: AuthenticatedLand3dRoute,
   AuthenticatedLandMappingRoute: AuthenticatedLandMappingRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
