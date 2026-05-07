@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/format";
 import { TableSkeleton } from "@/components/skeletons";
 import { RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { resetSeedData } from "@/lib/seed.functions";
+import { clearAllData } from "@/lib/seed.functions";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -48,7 +48,7 @@ function SystemSettingsPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
 
-  const reseed = useServerFn(resetSeedData);
+  const clearData = useServerFn(clearAllData);
   const [resetting, setResetting] = useState(false);
   const [clearing, setClearing] = useState(false);
 
@@ -152,14 +152,14 @@ function SystemSettingsPage() {
   const handleReset = async () => {
     setResetting(true);
     try {
-      const res = await reseed();
+      const res = await clearData();
       if (!res || res.ok !== true || !res.counts) {
         throw new Error(
           "Reset failed: server response was invalid. This feature requires the app to run as a Node.js server (TanStack Start SSR), not as a static Vite site.",
         );
       }
-      toast.success("Database reset", {
-        description: `Reseeded ${res.counts.lands} lands, ${res.counts.bills} bills, ${res.counts.payments} payments.`,
+      toast.success("Data cleared", {
+        description: `Deleted ${res.counts.landowners} landowners, ${res.counts.lands} lands, ${res.counts.bills} bills and ${res.counts.payments} payments.`,
       });
       await qc.invalidateQueries();
     } catch (e) {
@@ -324,14 +324,12 @@ function SystemSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Data reset</CardTitle>
-            <CardDescription>
-              Reset the database to a fresh practice dataset. User accounts are kept.
-            </CardDescription>
+            <CardDescription>Clear all system data. User accounts are kept.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
               Deletes landowners, lands, rent packages, bills, payments, ownership history, parcel
-              coordinates, walk-in logs and SMS logs.
+              coordinates, payroll runs, payslips, walk-in logs, SMS logs and activity logs.
             </div>
             <div className="flex items-center gap-2">
               {!isAdmin ? (
@@ -354,15 +352,15 @@ function SystemSettingsPage() {
                       <AlertDialogTitle>Reset to fresh data?</AlertDialogTitle>
                       <AlertDialogDescription>
                         This permanently deletes all landowners, lands, rent packages, bills,
-                        payments, ownership history, parcel coordinates, walk-in logs and SMS logs,
-                        then loads a fresh practice dataset. User accounts, land types and user
-                        roles are kept. Use only in non-production environments.
+                        payments, ownership history, parcel coordinates, payroll data, walk-in logs,
+                        SMS logs and activity logs. User accounts, land types, payroll components,
+                        settings and user roles are kept. Use only in non-production environments.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction onClick={handleReset}>
-                        Yes, wipe and reseed
+                        Yes, clear all data
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

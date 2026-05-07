@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth";
+import { looksLikePhone, normalisePhone } from "@/lib/phone-auth";
 import { toast } from "sonner";
 import { Loader2, Save, KeyRound } from "lucide-react";
 import { AvatarUpload } from "@/components/AvatarUpload";
@@ -59,11 +60,15 @@ function ProfilePage() {
   const saveProfile = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not signed in");
+      const nextPhone = phone.trim();
+      if (nextPhone && !looksLikePhone(nextPhone)) {
+        throw new Error("Enter a valid phone number.");
+      }
       const { error: pErr } = await supabase
         .from("profiles")
         .update({
           full_name: fullName.trim() || null,
-          phone: phone.trim() || null,
+          phone: nextPhone ? normalisePhone(nextPhone) : null,
           avatar_url: avatarUrl,
         })
         .eq("id", user.id);

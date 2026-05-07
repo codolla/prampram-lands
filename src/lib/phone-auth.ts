@@ -25,9 +25,11 @@ export function looksLikePhone(input: string): boolean {
 
 /** Normalise a Ghanaian phone number to E.164 (+233XXXXXXXXX). */
 export function normalisePhone(input: string): string {
-  let v = input.trim().replace(/[\s\-()]/g, "");
+  const v = input.trim().replace(/[\s\-()]/g, "");
   if (v.startsWith("+")) return v;
   if (v.startsWith("00")) return "+" + v.slice(2);
+  if (v.startsWith("2330")) return GHANA_CC + v.slice(4);
+  if (v.startsWith("233")) return "+" + v;
   if (v.startsWith("0")) return GHANA_CC + v.slice(1);
   // Bare digits assumed to already be national without leading 0
   return GHANA_CC + v;

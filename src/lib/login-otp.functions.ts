@@ -16,6 +16,30 @@ function normalizeSmsPhone(raw: string): string | null {
   return p;
 }
 
+function phoneCandidates(input: string): string[] {
+  const raw = input.trim();
+  const compact = raw.replace(/[\s\-()]/g, "");
+  const digits = compact.replace(/[^\d]/g, "");
+  const out = new Set<string>();
+
+  if (raw) out.add(raw);
+  if (compact) out.add(compact);
+
+  const e164 = normalisePhone(compact);
+  out.add(e164);
+  if (e164.startsWith("+")) out.add(e164.slice(1));
+
+  if (digits) {
+    out.add(digits);
+    if (digits.startsWith("2330")) out.add("+233" + digits.slice(4));
+    if (digits.startsWith("233")) out.add("+" + digits);
+    if (digits.startsWith("0")) out.add("+233" + digits.slice(1));
+    if (digits.length === 9) out.add("+233" + digits);
+  }
+
+  return Array.from(out);
+}
+
 async function sendArkesel(opts: {
   apiKey: string;
   sender: string;
@@ -156,10 +180,14 @@ export const requestLoginOtp = createServerFn({ method: "POST" })
     const { data: profile, error: pErr } = await db
       .from("profiles")
       .select("id, phone")
-      .eq("phone", phone)
+      .in("phone", phoneCandidates(data.phone))
+      .limit(1)
       .maybeSingle();
     if (pErr) return { ok: false, error: pErr.message };
     if (!profile?.id) return { ok: false, error: "Phone number is not registered." };
+    if (profile.phone !== phone) {
+      await db.from("profiles").update({ phone }).eq("id", profile.id);
+    }
 
     const { data: roleRows, error: rErr } = await db
       .from("user_roles")

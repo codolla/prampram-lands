@@ -528,3 +528,101 @@ export const resetSeedData = createServerFn({ method: "POST" })
           : undefined,
     };
   });
+
+export const clearAllData = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: roles, error: rolesErr } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (rolesErr) throw new Error(rolesErr.message);
+    const canClear = (roles ?? []).some(
+      (r) => r.role === "admin" || (r.role as unknown as string) === "developer",
+    );
+    if (!canClear) {
+      throw new Error("Only administrators can clear all data.");
+    }
+
+    const db = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (
+          columns: string,
+          opts: { count: "exact"; head: true },
+        ) => Promise<{ count: number | null; error: { message: string } | null }>;
+        delete: () => {
+          not: (
+            column: string,
+            operator: "is",
+            value: null,
+          ) => Promise<{ error: { message: string } | null }>;
+        };
+      };
+    };
+
+    const wipe = async (table: string): Promise<number> => {
+      const countRes = await db.from(table).select("id", { count: "exact", head: true });
+      if (countRes.error) throw new Error(`Failed to count ${table}: ${countRes.error.message}`);
+      const { error } = await db.from(table).delete().not("id", "is", null);
+      if (error) throw new Error(`Failed to clear ${table}: ${error.message}`);
+      return countRes.count ?? 0;
+    };
+
+    const counts = {
+      payments: await wipe("payments"),
+      bills: await wipe("bills"),
+      ownership_history: await wipe("ownership_history"),
+      land_coordinates: await wipe("land_coordinates"),
+      documents: await wipe("documents"),
+      lands: await wipe("lands"),
+      landowners: await wipe("landowners"),
+      rent_packages: await wipe("rent_packages"),
+      staff_zone_assignments: await wipe("staff_zone_assignments"),
+      staff_zones: await wipe("staff_zones"),
+      land_staff_assignments: await wipe("land_staff_assignments"),
+      walkin_logs: await wipe("walkin_logs"),
+      sms_logs: await wipe("sms_logs"),
+      login_otps: await wipe("login_otps"),
+      payslips: await wipe("payslips"),
+      payroll_runs: await wipe("payroll_runs"),
+      payroll_staff_components: await wipe("payroll_staff_components"),
+      payroll_staff: await wipe("payroll_staff"),
+    };
+
+    type ActivityClient = {
+      from: (t: "activity_logs") => {
+        insert: (row: {
+          actor_id: string;
+          action: string;
+          entity: string;
+          entity_id: null;
+          message: string;
+          metadata: Record<string, unknown>;
+        }) => Promise<{ error: { message: string } | null }>;
+      };
+    };
+    const activity = supabaseAdmin as unknown as ActivityClient;
+    await activity.from("activity_logs").insert({
+      actor_id: userId,
+      action: "reset",
+      entity: "data",
+      entity_id: null,
+      message: "Cleared all data",
+      metadata: {
+        keep: [
+          "users",
+          "profiles",
+          "user_roles",
+          "app_settings",
+          "land_types",
+          "payroll_components",
+        ],
+      },
+    });
+
+    await wipe("activity_logs");
+
+    return { ok: true, counts };
+  });

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, type AppRole } from "@/lib/auth";
+import { looksLikePhone, normalisePhone } from "@/lib/phone-auth";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/skeletons";
 import { ShieldCheck, UserPlus, KeyRound, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -369,7 +370,13 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
         email: email.trim(),
         password,
         full_name: fullName.trim() || undefined,
-        phone: phone.trim() || undefined,
+        phone: phone.trim()
+          ? looksLikePhone(phone.trim())
+            ? normalisePhone(phone.trim())
+            : (() => {
+                throw new Error("Enter a valid phone number.");
+              })()
+          : undefined,
         avatar_url: avatarUrl,
         roles: selectedRoles,
       }),
@@ -507,11 +514,15 @@ function EditUserDialog({ user, onSaved }: { user: UserRow; onSaved: () => void 
   const save = useMutation({
     mutationFn: async () => {
       // Profile fields via direct update (admin RLS allows it)
+      const nextPhone = phone.trim();
+      if (nextPhone && !looksLikePhone(nextPhone)) {
+        throw new Error("Enter a valid phone number.");
+      }
       const { error: pErr } = await supabase
         .from("profiles")
         .update({
           full_name: fullName.trim() || null,
-          phone: phone.trim() || null,
+          phone: nextPhone ? normalisePhone(nextPhone) : null,
           avatar_url: avatarUrl,
         })
         .eq("id", user.id);
