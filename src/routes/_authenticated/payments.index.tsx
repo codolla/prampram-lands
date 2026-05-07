@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { TableSkeleton } from "@/components/skeletons";
 import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
@@ -24,7 +25,9 @@ type PaymentRow = {
   method: string;
   receipt_number: string;
   reference: string | null;
+  kind: string | null;
   bills: { billing_year: number; lands: { land_code: string } } | null;
+  lands: { land_code: string } | null;
 };
 
 function PaymentsPage() {
@@ -39,12 +42,11 @@ function PaymentsPage() {
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
+      const selectClause: string =
+        "id, amount, paid_at, method, receipt_number, reference, kind, bills(billing_year, lands(land_code)), lands:land_id(land_code)";
       const ranged = await supabase
         .from("payments")
-        .select(
-          "id, amount, paid_at, method, receipt_number, reference, bills(billing_year, lands(land_code))",
-          { count: "exact" },
-        )
+        .select(selectClause, { count: "exact" })
         .order("paid_at", { ascending: false })
         .range(from, to);
       if (ranged.error) throw ranged.error;
@@ -105,6 +107,10 @@ function PaymentsPage() {
               <tbody>
                 {(payments.data?.rows ?? []).map((p) => {
                   const bill = p.bills;
+                  const landCode = bill?.lands?.land_code ?? p.lands?.land_code ?? "—";
+                  const yearLabel =
+                    bill?.billing_year ?? (p.kind === "advance_deposit" ? "Advance" : "—");
+                  const methodLabel = p.kind === "advance_apply" ? "advance" : p.method;
                   return (
                     <tr key={p.id} className="border-b last:border-0">
                       <td className="py-2 font-mono text-xs">
@@ -116,11 +122,11 @@ function PaymentsPage() {
                           {p.receipt_number}
                         </Link>
                       </td>
-                      <td className="py-2">{bill?.lands?.land_code ?? "—"}</td>
-                      <td className="py-2">{bill?.billing_year ?? "—"}</td>
+                      <td className="py-2">{landCode}</td>
+                      <td className="py-2">{yearLabel}</td>
                       <td className="py-2">
                         <Badge variant="secondary" className="uppercase">
-                          {p.method}
+                          {methodLabel}
                         </Badge>
                       </td>
                       <td className="py-2 text-muted-foreground">{formatDate(p.paid_at)}</td>

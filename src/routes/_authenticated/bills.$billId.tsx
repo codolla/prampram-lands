@@ -28,6 +28,16 @@ export const Route = createFileRoute("/_authenticated/bills/$billId")({
   component: BillDetail,
 });
 
+type BillPaymentRow = {
+  id: string;
+  amount: number;
+  paid_at: string;
+  method: string;
+  reference: string | null;
+  receipt_number: string;
+  kind: string | null;
+};
+
 function BillDetail() {
   const { billId } = Route.useParams();
   const qc = useQueryClient();
@@ -40,7 +50,7 @@ function BillDetail() {
       const { data, error } = await supabase
         .from("bills")
         .select(
-          "*, lands(id, land_code, plot_number, location_description, landowners(full_name, phone, email))",
+          "*, lands(id, land_code, plot_number, location_description, current_owner_id, landowners(id, full_name, phone, email))",
         )
         .eq("id", billId)
         .single();
@@ -49,16 +59,17 @@ function BillDetail() {
     },
   });
 
-  const payments = useQuery({
+  const payments = useQuery<BillPaymentRow[]>({
     queryKey: ["bill-payments", billId],
     queryFn: async () => {
+      const selectClause: string = "id, amount, paid_at, method, reference, receipt_number, kind";
       const { data, error } = await supabase
         .from("payments")
-        .select("id, amount, paid_at, method, reference, receipt_number")
+        .select(selectClause)
         .eq("bill_id", billId)
         .order("paid_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data ?? []) as unknown as BillPaymentRow[];
     },
   });
 
@@ -67,11 +78,32 @@ function BillDetail() {
     land_code: string;
     plot_number: string | null;
     location_description: string | null;
-    landowners: { full_name: string; phone: string | null; email: string | null } | null;
+    current_owner_id: string | null;
+    landowners: {
+      id: string;
+      full_name: string;
+      phone: string | null;
+      email: string | null;
+    } | null;
   } | null;
   const totalPaid = (payments.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
   const outstanding = Math.max(0, Number(bill.data?.amount ?? 0) - totalPaid);
   const isFullyPaid = outstanding <= 0 && Number(bill.data?.amount ?? 0) > 0;
+
+  const ownerId = land?.landowners?.id ?? land?.current_owner_id ?? null;
+  const advance = useQuery<number>({
+    queryKey: ["advance-balance", ownerId],
+    enabled: !!ownerId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("landowner_advance_balances" as never)
+        .select("balance")
+        .filter("landowner_id", "eq", ownerId as string)
+        .maybeSingle();
+      if (error) throw error;
+      return Number((data as unknown as { balance?: number | null } | null)?.balance ?? 0);
+    },
+  });
 
   const [form, setForm] = useState({
     amount: "",
@@ -93,26 +125,62 @@ function BillDetail() {
       if (!form.amount) throw new Error("Amount required");
       const amt = Number(form.amount);
       if (!Number.isFinite(amt) || amt <= 0) throw new Error("Enter a valid amount");
-      if (amt > outstanding + 0.005) {
-        throw new Error(`Amount exceeds outstanding (${formatCurrency(outstanding)})`);
-      }
-      const { data: inserted, error } = await supabase
-        .from("payments")
-        .insert({
+      if (!land?.id) throw new Error("Land record not available");
+
+      const appliedToBill = Math.min(amt, outstanding);
+      const credit = Math.max(0, amt - outstanding);
+
+      const rows: Array<Record<string, unknown>> = [];
+
+      if (appliedToBill > 0) {
+        rows.push({
           bill_id: billId,
-          amount: amt,
+          kind: "bill",
+          land_id: land.id,
+          landowner_id: ownerId,
+          amount: appliedToBill,
           paid_at: form.paid_at,
           method: form.method,
           reference: form.reference || null,
           recorded_by: user?.id,
-        })
-        .select("id")
-        .single();
+        });
+      }
+
+      if (credit > 0) {
+        if (!ownerId) {
+          throw new Error("This land has no owner. Set an owner before saving advance.");
+        }
+        rows.push({
+          bill_id: null,
+          kind: "advance_deposit",
+          land_id: land.id,
+          landowner_id: ownerId,
+          amount: credit,
+          paid_at: form.paid_at,
+          method: form.method,
+          reference: form.reference || null,
+          recorded_by: user?.id,
+          notes: "Advance payment (credit)",
+        });
+      }
+
+      if (rows.length === 0) throw new Error("Nothing to record");
+
+      const selectInsertedClause: string = "id, kind";
+      const { data: inserted, error } = await supabase
+        .from("payments")
+        .insert(rows as never)
+        .select(selectInsertedClause)
+        .order("created_at", { ascending: false });
       if (error) throw error;
 
-      if (inserted?.id) {
+      const insertedRows =
+        (inserted as unknown as Array<{ id: string; kind: string | null }> | null) ?? [];
+      const billPaymentId =
+        (insertedRows.find((r) => r.kind === "bill")?.id as string | undefined) ?? undefined;
+      if (billPaymentId) {
         try {
-          const r = await notifyPayment({ data: { paymentId: inserted.id } });
+          const r = await notifyPayment({ data: { paymentId: billPaymentId } });
           if (!r.ok) {
             toast.warning("Payment recorded, but SMS not sent", {
               description: r.error ?? "SMS failed",
@@ -126,7 +194,14 @@ function BillDetail() {
       }
     },
     onSuccess: () => {
-      toast.success("Payment recorded");
+      const amt = Number(form.amount || 0);
+      const appliedToBill = Math.min(amt, outstanding);
+      const credit = Math.max(0, amt - outstanding);
+      toast.success(
+        credit > 0
+          ? `Payment recorded · ${formatCurrency(appliedToBill)} applied, ${formatCurrency(credit)} saved as advance`
+          : "Payment recorded",
+      );
       setForm({ ...form, amount: "", reference: "" });
       setAmountTouched(false);
       qc.invalidateQueries({ queryKey: ["bill", billId] });
@@ -134,6 +209,40 @@ function BillDetail() {
       qc.invalidateQueries({ queryKey: ["bills"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["recent-payments"] });
+      qc.invalidateQueries({ queryKey: ["advance-balance"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const applyAdvance = useMutation({
+    mutationFn: async () => {
+      if (!ownerId) throw new Error("No landowner found for this land");
+      const bal = advance.data ?? 0;
+      if (bal <= 0) throw new Error("No advance balance available");
+      if (outstanding <= 0) throw new Error("This bill has no outstanding amount");
+      const useAmt = Math.min(outstanding, bal);
+      const { error } = await supabase.from("payments").insert({
+        bill_id: billId,
+        kind: "advance_apply",
+        land_id: land?.id ?? null,
+        landowner_id: ownerId,
+        amount: useAmt,
+        paid_at: new Date().toISOString().slice(0, 10),
+        method: "cash",
+        reference: "Advance balance",
+        recorded_by: user?.id,
+        notes: "Applied from advance balance",
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Advance applied to this bill");
+      qc.invalidateQueries({ queryKey: ["bill", billId] });
+      qc.invalidateQueries({ queryKey: ["bill-payments", billId] });
+      qc.invalidateQueries({ queryKey: ["bills"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["recent-payments"] });
+      qc.invalidateQueries({ queryKey: ["advance-balance"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -270,7 +379,25 @@ function BillDetail() {
                     <span className="text-muted-foreground">Outstanding</span>
                     <span className="font-semibold">{formatCurrency(outstanding)}</span>
                   </div>
+                  {!!ownerId && (
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="text-muted-foreground">Advance balance</span>
+                      <span className="font-semibold">
+                        {advance.isLoading ? "…" : formatCurrency(advance.data ?? 0)}
+                      </span>
+                    </div>
+                  )}
                 </div>
+                {!!ownerId && (advance.data ?? 0) > 0 && outstanding > 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => applyAdvance.mutate()}
+                    disabled={applyAdvance.isPending || advance.isLoading}
+                  >
+                    {applyAdvance.isPending ? "Applying…" : "Use advance to pay this bill"}
+                  </Button>
+                )}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label>Amount (GHS)</Label>
@@ -288,7 +415,6 @@ function BillDetail() {
                   <Input
                     type="number"
                     min={0}
-                    max={outstanding}
                     step="0.01"
                     value={form.amount}
                     onChange={(e) => {
@@ -296,8 +422,11 @@ function BillDetail() {
                       setForm({ ...form, amount: e.target.value });
                     }}
                   />
-                  {form.amount !== "" && Number(form.amount) > outstanding && (
-                    <p className="text-xs text-destructive">Cannot exceed outstanding balance.</p>
+                  {form.amount !== "" && Number(form.amount) > outstanding && outstanding > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Extra {formatCurrency(Math.max(0, Number(form.amount) - outstanding))} will be
+                      saved as advance credit.
+                    </p>
                   )}
                 </div>
                 <div className="space-y-1">
@@ -339,7 +468,7 @@ function BillDetail() {
                     pay.isPending ||
                     !form.amount ||
                     Number(form.amount) <= 0 ||
-                    Number(form.amount) > outstanding
+                    !Number.isFinite(Number(form.amount))
                   }
                 >
                   {pay.isPending ? "Recording…" : "Record payment"}

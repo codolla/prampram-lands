@@ -35,7 +35,7 @@ function DashboardPage() {
         };
       }
       const [paymentsRes, billsRes] = await Promise.all([
-        supabase.from("payments").select("amount"),
+        supabase.from("payments").select("amount").filter("kind", "neq", "advance_apply"),
         supabase
           .from("bills")
           .select("amount, status")
@@ -56,11 +56,12 @@ function DashboardPage() {
     queryKey: ["recent-payments", canSeeRevenue],
     enabled: canSeeRevenue,
     queryFn: async () => {
+      const selectClause: string =
+        "id, amount, paid_at, method, receipt_number, kind, bills(id, billing_year, lands!inner(land_code, plot_number)), lands:land_id(land_code, plot_number)";
       const { data, error } = await supabase
         .from("payments")
-        .select(
-          "id, amount, paid_at, method, receipt_number, bills!inner(id, billing_year, lands!inner(land_code, plot_number))",
-        )
+        .select(selectClause)
+        .filter("kind", "neq", "advance_apply")
         .order("paid_at", { ascending: false })
         .limit(8);
       if (error) throw error;
@@ -181,40 +182,54 @@ function DashboardPage() {
                   </thead>
                   <tbody>
                     {(recent.data ?? []).map((p) => {
-                      const bill = p.bills as unknown as {
+                      const row = p as unknown as {
                         id: string;
-                        billing_year: number;
+                        receipt_number: string;
+                        method: string;
+                        amount: number;
+                        paid_at: string;
+                        kind: string | null;
+                        bills: {
+                          id: string;
+                          billing_year: number;
+                          lands: { land_code: string; plot_number: string | null } | null;
+                        } | null;
                         lands: { land_code: string; plot_number: string | null } | null;
-                      } | null;
+                      };
+                      const bill = row.bills;
+                      const landCode = bill?.lands?.land_code ?? row.lands?.land_code ?? "—";
+                      const yearLabel =
+                        bill?.billing_year ?? (row.kind === "advance_deposit" ? "Advance" : "—");
+                      const methodLabel = row.kind === "advance_apply" ? "advance" : row.method;
                       return (
                         <tr
-                          key={p.id}
+                          key={row.id}
                           className="border-b border-border/50 last:border-0 hover:bg-muted/40"
                         >
                           <td className="py-3 pr-4 font-mono text-xs">
                             <Link
                               to="/payments/$paymentId/receipt"
-                              params={{ paymentId: p.id }}
+                              params={{ paymentId: row.id }}
                               className="font-medium text-primary hover:underline"
                             >
-                              {p.receipt_number}
+                              {row.receipt_number}
                             </Link>
                           </td>
-                          <td className="py-3 pr-4 font-medium">{bill?.lands?.land_code ?? "—"}</td>
-                          <td className="py-3 pr-4">{bill?.billing_year ?? "—"}</td>
+                          <td className="py-3 pr-4 font-medium">{landCode}</td>
+                          <td className="py-3 pr-4">{yearLabel}</td>
                           <td className="py-3 pr-4">
                             <Badge
                               variant="secondary"
                               className="text-[10px] uppercase tracking-wide"
                             >
-                              {p.method}
+                              {methodLabel}
                             </Badge>
                           </td>
                           <td className="py-3 pr-6 text-right font-mono font-medium tabular-nums whitespace-nowrap">
-                            {formatCurrency(p.amount)}
+                            {formatCurrency(row.amount)}
                           </td>
                           <td className="py-3 pl-6 text-muted-foreground whitespace-nowrap">
-                            {formatDate(p.paid_at)}
+                            {formatDate(row.paid_at)}
                           </td>
                         </tr>
                       );

@@ -103,6 +103,7 @@ function LandsPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     plot_number: "",
+    family: "",
     size_value: "",
     size_unit: "acres" as "acres" | "hectares",
     location_description: "",
@@ -156,6 +157,7 @@ function LandsPage() {
     setPreviews([]);
     setForm({
       plot_number: "",
+      family: "",
       size_value: "",
       size_unit: "acres",
       location_description: "",
@@ -173,21 +175,23 @@ function LandsPage() {
     mutationFn: async () => {
       if (!form.land_type_id) throw new Error("Land type is required");
       setUploadProgress({ current: 0, total: images.length, fileName: "", stage: "saving" });
+      const payload = {
+        plot_number: form.plot_number || null,
+        family: form.family || null,
+        size_value: form.size_value ? Number(form.size_value) : null,
+        size_unit: form.size_unit,
+        location_description: form.location_description || null,
+        gps_lat: form.gps_lat ? Number(form.gps_lat) : null,
+        gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
+        status: form.status,
+        current_owner_id: form.current_owner_id || null,
+        annual_rent_amount: form.annual_rent_amount ? Number(form.annual_rent_amount) : 0,
+        notes: form.notes || null,
+        land_type_id: form.land_type_id,
+      };
       const { data: inserted, error } = await supabase
         .from("lands")
-        .insert({
-          plot_number: form.plot_number || null,
-          size_value: form.size_value ? Number(form.size_value) : null,
-          size_unit: form.size_unit,
-          location_description: form.location_description || null,
-          gps_lat: form.gps_lat ? Number(form.gps_lat) : null,
-          gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
-          status: form.status,
-          current_owner_id: form.current_owner_id || null,
-          annual_rent_amount: form.annual_rent_amount ? Number(form.annual_rent_amount) : 0,
-          notes: form.notes || null,
-          land_type_id: form.land_type_id,
-        })
+        .insert(payload as never)
         .select("id, land_code")
         .single();
       if (error) throw error;
@@ -298,6 +302,11 @@ function LandsPage() {
                   onChange={(v) => setForm({ ...form, plot_number: v })}
                 />
               </div>
+              <FieldInput
+                label="Grantor/Family"
+                value={form.family}
+                onChange={(v) => setForm({ ...form, family: v })}
+              />
               <div className="grid grid-cols-3 gap-3">
                 <FieldInput
                   label="Size"

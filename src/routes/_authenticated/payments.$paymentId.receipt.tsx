@@ -24,6 +24,35 @@ export const Route = createFileRoute("/_authenticated/payments/$paymentId/receip
 
 type PrintFormat = "thermal" | "a4";
 
+type PaymentKind = "bill" | "advance_deposit" | "advance_apply" | null;
+
+type ReceiptLand = {
+  id: string;
+  land_code: string;
+  plot_number: string | null;
+  family: string | null;
+  size_value: number | null;
+  size_unit: string;
+  location_description: string | null;
+  landowners: { full_name: string; phone: string | null } | null;
+};
+
+type PaymentReceiptRow = {
+  id: string;
+  amount: number;
+  paid_at: string;
+  method: string;
+  reference: string | null;
+  receipt_number: string;
+  kind: PaymentKind;
+  bills: {
+    billing_year: number;
+    amount: number;
+    lands: ReceiptLand | null;
+  } | null;
+  lands: ReceiptLand | null;
+};
+
 function ReceiptPage() {
   const { paymentId } = Route.useParams();
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -33,18 +62,19 @@ function ReceiptPage() {
   const [printFormat, setPrintFormat] = useState<PrintFormat>(defaultFormat);
   const [thermalPageHeightMm, setThermalPageHeightMm] = useState<number>(200);
   const [printing, setPrinting] = useState(false);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<PaymentReceiptRow>({
     queryKey: ["payment-receipt", paymentId],
     queryFn: async () => {
+      const selectClause: string =
+        "*, kind, bills(billing_year, amount, lands(id, land_code, plot_number, family, size_value, size_unit, location_description, landowners(full_name, phone))), lands:land_id(id, land_code, plot_number, family, size_value, size_unit, location_description, landowners:current_owner_id(full_name, phone))";
       const { data, error } = await supabase
         .from("payments")
-        .select(
-          "*, bills(billing_year, amount, lands(land_code, plot_number, location_description, landowners(full_name, phone)))",
-        )
+        .select(selectClause)
         .eq("id", paymentId)
         .single();
       if (error) throw error;
-      return data;
+      if (!data) throw new Error("Receipt not found");
+      return data as unknown as PaymentReceiptRow;
     },
   });
 
@@ -102,16 +132,22 @@ function ReceiptPage() {
       </div>
     );
   }
-  const bill = data.bills as unknown as {
-    billing_year: number;
-    amount: number;
-    lands: {
-      land_code: string;
-      plot_number: string | null;
-      location_description: string | null;
-      landowners: { full_name: string; phone: string | null } | null;
-    };
-  };
+  const kind = data.kind ?? "bill";
+  const bill = data.bills;
+  const land = bill?.lands ?? data.lands;
+  const receiptTitle =
+    kind === "advance_deposit" ? "Advance Payment Receipt" : "Official Payment Receipt";
+  const amountLabel =
+    kind === "advance_deposit"
+      ? "Amount credited"
+      : kind === "advance_apply"
+        ? "Amount applied"
+        : "Amount paid";
+  const methodLabel = kind === "advance_apply" ? "ADVANCE" : data.method.toUpperCase();
+  const landSize =
+    land?.size_value != null
+      ? `${Number(land.size_value)} ${String(land.size_unit).toUpperCase()}`
+      : null;
 
   const downloadPdf = async () => {
     if (!receiptRef.current) return;
@@ -225,7 +261,7 @@ function ReceiptPage() {
                 printFormat === "a4" ? "mt-1 text-2xl font-semibold" : "mt-1 text-lg font-semibold"
               }
             >
-              Official Payment Receipt
+              {receiptTitle}
             </h1>
             <p
               className={printFormat === "a4" ? "mt-1 font-mono text-sm" : "mt-1 font-mono text-xs"}
@@ -239,21 +275,25 @@ function ReceiptPage() {
               printFormat === "a4" ? "grid-cols-2" : "grid-cols-1",
             ].join(" ")}
           >
-            <Row label="Received from" value={bill.lands.landowners?.full_name ?? "—"} />
-            <Row label="Phone" value={bill.lands.landowners?.phone ?? "—"} />
+            <Row label="Received from" value={land?.landowners?.full_name ?? "—"} />
+            <Row label="Phone" value={land?.landowners?.phone ?? "—"} />
             <Row
               label="Land"
-              value={`${bill.lands.land_code} · Plot ${bill.lands.plot_number ?? "—"}`}
+              value={`${land?.land_code ?? "—"} · Plot ${land?.plot_number ?? "—"}`}
             />
-            <Row label="Location" value={bill.lands.location_description ?? "—"} />
-            <Row label="Billing year" value={String(bill.billing_year)} />
-            <Row label="Method" value={data.method.toUpperCase()} />
+            <Row label="Location" value={land?.location_description ?? "—"} />
+            {landSize ? <Row label="Land size" value={landSize} /> : null}
+            {land?.family ? <Row label="Family" value={land.family} /> : null}
+            {bill?.billing_year ? (
+              <Row label="Billing year" value={String(bill.billing_year)} />
+            ) : null}
+            <Row label="Method" value={methodLabel} />
             <Row label="Reference" value={data.reference ?? "—"} />
             <Row label="Date" value={formatDate(data.paid_at)} />
           </div>
           <div className="border-t pt-4">
             <div className="flex items-end justify-between">
-              <span className="text-sm text-muted-foreground">Amount paid</span>
+              <span className="text-sm text-muted-foreground">{amountLabel}</span>
               <span className={printFormat === "a4" ? "text-2xl font-bold" : "text-xl font-bold"}>
                 {formatCurrency(data.amount)}
               </span>

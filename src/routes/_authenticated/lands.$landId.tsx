@@ -8,12 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -22,12 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/SearchableSelect";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Save, Upload, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LandStatusBadge, BillStatusBadge } from "@/components/StatusBadge";
@@ -124,6 +114,7 @@ function LandDetail() {
 
   const [form, setForm] = useState({
     plot_number: "",
+    family: "",
     size_value: "",
     size_unit: "acres" as "acres" | "hectares",
     location_description: "",
@@ -139,6 +130,7 @@ function LandDetail() {
     if (land.data) {
       setForm({
         plot_number: land.data.plot_number ?? "",
+        family: (land.data as unknown as { family?: string | null }).family ?? "",
         size_value: land.data.size_value?.toString() ?? "",
         size_unit: land.data.size_unit,
         location_description: land.data.location_description ?? "",
@@ -154,20 +146,22 @@ function LandDetail() {
 
   const save = useMutation({
     mutationFn: async () => {
+      const payload = {
+        plot_number: form.plot_number || null,
+        family: form.family || null,
+        size_value: form.size_value ? Number(form.size_value) : null,
+        size_unit: form.size_unit,
+        location_description: form.location_description || null,
+        gps_lat: form.gps_lat ? Number(form.gps_lat) : null,
+        gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
+        status: form.status,
+        current_owner_id: form.current_owner_id || null,
+        annual_rent_amount: form.annual_rent_amount ? Number(form.annual_rent_amount) : 0,
+        notes: form.notes || null,
+      };
       const { error } = await supabase
         .from("lands")
-        .update({
-          plot_number: form.plot_number || null,
-          size_value: form.size_value ? Number(form.size_value) : null,
-          size_unit: form.size_unit,
-          location_description: form.location_description || null,
-          gps_lat: form.gps_lat ? Number(form.gps_lat) : null,
-          gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
-          status: form.status,
-          current_owner_id: form.current_owner_id || null,
-          annual_rent_amount: form.annual_rent_amount ? Number(form.annual_rent_amount) : 0,
-          notes: form.notes || null,
-        })
+        .update(payload as never)
         .eq("id", landId);
       if (error) throw error;
     },
@@ -212,7 +206,9 @@ function LandDetail() {
 
   // Documents upload
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [docKind, setDocKind] = useState<"indenture" | "agreement" | "receipt" | "other">("indenture");
+  const [docKind, setDocKind] = useState<"indenture" | "agreement" | "receipt" | "other">(
+    "indenture",
+  );
 
   const uploadDoc = useMutation({
     mutationFn: async (file: File) => {
@@ -255,9 +251,7 @@ function LandDetail() {
   });
 
   const downloadDoc = async (path: string) => {
-    const { data, error } = await supabase.storage
-      .from("land-documents")
-      .createSignedUrl(path, 60);
+    const { data, error } = await supabase.storage.from("land-documents").createSignedUrl(path, 60);
     if (error) {
       toast.error(error.message);
       return;
@@ -286,9 +280,7 @@ function LandDetail() {
           <p className="text-sm text-muted-foreground">
             Plot {land.data?.plot_number ?? "—"} · {land.data?.location_description ?? "—"}
           </p>
-          <div className="mt-1">
-            {land.data && <LandStatusBadge status={land.data.status} />}
-          </div>
+          <div className="mt-1">{land.data && <LandStatusBadge status={land.data.status} />}</div>
         </div>
       </div>
 
@@ -309,15 +301,41 @@ function LandDetail() {
             </CardHeader>
             <CardContent className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
-                <FieldInput label="Plot number" value={form.plot_number} onChange={(v) => setForm({ ...form, plot_number: v })} />
-                <FieldInput label="Annual rent (GHS)" value={form.annual_rent_amount} onChange={(v) => setForm({ ...form, annual_rent_amount: v })} type="number" />
+                <FieldInput
+                  label="Plot number"
+                  value={form.plot_number}
+                  onChange={(v) => setForm({ ...form, plot_number: v })}
+                />
+                <FieldInput
+                  label="Annual rent (GHS)"
+                  value={form.annual_rent_amount}
+                  onChange={(v) => setForm({ ...form, annual_rent_amount: v })}
+                  type="number"
+                />
               </div>
+              <FieldInput
+                label="Family (optional)"
+                value={form.family}
+                onChange={(v) => setForm({ ...form, family: v })}
+              />
               <div className="grid grid-cols-3 gap-3">
-                <FieldInput label="Size" value={form.size_value} onChange={(v) => setForm({ ...form, size_value: v })} type="number" />
+                <FieldInput
+                  label="Size"
+                  value={form.size_value}
+                  onChange={(v) => setForm({ ...form, size_value: v })}
+                  type="number"
+                />
                 <div className="space-y-1">
                   <Label>Unit</Label>
-                  <Select value={form.size_unit} onValueChange={(v) => setForm({ ...form, size_unit: v as typeof form.size_unit })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.size_unit}
+                    onValueChange={(v) =>
+                      setForm({ ...form, size_unit: v as typeof form.size_unit })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="acres">Acres</SelectItem>
                       <SelectItem value="hectares">Hectares</SelectItem>
@@ -326,8 +344,13 @@ function LandDetail() {
                 </div>
                 <div className="space-y-1">
                   <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.status}
+                    onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="disputed">Disputed</SelectItem>
@@ -336,16 +359,32 @@ function LandDetail() {
                   </Select>
                 </div>
               </div>
-              <FieldInput label="Location description" value={form.location_description} onChange={(v) => setForm({ ...form, location_description: v })} />
+              <FieldInput
+                label="Location description"
+                value={form.location_description}
+                onChange={(v) => setForm({ ...form, location_description: v })}
+              />
               <div className="grid grid-cols-2 gap-3">
-                <FieldInput label="GPS latitude" value={form.gps_lat} onChange={(v) => setForm({ ...form, gps_lat: v })} type="number" />
-                <FieldInput label="GPS longitude" value={form.gps_lng} onChange={(v) => setForm({ ...form, gps_lng: v })} type="number" />
+                <FieldInput
+                  label="GPS latitude"
+                  value={form.gps_lat}
+                  onChange={(v) => setForm({ ...form, gps_lat: v })}
+                  type="number"
+                />
+                <FieldInput
+                  label="GPS longitude"
+                  value={form.gps_lng}
+                  onChange={(v) => setForm({ ...form, gps_lng: v })}
+                  type="number"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Current owner</Label>
                 <SearchableSelect
                   value={form.current_owner_id || "__none__"}
-                  onValueChange={(v) => setForm({ ...form, current_owner_id: v === "__none__" ? "" : v })}
+                  onValueChange={(v) =>
+                    setForm({ ...form, current_owner_id: v === "__none__" ? "" : v })
+                  }
                   searchPlaceholder="Search owners…"
                   options={[
                     { value: "__none__", label: "— Unassigned —" },
@@ -355,7 +394,11 @@ function LandDetail() {
               </div>
               <div className="space-y-1">
                 <Label>Notes</Label>
-                <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <Textarea
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
               <div>
                 <Button onClick={() => save.mutate()} disabled={save.isPending}>
@@ -372,18 +415,15 @@ function LandDetail() {
             <CardHeader>
               <CardTitle className="text-base">Polygon boundary</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Use the draw tool on the map to outline the parcel. Existing polygons can be edited or deleted.
+                Use the draw tool on the map to outline the parcel. Existing polygons can be edited
+                or deleted.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
               {coords.isLoading ? (
                 <Skeleton className="h-72 w-full rounded-md" />
               ) : (
-                <PolygonEditor
-                  initial={coords.data ?? []}
-                  center={center}
-                  onChange={setPolygon}
-                />
+                <PolygonEditor initial={coords.data ?? []} center={center} onChange={setPolygon} />
               )}
               <div className="flex items-center gap-3">
                 <Button onClick={() => savePolygon.mutate()} disabled={savePolygon.isPending}>
@@ -405,7 +445,9 @@ function LandDetail() {
                 <div className="space-y-1">
                   <Label>Type</Label>
                   <Select value={docKind} onValueChange={(v) => setDocKind(v as typeof docKind)}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="indenture">Indenture</SelectItem>
                       <SelectItem value="agreement">Agreement</SelectItem>
@@ -424,7 +466,11 @@ function LandDetail() {
                     if (f) uploadDoc.mutate(f);
                   }}
                 />
-                <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadDoc.isPending}>
+                <Button
+                  variant="outline"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploadDoc.isPending}
+                >
                   <Upload className="mr-1 h-4 w-4" />
                   {uploadDoc.isPending ? "Uploading…" : "Upload"}
                 </Button>
@@ -446,10 +492,20 @@ function LandDetail() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <Button size="sm" variant="outline" onClick={() => downloadDoc(d.storage_path)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadDoc(d.storage_path)}
+                        >
                           Download
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => deleteDoc.mutate({ id: d.id, storage_path: d.storage_path })}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            deleteDoc.mutate({ id: d.id, storage_path: d.storage_path })
+                          }
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -477,7 +533,8 @@ function LandDetail() {
                       <li key={h.id} className="py-2">
                         <p className="text-sm font-medium">{o?.full_name ?? "Unknown"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDate(h.start_date)} – {h.end_date ? formatDate(h.end_date) : "present"}
+                          {formatDate(h.start_date)} –{" "}
+                          {h.end_date ? formatDate(h.end_date) : "present"}
                           {h.transfer_note ? ` · ${h.transfer_note}` : ""}
                         </p>
                       </li>
@@ -498,7 +555,10 @@ function LandDetail() {
               {(bills.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No bills yet. Create one from the{" "}
-                  <Link to="/bills" className="text-primary underline">Bills page</Link>.
+                  <Link to="/bills" className="text-primary underline">
+                    Bills page
+                  </Link>
+                  .
                 </p>
               ) : (
                 <table className="w-full text-sm">
@@ -516,10 +576,16 @@ function LandDetail() {
                       <tr key={b.id} className="border-b last:border-0">
                         <td className="py-2 font-medium">{b.billing_year}</td>
                         <td className="py-2">{formatDate(b.due_date)}</td>
-                        <td className="py-2"><BillStatusBadge status={b.status} /></td>
+                        <td className="py-2">
+                          <BillStatusBadge status={b.status} />
+                        </td>
                         <td className="py-2 text-right">{formatCurrency(b.amount)}</td>
                         <td className="py-2 text-right">
-                          <Link to="/bills/$billId" params={{ billId: b.id }} className="text-primary text-xs hover:underline">
+                          <Link
+                            to="/bills/$billId"
+                            params={{ billId: b.id }}
+                            className="text-primary text-xs hover:underline"
+                          >
                             Open
                           </Link>
                         </td>
@@ -547,7 +613,17 @@ function LandDetail() {
   );
 }
 
-function FieldInput({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function FieldInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
