@@ -171,12 +171,12 @@ function DashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/70 text-left text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      <th className="pb-3 font-medium">Receipt</th>
-                      <th className="pb-3 font-medium">Land</th>
-                      <th className="pb-3 font-medium">Year</th>
-                      <th className="pb-3 font-medium">Method</th>
-                      <th className="pb-3 text-right font-medium">Amount</th>
-                      <th className="pb-3 font-medium">Date</th>
+                      <th className="pb-3 pr-4 font-medium">Receipt</th>
+                      <th className="pb-3 pr-4 font-medium">Land</th>
+                      <th className="pb-3 pr-4 font-medium">Year</th>
+                      <th className="pb-3 pr-4 font-medium">Method</th>
+                      <th className="pb-3 pr-6 text-right font-medium">Amount</th>
+                      <th className="pb-3 pl-6 font-medium">Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -191,7 +191,7 @@ function DashboardPage() {
                           key={p.id}
                           className="border-b border-border/50 last:border-0 hover:bg-muted/40"
                         >
-                          <td className="py-3 font-mono text-xs">
+                          <td className="py-3 pr-4 font-mono text-xs">
                             <Link
                               to="/payments/$paymentId/receipt"
                               params={{ paymentId: p.id }}
@@ -200,9 +200,9 @@ function DashboardPage() {
                               {p.receipt_number}
                             </Link>
                           </td>
-                          <td className="py-3 font-medium">{bill?.lands?.land_code ?? "—"}</td>
-                          <td className="py-3">{bill?.billing_year ?? "—"}</td>
-                          <td className="py-3">
+                          <td className="py-3 pr-4 font-medium">{bill?.lands?.land_code ?? "—"}</td>
+                          <td className="py-3 pr-4">{bill?.billing_year ?? "—"}</td>
+                          <td className="py-3 pr-4">
                             <Badge
                               variant="secondary"
                               className="text-[10px] uppercase tracking-wide"
@@ -210,10 +210,12 @@ function DashboardPage() {
                               {p.method}
                             </Badge>
                           </td>
-                          <td className="py-3 text-right font-mono font-medium tabular-nums">
+                          <td className="py-3 pr-6 text-right font-mono font-medium tabular-nums whitespace-nowrap">
                             {formatCurrency(p.amount)}
                           </td>
-                          <td className="py-3 text-muted-foreground">{formatDate(p.paid_at)}</td>
+                          <td className="py-3 pl-6 text-muted-foreground whitespace-nowrap">
+                            {formatDate(p.paid_at)}
+                          </td>
                         </tr>
                       );
                     })}

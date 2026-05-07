@@ -67,8 +67,8 @@ const DEFAULT: SettingsForm = {
 
 function SmsSettingsPage() {
   const qc = useQueryClient();
-  const { roles } = useAuth();
-  const isAdmin = roles.includes("admin");
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const send = useServerFn(sendOverdueReminders);
   const [form, setForm] = useState<SettingsForm>(DEFAULT);
   const [rowId, setRowId] = useState<string | null>(null);

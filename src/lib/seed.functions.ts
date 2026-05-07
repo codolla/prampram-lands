@@ -21,8 +21,10 @@ export const resetSeedData = createServerFn({ method: "POST" })
       .select("role")
       .eq("user_id", userId);
     if (rolesErr) throw new Error(rolesErr.message);
-    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-    if (!isAdmin) {
+    const canReset = (roles ?? []).some(
+      (r) => r.role === "admin" || (r.role as unknown as string) === "developer",
+    );
+    if (!canReset) {
       throw new Error("Only administrators can reset seed data.");
     }
 

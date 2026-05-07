@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/settings/users")({
   component: UsersPage,
 });
 
-const ROLES: AppRole[] = ["admin", "manager", "frontdesk", "staff", "finance"];
+const ROLES: AppRole[] = ["admin", "manager", "frontdesk", "staff", "finance", "developer"];
 
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
@@ -56,6 +56,7 @@ const ROLE_LABEL: Record<AppRole, string> = {
   frontdesk: "FrontDesk",
   staff: "Staff",
   finance: "Finance",
+  developer: "Developer",
 };
 
 type UserRow = {
@@ -67,14 +68,54 @@ type UserRow = {
   roles: AppRole[];
 };
 
+async function friendlyEdgeFunctionError(error: unknown, response?: Response): Promise<string> {
+  const err = error as { name?: string; message?: string; context?: unknown };
+  const name = err?.name ?? "";
+
+  if (name === "FunctionsFetchError") {
+    return "Could not reach the server. Check your internet connection and try again.";
+  }
+
+  if (name === "FunctionsRelayError") {
+    return "Service is temporarily unavailable. Please try again.";
+  }
+
+  if (name === "FunctionsHttpError") {
+    const res = (err.context ?? response) as Response | undefined;
+    const status =
+      typeof (res as { status?: unknown })?.status === "number" ? res?.status : undefined;
+    const payload = res
+      ? await res
+          .clone()
+          .json()
+          .catch(() => null as unknown as null)
+      : null;
+    const serverMsg =
+      (payload as { error?: string; message?: string; detail?: string } | null)?.error ??
+      (payload as { error?: string; message?: string; detail?: string } | null)?.message ??
+      (payload as { error?: string; message?: string; detail?: string } | null)?.detail ??
+      null;
+
+    if (status === 401) return "Your session has expired. Please sign in again.";
+    if (status === 403) return serverMsg ?? "You do not have permission to do this.";
+    if (status === 404) return "This action is currently unavailable. Please contact support.";
+    if (status && status >= 500) return "Server error. Please try again.";
+    return serverMsg ?? "Request failed. Please check your input and try again.";
+  }
+
+  if ((err?.message ?? "").includes("Edge Function returned a non-2xx status code")) {
+    return "Action failed. Please try again.";
+  }
+
+  return err?.message ?? "Something went wrong. Please try again.";
+}
+
 async function callAdminUsers(payload: Record<string, unknown>) {
-  const { data, error } = await supabase.functions.invoke("admin-users", {
+  const { data, error, response } = await supabase.functions.invoke("admin-users", {
     body: payload,
   });
   if (error) {
-    // Try to extract a useful error message from the function response
-    const ctx = (error as { context?: { error?: string } }).context;
-    throw new Error(ctx?.error ?? error.message);
+    throw new Error(await friendlyEdgeFunctionError(error, response));
   }
   if (data?.error) throw new Error(data.error);
   return data;
@@ -82,6 +123,7 @@ async function callAdminUsers(payload: Record<string, unknown>) {
 
 function UsersPage() {
   const { hasRole, user: currentUser } = useAuth();
+  const isDeveloper = hasRole("developer");
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 25;
@@ -124,10 +166,12 @@ function UsersPage() {
           .from("user_roles")
           .delete()
           .eq("user_id", userId)
-          .eq("role", role);
+          .eq("role", role as unknown as string);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: role as unknown as string });
         if (error) throw error;
       }
     },
@@ -155,7 +199,14 @@ function UsersPage() {
     <AppShell
       title="Users & Roles"
       actions={
-        <CreateUserDialog onCreated={() => qc.invalidateQueries({ queryKey: ["users-roles"] })} />
+        <div className="flex items-center gap-2">
+          {!isDeveloper ? (
+            <EnsureDefaultDeveloperButton
+              onDone={() => qc.invalidateQueries({ queryKey: ["users-roles"] })}
+            />
+          ) : null}
+          <CreateUserDialog onCreated={() => qc.invalidateQueries({ queryKey: ["users-roles"] })} />
+        </div>
       }
     >
       <Card>
@@ -216,7 +267,7 @@ function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Assign roles</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {ROLES.map((r) => {
+                            {ROLES.filter((r) => isDeveloper || r !== "developer").map((r) => {
                               const has = u.roles.includes(r);
                               return (
                                 <DropdownMenuCheckboxItem
@@ -302,6 +353,8 @@ function UsersPage() {
 
 function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
+  const { hasRole } = useAuth();
+  const isDeveloper = hasRole("developer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -395,7 +448,7 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
           <div className="grid gap-2">
             <Label>Roles</Label>
             <div className="flex flex-wrap gap-3">
-              {ROLES.map((r) => (
+              {ROLES.filter((r) => isDeveloper || r !== "developer").map((r) => (
                 <label key={r} className="flex items-center gap-2 text-sm capitalize">
                   <Checkbox
                     checked={selectedRoles.includes(r)}
@@ -423,6 +476,24 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function EnsureDefaultDeveloperButton({ onDone }: { onDone: () => void }) {
+  const create = useMutation({
+    mutationFn: () => callAdminUsers({ action: "ensure_default_developer" }),
+    onSuccess: () => {
+      toast.success("Developer account ensured");
+      onDone();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Button size="sm" variant="outline" onClick={() => create.mutate()} disabled={create.isPending}>
+      {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      Create developer
+    </Button>
   );
 }
 

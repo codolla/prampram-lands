@@ -141,13 +141,18 @@ function AppSidebarInner() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { roles } = useAuth();
-  const canSeeAdminGroup = roles.includes("admin") || roles.includes("manager");
+  const isDeveloper = roles.includes("developer");
+  const canSeeAdminGroup = isDeveloper || roles.includes("admin") || roles.includes("manager");
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
-  const navItems = NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
-  const adminItems = ADMIN_NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
+  const navItems = isDeveloper
+    ? [...NAV]
+    : NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
+  const adminItems = isDeveloper
+    ? [...ADMIN_NAV]
+    : ADMIN_NAV.filter((item) => item.roles.some((r) => roles.includes(r)));
 
   return (
     <Sidebar collapsible="icon">

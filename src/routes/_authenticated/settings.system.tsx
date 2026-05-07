@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { TableSkeleton } from "@/components/skeletons";
-import { RefreshCw, ShieldAlert } from "lucide-react";
+import { RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { resetSeedData } from "@/lib/seed.functions";
 import { toast } from "sonner";
@@ -50,6 +50,7 @@ function SystemSettingsPage() {
 
   const reseed = useServerFn(resetSeedData);
   const [resetting, setResetting] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const activity = useQuery<{ rows: (ActivityRow & { actorLabel: string })[]; count: number }>({
     queryKey: ["activity_logs", page],
@@ -119,6 +120,35 @@ function SystemSettingsPage() {
   const total = activity.data?.count ?? 0;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
+  const clearActivityLogs = async () => {
+    setClearing(true);
+    try {
+      type ActivityClearClient = {
+        from: (t: "activity_logs") => {
+          delete: () => {
+            not: (
+              column: "id",
+              operator: "is",
+              value: null,
+            ) => Promise<{ error: { message: string } | null }>;
+          };
+        };
+      };
+      const activityDb = supabase as unknown as ActivityClearClient;
+      const { error } = await activityDb.from("activity_logs").delete().not("id", "is", null);
+      if (error) throw new Error(error.message);
+      toast.success("Activity log cleared");
+      setPage(1);
+      await qc.invalidateQueries({ queryKey: ["activity_logs"] });
+    } catch (e) {
+      toast.error("Clear failed", {
+        description: e instanceof Error ? e.message : "Unknown error",
+      });
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const handleReset = async () => {
     setResetting(true);
     try {
@@ -182,6 +212,30 @@ function SystemSettingsPage() {
                 />
                 Refresh
               </Button>
+              {isAdmin ? (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={clearing}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {clearing ? "Clearing…" : "Clear logs"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Clear activity logs?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently deletes all activity log records. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={clearActivityLogs}>
+                        Yes, clear logs
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : null}
             </div>
           </CardHeader>
           <CardContent>

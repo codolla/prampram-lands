@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "staff" | "finance" | "manager" | "frontdesk";
+export type AppRole = "admin" | "staff" | "finance" | "manager" | "frontdesk" | "developer";
 
 export interface AppProfile {
   id: string;
@@ -94,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthState>(() => {
     const user = session?.user ?? null;
+    const isDeveloper = roles.includes("developer");
     return {
       loading,
       session,
@@ -101,8 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       roles,
       isAuthenticated: !!user,
-      hasRole: (r) => roles.includes(r),
-      hasAnyRole: (rs) => rs.some((r) => roles.includes(r)),
+      hasRole: (r) => isDeveloper || roles.includes(r),
+      hasAnyRole: (rs) => isDeveloper || rs.some((r) => roles.includes(r)),
       signOut: async () => {
         await supabase.auth.signOut();
       },
@@ -128,6 +129,7 @@ export function useAuth(): AuthState {
 
 export function roleLabel(role: AppRole): string {
   if (role === "admin") return "Administrator";
+  if (role === "developer") return "Developer";
   if (role === "manager") return "Manager";
   if (role === "frontdesk") return "Front Desk";
   if (role === "finance") return "Finance Officer";
