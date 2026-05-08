@@ -112,7 +112,21 @@ export function PolygonEditor({
     map.on("draw:edited", emit);
     map.on("draw:deleted", emit);
 
+    let raf = 0;
+    const ro =
+      "ResizeObserver" in window
+        ? new ResizeObserver(() => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+              map.invalidateSize();
+            });
+          })
+        : null;
+    if (ro && containerRef.current) ro.observe(containerRef.current);
+
     return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
       map.remove();
       mapRef.current = null;
     };

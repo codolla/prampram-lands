@@ -289,19 +289,23 @@ export function AppShell({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex min-h-svh w-full bg-background">
         <AppSidebarInner />
         <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-5 backdrop-blur-md md:px-8">
+          <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-border bg-background/85 px-4 py-3 backdrop-blur-md md:h-16 md:flex-nowrap md:px-8 md:py-0">
             <SidebarTrigger className="-ml-1" />
-            <div className="flex items-baseline gap-2">
-              <h1 className="font-serif text-xl font-semibold tracking-tight">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <h1 className="min-w-0 truncate font-serif text-base font-semibold tracking-tight sm:text-lg md:text-xl">
                 {title ?? "Customary Lands Secretariat"}
               </h1>
             </div>
-            <div className="ml-auto flex items-center gap-2">{actions}</div>
+            <div className="w-full sm:ml-auto sm:w-auto">
+              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                {actions}
+              </div>
+            </div>
           </header>
-          <main className="flex-1 px-5 py-6 md:px-8 md:py-8">{children}</main>
+          <main className="flex-1 px-4 py-4 md:px-8 md:py-8">{children}</main>
         </div>
       </div>
     </SidebarProvider>

@@ -348,42 +348,37 @@ function BillsPage() {
           ) : (bills.data?.rows ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No bills.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                  <th className="pb-2">Land</th>
-                  <th className="pb-2">Year</th>
-                  <th className="pb-2">Due</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2 text-right">Amount</th>
-                  {canDelete && <th className="pb-2"></th>}
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              <div className="grid gap-2 md:hidden">
                 {(bills.data?.rows ?? []).map((b) => {
                   const land = b.lands as unknown as {
                     land_code: string;
                     plot_number: string | null;
                   } | null;
                   return (
-                    <tr key={b.id} className="border-b last:border-0">
-                      <td className="py-2 font-medium">
-                        <Link
-                          to="/bills/$billId"
-                          params={{ billId: b.id }}
-                          className="text-primary hover:underline"
-                        >
-                          {land?.land_code ?? "—"}
-                        </Link>
-                      </td>
-                      <td className="py-2">{b.billing_year}</td>
-                      <td className="py-2">{formatDate(b.due_date)}</td>
-                      <td className="py-2">
-                        <BillStatusBadge status={b.status} />
-                      </td>
-                      <td className="py-2 text-right">{formatCurrency(b.amount)}</td>
-                      {canDelete && (
-                        <td className="py-2 text-right">
+                    <div key={b.id} className="rounded-md border border-border bg-background p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <Link
+                            to="/bills/$billId"
+                            params={{ billId: b.id }}
+                            className="block truncate font-medium text-primary hover:underline"
+                          >
+                            {land?.land_code ?? "—"}
+                          </Link>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Year {b.billing_year} · Due {formatDate(b.due_date)}
+                          </div>
+                          <div className="mt-2">
+                            <BillStatusBadge status={b.status} />
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <div className="text-sm font-semibold">{formatCurrency(b.amount)}</div>
+                        </div>
+                      </div>
+                      {canDelete ? (
+                        <div className="mt-2 flex justify-end">
                           <ConfirmDelete
                             onConfirm={() => remove.mutateAsync(b.id)}
                             pending={remove.isPending}
@@ -395,13 +390,69 @@ function BillsPage() {
                               </>
                             }
                           />
-                        </td>
-                      )}
-                    </tr>
+                        </div>
+                      ) : null}
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                      <th className="pb-2">Land</th>
+                      <th className="pb-2">Year</th>
+                      <th className="pb-2">Due</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2 text-right">Amount</th>
+                      {canDelete && <th className="pb-2"></th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(bills.data?.rows ?? []).map((b) => {
+                      const land = b.lands as unknown as {
+                        land_code: string;
+                        plot_number: string | null;
+                      } | null;
+                      return (
+                        <tr key={b.id} className="border-b last:border-0">
+                          <td className="py-2 font-medium">
+                            <Link
+                              to="/bills/$billId"
+                              params={{ billId: b.id }}
+                              className="text-primary hover:underline"
+                            >
+                              {land?.land_code ?? "—"}
+                            </Link>
+                          </td>
+                          <td className="py-2">{b.billing_year}</td>
+                          <td className="py-2">{formatDate(b.due_date)}</td>
+                          <td className="py-2">
+                            <BillStatusBadge status={b.status} />
+                          </td>
+                          <td className="py-2 text-right">{formatCurrency(b.amount)}</td>
+                          {canDelete && (
+                            <td className="py-2 text-right">
+                              <ConfirmDelete
+                                onConfirm={() => remove.mutateAsync(b.id)}
+                                pending={remove.isPending}
+                                title={`Delete bill for ${land?.land_code ?? "land"} (${b.billing_year})?`}
+                                description={
+                                  <>
+                                    This permanently removes the bill and cannot be undone.
+                                    <DeleteImpactWarning kind="bill" />
+                                  </>
+                                }
+                              />
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           {(() => {
             const total = bills.data?.count ?? 0;

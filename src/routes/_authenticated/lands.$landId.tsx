@@ -27,6 +27,7 @@ import { PolygonEditor, type LatLng } from "@/components/PolygonEditor";
 import { useAuth } from "@/lib/auth";
 import { LandStaffAssignments } from "@/components/LandStaffAssignments";
 import { parseBoundaryFile } from "@/lib/boundary";
+import { Switch } from "@/components/ui/switch";
 import {
   Carousel,
   CarouselContent,
@@ -203,6 +204,9 @@ function LandDetail() {
 
   const [polygon, setPolygon] = useState<LatLng[]>([]);
   const [expectedPoints, setExpectedPoints] = useState(4);
+  const [gpsAccuracyTargetM, setGpsAccuracyTargetM] = useState(25);
+  const [minPointDistanceM, setMinPointDistanceM] = useState(3);
+  const [autoOrderPoints, setAutoOrderPoints] = useState(true);
   useEffect(() => {
     if (coords.data) setPolygon(coords.data);
   }, [coords.data]);
@@ -211,31 +215,114 @@ function LandDetail() {
   const boundaryFileRef = useRef<HTMLInputElement | null>(null);
   const [sitePlanOpen, setSitePlanOpen] = useState(false);
   const [sitePlanText, setSitePlanText] = useState("");
+
+  const distanceMeters = (a: LatLng, b: LatLng) => {
+    const R = 6371000;
+    const lat1 = (a.lat * Math.PI) / 180;
+    const lat2 = (b.lat * Math.PI) / 180;
+    const dLat = lat2 - lat1;
+    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+    const s =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+    return R * c;
+  };
+
+  const orderByAngle = (pts: LatLng[]) => {
+    if (pts.length < 3) return pts;
+    const cLat = pts.reduce((s, p) => s + p.lat, 0) / pts.length;
+    const cLng = pts.reduce((s, p) => s + p.lng, 0) / pts.length;
+    return [...pts].sort((a, b) => {
+      const aa = Math.atan2(a.lng - cLng, a.lat - cLat);
+      const bb = Math.atan2(b.lng - cLng, b.lat - cLat);
+      return aa - bb;
+    });
+  };
+
+  const normalizePoints = (pts: LatLng[]) => {
+    const out: LatLng[] = [];
+    for (const p of pts) {
+      const prev = out[out.length - 1];
+      if (!prev) {
+        out.push(p);
+        continue;
+      }
+      const d = distanceMeters(prev, p);
+      if (Number.isFinite(d) && d < Math.max(0, minPointDistanceM)) continue;
+      out.push(p);
+    }
+    return out;
+  };
+
   const captureGpsPoint = async () => {
     if (capturingGps) return;
     if (!("geolocation" in navigator)) {
       toast.error("GPS is not available on this device/browser.");
       return;
     }
+    if (!window.isSecureContext) {
+      toast.error("GPS requires HTTPS. Open the app on https:// and try again.");
+      return;
+    }
     setCapturingGps(true);
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
-        });
+      const best = await new Promise<GeolocationPosition>((resolve, reject) => {
+        const target = Math.max(5, gpsAccuracyTargetM || 0);
+        let bestPos: GeolocationPosition | null = null;
+        const startedAt = Date.now();
+        const timeoutMs = 20000;
+        const watchId = navigator.geolocation.watchPosition(
+          (p) => {
+            const acc = Number(p.coords.accuracy);
+            if (!bestPos) bestPos = p;
+            else {
+              const bestAcc = Number(bestPos.coords.accuracy);
+              if (Number.isFinite(acc) && (!Number.isFinite(bestAcc) || acc < bestAcc)) bestPos = p;
+            }
+            if (Number.isFinite(acc) && acc <= target) {
+              navigator.geolocation.clearWatch(watchId);
+              resolve(p);
+              return;
+            }
+            if (Date.now() - startedAt > timeoutMs) {
+              navigator.geolocation.clearWatch(watchId);
+              if (bestPos) resolve(bestPos);
+              else reject(new Error("GPS timeout. Try again."));
+            }
+          },
+          (err) => {
+            navigator.geolocation.clearWatch(watchId);
+            reject(err);
+          },
+          { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
+        );
       });
-      const lat = Number(pos.coords.latitude);
-      const lng = Number(pos.coords.longitude);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+
+      const lat = Number(best.coords.latitude);
+      const lng = Number(best.coords.longitude);
+      const acc = Number(best.coords.accuracy);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng))
         throw new Error("GPS returned invalid coordinates.");
+      if (!Number.isFinite(acc)) throw new Error("GPS did not provide accuracy. Try again.");
+      if (acc > Math.max(10, gpsAccuracyTargetM || 0)) {
+        throw new Error(
+          `GPS accuracy is too low (~${Math.round(acc)}m). Move outside, turn on GPS, and try again.`,
+        );
       }
-      setPolygon((prev) => [...prev, { lat, lng }]);
-      const acc = Number(pos.coords.accuracy);
-      toast.success("Point captured", {
-        description: Number.isFinite(acc) ? `Accuracy ~${Math.round(acc)}m` : undefined,
+
+      setPolygon((prev) => {
+        const next = normalizePoints([...prev, { lat, lng }]);
+        const prevLast = prev[prev.length - 1];
+        const last = next[next.length - 1];
+        if (!last) return prev;
+        if (prevLast && distanceMeters(prevLast, last) < Math.max(0, minPointDistanceM))
+          return prev;
+        return next;
       });
+
+      toast.success("Point captured", { description: `Accuracy ~${Math.round(acc)}m` });
     } catch (e) {
       const msg =
         e && typeof e === "object" && "code" in e
@@ -371,13 +458,13 @@ function LandDetail() {
       })();
 
       if (out.length < 3) throw new Error("Conversion returned too few points.");
-      setPolygon(out);
+      setPolygon(normalizePoints(out));
       setSitePlanOpen(false);
       toast.success("Coordinates converted", {
         description:
           filtered.dropped > 0
-            ? `${out.length} points loaded. Ignored ${filtered.dropped} far point(s).`
-            : `${out.length} points loaded.`,
+            ? `${normalizePoints(out).length} points loaded. Ignored ${filtered.dropped} far point(s).`
+            : `${normalizePoints(out).length} points loaded.`,
       });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -395,8 +482,9 @@ function LandDetail() {
           ? points.slice(0, -1)
           : points;
       if (cleaned.length < 3) throw new Error("Imported boundary needs at least 3 points.");
-      setPolygon(cleaned);
-      toast.success("Coordinates imported", { description: `${cleaned.length} points loaded.` });
+      const normalized = normalizePoints(cleaned);
+      setPolygon(normalized);
+      toast.success("Coordinates imported", { description: `${normalized.length} points loaded.` });
       navigate({ search: (prev) => ({ ...prev, tab: "map" }) });
     } catch (e) {
       toast.error("Import failed", {
@@ -410,12 +498,19 @@ function LandDetail() {
   const savePolygon = useMutation({
     mutationFn: async () => {
       if (polygon.length < 3) throw new Error("Draw at least 3 points");
+      const minPts = Math.max(3, expectedPoints || 0);
+      if (polygon.length < minPts)
+        throw new Error(`Capture at least ${minPts} point(s) before saving`);
       const { error: delErr } = await supabase
         .from("land_coordinates")
         .delete()
         .eq("land_id", landId);
       if (delErr) throw delErr;
-      const rows = polygon.map((p, i) => ({
+      const ordered = autoOrderPoints
+        ? orderByAngle(normalizePoints(polygon))
+        : normalizePoints(polygon);
+      if (ordered.length < 3) throw new Error("Too few valid points after cleanup.");
+      const rows = ordered.map((p, i) => ({
         land_id: landId,
         seq: i,
         lat: p.lat,
@@ -581,6 +676,9 @@ function LandDetail() {
     lat: form.gps_lat ? Number(form.gps_lat) : 5.7167,
     lng: form.gps_lng ? Number(form.gps_lng) : 0.117,
   };
+  const polygonForEditor = autoOrderPoints
+    ? orderByAngle(normalizePoints(polygon))
+    : normalizePoints(polygon);
 
   return (
     <AppShell
@@ -607,13 +705,25 @@ function LandDetail() {
         onValueChange={(v) => navigate({ search: (prev) => ({ ...prev, tab: v }) })}
         className="mt-4"
       >
-        <TabsList>
-          <TabsTrigger value="info">Information</TabsTrigger>
-          <TabsTrigger value="map">Coordinates</TabsTrigger>
-          <TabsTrigger value="docs">Documents</TabsTrigger>
-          <TabsTrigger value="history">Ownership history</TabsTrigger>
-          <TabsTrigger value="bills">Bills</TabsTrigger>
-          <TabsTrigger value="staff">Assigned staff</TabsTrigger>
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="info" className="shrink-0">
+            Information
+          </TabsTrigger>
+          <TabsTrigger value="map" className="shrink-0">
+            Coordinates
+          </TabsTrigger>
+          <TabsTrigger value="docs" className="shrink-0">
+            Documents
+          </TabsTrigger>
+          <TabsTrigger value="history" className="shrink-0">
+            Ownership history
+          </TabsTrigger>
+          <TabsTrigger value="bills" className="shrink-0">
+            Bills
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="shrink-0">
+            Assigned staff
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="mt-4">
@@ -762,6 +872,38 @@ function LandDetail() {
                       }}
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Accuracy (m)</Label>
+                    <Input
+                      type="number"
+                      min={5}
+                      max={200}
+                      value={gpsAccuracyTargetM}
+                      className="h-9 w-24"
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setGpsAccuracyTargetM(Number.isFinite(v) ? v : 25);
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Min dist (m)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={50}
+                      value={minPointDistanceM}
+                      className="h-9 w-20"
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setMinPointDistanceM(Number.isFinite(v) ? v : 3);
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={autoOrderPoints} onCheckedChange={setAutoOrderPoints} />
+                    <span className="text-xs text-muted-foreground">Auto-order</span>
+                  </div>
                   <Input
                     ref={boundaryFileRef}
                     type="file"
@@ -812,9 +954,9 @@ function LandDetail() {
                 <Skeleton className="h-72 w-full rounded-md" />
               ) : (
                 <PolygonEditor
-                  initial={polygon}
+                  initial={polygonForEditor}
                   center={center}
-                  onChange={setPolygon}
+                  onChange={(pts) => setPolygon(normalizePoints(pts))}
                   minPolygonPoints={Math.max(3, expectedPoints || 0)}
                 />
               )}
@@ -857,13 +999,14 @@ function LandDetail() {
                 <Button
                   onClick={() => savePolygon.mutate()}
                   disabled={
-                    savePolygon.isPending || polygon.length < Math.max(3, expectedPoints || 0)
+                    savePolygon.isPending ||
+                    polygonForEditor.length < Math.max(3, expectedPoints || 0)
                   }
                 >
                   {savePolygon.isPending ? "Saving…" : "Save polygon"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  {polygon.length}/{Math.max(3, expectedPoints || 0)} points
+                  {polygonForEditor.length}/{Math.max(3, expectedPoints || 0)} points
                 </p>
               </div>
               {polygon.length > 0 ? (

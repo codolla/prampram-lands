@@ -50,7 +50,10 @@ function PaymentsPage() {
         .order("paid_at", { ascending: false })
         .range(from, to);
       if (ranged.error) throw ranged.error;
-      return { rows: ranged.data ?? [], count: ranged.count ?? 0 };
+      return {
+        rows: (ranged.data ?? []) as unknown as PaymentRow[],
+        count: ranged.count ?? 0,
+      };
     },
   });
 
@@ -92,19 +95,8 @@ function PaymentsPage() {
           ) : (payments.data?.rows ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No payments recorded.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                  <th className="pb-2">Receipt</th>
-                  <th className="pb-2">Land</th>
-                  <th className="pb-2">Year</th>
-                  <th className="pb-2">Method</th>
-                  <th className="pb-2">Date</th>
-                  <th className="pb-2 text-right">Amount</th>
-                  {canDelete && <th className="pb-2"></th>}
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              <div className="grid gap-2 md:hidden">
                 {(payments.data?.rows ?? []).map((p) => {
                   const bill = p.bills;
                   const landCode = bill?.lands?.land_code ?? p.lands?.land_code ?? "—";
@@ -112,27 +104,30 @@ function PaymentsPage() {
                     bill?.billing_year ?? (p.kind === "advance_deposit" ? "Advance" : "—");
                   const methodLabel = p.kind === "advance_apply" ? "advance" : p.method;
                   return (
-                    <tr key={p.id} className="border-b last:border-0">
-                      <td className="py-2 font-mono text-xs">
-                        <Link
-                          to="/payments/$paymentId/receipt"
-                          params={{ paymentId: p.id }}
-                          className="text-primary hover:underline"
-                        >
-                          {p.receipt_number}
-                        </Link>
-                      </td>
-                      <td className="py-2">{landCode}</td>
-                      <td className="py-2">{yearLabel}</td>
-                      <td className="py-2">
-                        <Badge variant="secondary" className="uppercase">
-                          {methodLabel}
-                        </Badge>
-                      </td>
-                      <td className="py-2 text-muted-foreground">{formatDate(p.paid_at)}</td>
-                      <td className="py-2 text-right font-medium">{formatCurrency(p.amount)}</td>
-                      {canDelete && (
-                        <td className="py-2 text-right">
+                    <div key={p.id} className="rounded-md border border-border bg-background p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <Link
+                            to="/payments/$paymentId/receipt"
+                            params={{ paymentId: p.id }}
+                            className="block truncate font-mono text-xs text-primary hover:underline"
+                          >
+                            {p.receipt_number}
+                          </Link>
+                          <div className="mt-1 text-sm font-medium">{landCode}</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            {formatDate(p.paid_at)} · {yearLabel}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <div className="text-sm font-semibold">{formatCurrency(p.amount)}</div>
+                          <Badge variant="secondary" className="mt-1 uppercase">
+                            {methodLabel}
+                          </Badge>
+                        </div>
+                      </div>
+                      {canDelete ? (
+                        <div className="mt-2 flex justify-end">
                           <ConfirmDelete
                             onConfirm={() => remove.mutateAsync(p.id)}
                             pending={remove.isPending}
@@ -144,13 +139,77 @@ function PaymentsPage() {
                               </>
                             }
                           />
-                        </td>
-                      )}
-                    </tr>
+                        </div>
+                      ) : null}
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                      <th className="pb-2">Receipt</th>
+                      <th className="pb-2">Land</th>
+                      <th className="pb-2">Year</th>
+                      <th className="pb-2">Method</th>
+                      <th className="pb-2">Date</th>
+                      <th className="pb-2 text-right">Amount</th>
+                      {canDelete && <th className="pb-2"></th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(payments.data?.rows ?? []).map((p) => {
+                      const bill = p.bills;
+                      const landCode = bill?.lands?.land_code ?? p.lands?.land_code ?? "—";
+                      const yearLabel =
+                        bill?.billing_year ?? (p.kind === "advance_deposit" ? "Advance" : "—");
+                      const methodLabel = p.kind === "advance_apply" ? "advance" : p.method;
+                      return (
+                        <tr key={p.id} className="border-b last:border-0">
+                          <td className="py-2 font-mono text-xs">
+                            <Link
+                              to="/payments/$paymentId/receipt"
+                              params={{ paymentId: p.id }}
+                              className="text-primary hover:underline"
+                            >
+                              {p.receipt_number}
+                            </Link>
+                          </td>
+                          <td className="py-2">{landCode}</td>
+                          <td className="py-2">{yearLabel}</td>
+                          <td className="py-2">
+                            <Badge variant="secondary" className="uppercase">
+                              {methodLabel}
+                            </Badge>
+                          </td>
+                          <td className="py-2 text-muted-foreground">{formatDate(p.paid_at)}</td>
+                          <td className="py-2 text-right font-medium">
+                            {formatCurrency(p.amount)}
+                          </td>
+                          {canDelete && (
+                            <td className="py-2 text-right">
+                              <ConfirmDelete
+                                onConfirm={() => remove.mutateAsync(p.id)}
+                                pending={remove.isPending}
+                                title={`Delete payment ${p.receipt_number}?`}
+                                description={
+                                  <>
+                                    This permanently removes the payment record and cannot be
+                                    undone.
+                                    <DeleteImpactWarning kind="payment" />
+                                  </>
+                                }
+                              />
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           {(() => {
             const total = payments.data?.count ?? 0;

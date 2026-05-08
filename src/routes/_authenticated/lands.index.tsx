@@ -552,64 +552,120 @@ function LandsPage() {
               <p className="text-sm text-muted-foreground">No lands match.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                    <th className="pb-2">Code</th>
-                    <th className="pb-2">Plot</th>
-                    <th className="pb-2">Owner</th>
-                    <th className="pb-2">Size</th>
-                    <th className="pb-2">Status</th>
-                    <th className="pb-2 text-right">Annual rent</th>
-                    {canDelete && <th className="pb-2"></th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(lands.data?.rows ?? []).map((l) => {
-                    const owner = l.landowners as unknown as { full_name: string } | null;
-                    return (
-                      <tr key={l.id} className="border-b last:border-0">
-                        <td className="py-2 font-medium">
+            <>
+              <div className="grid gap-2 md:hidden">
+                {(lands.data?.rows ?? []).map((l) => {
+                  const owner = l.landowners as unknown as { full_name: string } | null;
+                  return (
+                    <div key={l.id} className="rounded-md border border-border bg-background p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
                           <Link
                             to="/lands/$landId"
                             params={{ landId: l.id }}
                             search={{ tab: undefined }}
-                            className="text-primary hover:underline"
+                            className="block truncate font-medium text-primary hover:underline"
                           >
                             {l.land_code}
                           </Link>
-                        </td>
-                        <td className="py-2">{l.plot_number || "—"}</td>
-                        <td className="py-2">{owner?.full_name ?? "—"}</td>
-                        <td className="py-2">
-                          {l.size_value ? `${l.size_value} ${l.size_unit}` : "—"}
-                        </td>
-                        <td className="py-2">
-                          <LandStatusBadge status={l.status} />
-                        </td>
-                        <td className="py-2 text-right">{formatCurrency(l.annual_rent_amount)}</td>
-                        {canDelete && (
-                          <td className="py-2 text-right">
-                            <ConfirmDelete
-                              onConfirm={() => remove.mutateAsync(l.id)}
-                              pending={remove.isPending}
-                              title={`Delete land ${l.land_code}?`}
-                              description={
-                                <>
-                                  This permanently removes the land parcel and cannot be undone.
-                                  <DeleteImpactWarning kind="land" />
-                                </>
-                              }
-                            />
+                          <div className="mt-1 text-sm">{l.plot_number || "—"}</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            {owner?.full_name ?? "—"}
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <LandStatusBadge status={l.status} />
+                            <span className="text-xs text-muted-foreground">
+                              {l.size_value ? `${l.size_value} ${l.size_unit}` : "No size"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <div className="text-sm font-semibold">
+                            {formatCurrency(l.annual_rent_amount)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Annual rent</div>
+                        </div>
+                      </div>
+                      {canDelete ? (
+                        <div className="mt-2 flex justify-end">
+                          <ConfirmDelete
+                            onConfirm={() => remove.mutateAsync(l.id)}
+                            pending={remove.isPending}
+                            title={`Delete land ${l.land_code}?`}
+                            description={
+                              <>
+                                This permanently removes the land parcel and cannot be undone.
+                                <DeleteImpactWarning kind="land" />
+                              </>
+                            }
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                      <th className="pb-2">Code</th>
+                      <th className="pb-2">Plot</th>
+                      <th className="pb-2">Owner</th>
+                      <th className="pb-2">Size</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2 text-right">Annual rent</th>
+                      {canDelete && <th className="pb-2"></th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(lands.data?.rows ?? []).map((l) => {
+                      const owner = l.landowners as unknown as { full_name: string } | null;
+                      return (
+                        <tr key={l.id} className="border-b last:border-0">
+                          <td className="py-2 font-medium">
+                            <Link
+                              to="/lands/$landId"
+                              params={{ landId: l.id }}
+                              search={{ tab: undefined }}
+                              className="text-primary hover:underline"
+                            >
+                              {l.land_code}
+                            </Link>
                           </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          <td className="py-2">{l.plot_number || "—"}</td>
+                          <td className="py-2">{owner?.full_name ?? "—"}</td>
+                          <td className="py-2">
+                            {l.size_value ? `${l.size_value} ${l.size_unit}` : "—"}
+                          </td>
+                          <td className="py-2">
+                            <LandStatusBadge status={l.status} />
+                          </td>
+                          <td className="py-2 text-right">
+                            {formatCurrency(l.annual_rent_amount)}
+                          </td>
+                          {canDelete && (
+                            <td className="py-2 text-right">
+                              <ConfirmDelete
+                                onConfirm={() => remove.mutateAsync(l.id)}
+                                pending={remove.isPending}
+                                title={`Delete land ${l.land_code}?`}
+                                description={
+                                  <>
+                                    This permanently removes the land parcel and cannot be undone.
+                                    <DeleteImpactWarning kind="land" />
+                                  </>
+                                }
+                              />
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           {(() => {
             const total = lands.data?.count ?? 0;
