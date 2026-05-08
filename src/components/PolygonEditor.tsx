@@ -22,6 +22,40 @@ export function PolygonEditor({
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.FeatureGroup | null>(null);
 
+  const renderInitial = () => {
+    const map = mapRef.current;
+    const drawn = layerRef.current;
+    if (!map || !drawn) return;
+    drawn.clearLayers();
+
+    if (initial.length === 0) {
+      map.setView([center.lat, center.lng], 16);
+      return;
+    }
+
+    const latLngs = initial.map((p) => [p.lat, p.lng] as [number, number]);
+    for (const [lat, lng] of latLngs) {
+      L.circleMarker([lat, lng], {
+        radius: 5,
+        color: "#2563eb",
+        weight: 2,
+        fillOpacity: 0.7,
+      }).addTo(drawn);
+    }
+
+    if (latLngs.length >= 3) {
+      const poly = L.polygon(latLngs, { color: "#15803d", weight: 3, fillOpacity: 0.2 });
+      drawn.addLayer(poly);
+      map.fitBounds(poly.getBounds(), { padding: [20, 20], maxZoom: 19 });
+    } else if (latLngs.length >= 2) {
+      const line = L.polyline(latLngs, { color: "#2563eb", weight: 3 });
+      drawn.addLayer(line);
+      map.fitBounds(line.getBounds(), { padding: [20, 20], maxZoom: 19 });
+    } else {
+      map.setView([latLngs[0][0], latLngs[0][1]], 19);
+    }
+  };
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current).setView([center.lat, center.lng], 16);
@@ -33,14 +67,8 @@ export function PolygonEditor({
     map.addLayer(drawn);
     layerRef.current = drawn;
 
-    if (initial.length >= 3) {
-      const poly = L.polygon(
-        initial.map((p) => [p.lat, p.lng] as [number, number]),
-        { color: "#15803d" },
-      );
-      drawn.addLayer(poly);
-      map.fitBounds(poly.getBounds(), { padding: [20, 20] });
-    }
+    mapRef.current = map;
+    renderInitial();
 
     const DrawCtor = (
       L.Control as unknown as {
@@ -82,7 +110,6 @@ export function PolygonEditor({
     map.on("draw:edited", emit);
     map.on("draw:deleted", emit);
 
-    mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
@@ -90,10 +117,13 @@ export function PolygonEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!mapRef.current || !layerRef.current) return;
+    renderInitial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial, center.lat, center.lng]);
+
   return (
-    <div
-      ref={containerRef}
-      className="relative z-0 h-[420px] w-full rounded-md border border-border"
-    />
+    <div ref={containerRef} className="relative z-0 h-105 w-full rounded-md border border-border" />
   );
 }

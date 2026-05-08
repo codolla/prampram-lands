@@ -100,7 +100,7 @@ export function ParcelDetailModal({
       role="dialog"
       aria-modal="false"
       aria-labelledby="parcel-detail-title"
-      className="fixed inset-y-0 right-0 z-[1000] w-full max-w-2xl overflow-y-auto border-l border-border bg-background p-6 shadow-2xl sm:top-4 sm:right-4 sm:bottom-4 sm:rounded-lg sm:border"
+      className="fixed inset-y-0 right-0 z-1000 w-full max-w-2xl overflow-y-auto border-l border-border bg-background p-6 shadow-2xl sm:top-4 sm:right-4 sm:bottom-4 sm:rounded-lg sm:border"
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >
@@ -374,7 +374,7 @@ function ParcelBody({
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="default" size="sm">
-          <Link to="/lands/$landId" params={{ landId: land.id }}>
+          <Link to="/lands/$landId" params={{ landId: land.id }} search={{ tab: undefined }}>
             <ExternalLink /> Open full record
           </Link>
         </Button>
@@ -433,7 +433,7 @@ function PhotoThumb({ path, name }: { path: string; name: string }) {
       href={url ?? "#"}
       target="_blank"
       rel="noreferrer"
-      className="block h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted"
+      className="block h-24 w-24 shrink-0 overflow-hidden rounded-md border border-border bg-muted"
       title={name}
     >
       {url ? (

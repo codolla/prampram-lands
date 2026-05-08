@@ -219,7 +219,7 @@ function ReceiptPage() {
           </Button>
           <div className="flex items-center gap-2">
             <Select value={printFormat} onValueChange={(v) => setPrintFormat(v as PrintFormat)}>
-              <SelectTrigger className="h-9 w-[160px]">
+              <SelectTrigger className="h-9 w-40">
                 <SelectValue placeholder="Paper size" />
               </SelectTrigger>
               <SelectContent>

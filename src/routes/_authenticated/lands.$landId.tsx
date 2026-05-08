@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Save, Upload, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LandStatusBadge, BillStatusBadge } from "@/components/StatusBadge";
@@ -25,13 +26,31 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { PolygonEditor, type LatLng } from "@/components/PolygonEditor";
 import { useAuth } from "@/lib/auth";
 import { LandStaffAssignments } from "@/components/LandStaffAssignments";
+import { parseBoundaryFile } from "@/lib/boundary";
 
 export const Route = createFileRoute("/_authenticated/lands/$landId")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const tabRaw = typeof search.tab === "string" ? search.tab : undefined;
+    const allowed = new Set(["info", "map", "docs", "history", "bills", "staff"]);
+    const tab = tabRaw && allowed.has(tabRaw) ? tabRaw : undefined;
+    return tab ? { tab } : {};
+  },
   component: LandDetail,
 });
 
+type LandDocRow = {
+  id: string;
+  file_name: string;
+  kind: string;
+  storage_path: string;
+  mime_type: string | null;
+  created_at: string;
+};
+
 function LandDetail() {
   const { landId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
 
@@ -99,7 +118,7 @@ function LandDetail() {
     },
   });
 
-  const documents = useQuery({
+  const documents = useQuery<LandDocRow[]>({
     queryKey: ["land-docs", landId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -108,7 +127,7 @@ function LandDetail() {
         .eq("land_id", landId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data ?? []) as unknown as LandDocRow[];
     },
   });
 
@@ -179,6 +198,206 @@ function LandDetail() {
     if (coords.data) setPolygon(coords.data);
   }, [coords.data]);
 
+  const [capturingGps, setCapturingGps] = useState(false);
+  const boundaryFileRef = useRef<HTMLInputElement | null>(null);
+  const [sitePlanOpen, setSitePlanOpen] = useState(false);
+  const [sitePlanText, setSitePlanText] = useState("");
+  const captureGpsPoint = async () => {
+    if (capturingGps) return;
+    if (!("geolocation" in navigator)) {
+      toast.error("GPS is not available on this device/browser.");
+      return;
+    }
+    setCapturingGps(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        });
+      });
+      const lat = Number(pos.coords.latitude);
+      const lng = Number(pos.coords.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        throw new Error("GPS returned invalid coordinates.");
+      }
+      setPolygon((prev) => [...prev, { lat, lng }]);
+      const acc = Number(pos.coords.accuracy);
+      toast.success("Point captured", {
+        description: Number.isFinite(acc) ? `Accuracy ~${Math.round(acc)}m` : undefined,
+      });
+    } catch (e) {
+      const msg =
+        e && typeof e === "object" && "code" in e
+          ? (() => {
+              const code = (e as { code?: number }).code;
+              if (code === 1) return "Permission denied. Allow location access and try again.";
+              if (code === 2) return "Location unavailable. Move to open area and try again.";
+              if (code === 3) return "GPS timeout. Try again.";
+              return "Could not get GPS location. Try again.";
+            })()
+          : e instanceof Error
+            ? e.message
+            : "Could not get GPS location. Try again.";
+      toast.error(msg);
+    } finally {
+      setCapturingGps(false);
+    }
+  };
+
+  const undoLastPoint = () => {
+    setPolygon((prev) => prev.slice(0, -1));
+  };
+
+  const clearPoints = () => {
+    setPolygon([]);
+  };
+
+  const convertSitePlan = useMutation({
+    mutationFn: async () => {
+      const lines = sitePlanText
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+      if (!lines.length) throw new Error("Paste site plan coordinates first.");
+
+      const fromToPairs: Array<{ from: [number, number]; to: [number, number] }> = [];
+      const singlePairs: Array<[number, number]> = [];
+
+      for (const line of lines) {
+        const nums = (line.match(/-?\d+(?:\.\d+)?/g) ?? [])
+          .map((s) => Number(s))
+          .filter((n) => Number.isFinite(n));
+        const candidates = nums.filter((n) => Math.abs(n) >= 100000);
+        if (candidates.length >= 4) {
+          const a1 = candidates[0]!;
+          const b1 = candidates[1]!;
+          const a2 = candidates[2]!;
+          const b2 = candidates[3]!;
+          const from: [number, number] = [Math.max(a1, b1), Math.min(a1, b1)];
+          const to: [number, number] = [Math.max(a2, b2), Math.min(a2, b2)];
+          fromToPairs.push({ from, to });
+        } else if (candidates.length >= 2) {
+          const a = candidates[0]!;
+          const b = candidates[1]!;
+          singlePairs.push([Math.max(a, b), Math.min(a, b)]);
+        }
+      }
+
+      const pointsEn: Array<[number, number]> = [];
+
+      if (fromToPairs.length > 0) {
+        pointsEn.push(fromToPairs[0]!.from);
+        for (const row of fromToPairs) pointsEn.push(row.to);
+      } else {
+        pointsEn.push(...singlePairs);
+      }
+
+      const deduped: Array<[number, number]> = [];
+      for (const p of pointsEn) {
+        const prev = deduped[deduped.length - 1];
+        if (!prev || prev[0] !== p[0] || prev[1] !== p[1]) deduped.push(p);
+      }
+
+      const cleaned =
+        deduped.length >= 2 &&
+        deduped[0]![0] === deduped[deduped.length - 1]![0] &&
+        deduped[0]![1] === deduped[deduped.length - 1]![1]
+          ? deduped.slice(0, -1)
+          : deduped;
+
+      if (cleaned.length < 3) throw new Error("Need at least 3 unique points to form a boundary.");
+
+      const distancesFromCenter = (() => {
+        const avgE = cleaned.reduce((s, p) => s + p[0], 0) / cleaned.length;
+        const avgN = cleaned.reduce((s, p) => s + p[1], 0) / cleaned.length;
+        const ds = cleaned.map((p) => Math.hypot(p[0] - avgE, p[1] - avgN));
+        const sorted = [...ds].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+        const max = sorted[sorted.length - 1] ?? 0;
+        return { ds, median, max };
+      })();
+
+      const filtered = (() => {
+        const { ds, median } = distancesFromCenter;
+        const threshold = Math.max(2000, median * 10);
+        const keep: Array<[number, number]> = [];
+        for (let i = 0; i < cleaned.length; i++) {
+          if ((ds[i] ?? 0) <= threshold) keep.push(cleaned[i]!);
+        }
+        return keep.length >= 3
+          ? { points: keep, dropped: cleaned.length - keep.length }
+          : { points: cleaned, dropped: 0 };
+      })();
+
+      const { data, error } = await supabase.rpc(
+        "ghana_grid_points_to_wgs84" as never,
+        {
+          points: filtered.points,
+        } as never,
+      );
+      if (error) throw error;
+
+      const outRaw = (data as unknown as Array<[number, number]>).map(([lng, lat]) => ({
+        lat: Number(lat),
+        lng: Number(lng),
+      }));
+
+      const out = (() => {
+        const pts =
+          outRaw.length >= 2 &&
+          outRaw[0]!.lat === outRaw[outRaw.length - 1]!.lat &&
+          outRaw[0]!.lng === outRaw[outRaw.length - 1]!.lng
+            ? outRaw.slice(0, -1)
+            : outRaw;
+        const cLat = pts.reduce((s, p) => s + p.lat, 0) / pts.length;
+        const cLng = pts.reduce((s, p) => s + p.lng, 0) / pts.length;
+        return [...pts].sort((a, b) => {
+          const aa = Math.atan2(a.lng - cLng, a.lat - cLat);
+          const bb = Math.atan2(b.lng - cLng, b.lat - cLat);
+          return aa - bb;
+        });
+      })();
+
+      if (out.length < 3) throw new Error("Conversion returned too few points.");
+      setPolygon(out);
+      setSitePlanOpen(false);
+      toast.success("Coordinates converted", {
+        description:
+          filtered.dropped > 0
+            ? `${out.length} points loaded. Ignored ${filtered.dropped} far point(s).`
+            : `${out.length} points loaded.`,
+      });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const importBoundaryFile = async (file: File) => {
+    try {
+      const geo = await parseBoundaryFile(file);
+      const ring = geo.coordinates[0] ?? [];
+      const points = ring.map(([lng, lat]) => ({ lat: Number(lat), lng: Number(lng) }));
+      const cleaned =
+        points.length >= 2 &&
+        points[0].lat === points[points.length - 1].lat &&
+        points[0].lng === points[points.length - 1].lng
+          ? points.slice(0, -1)
+          : points;
+      if (cleaned.length < 3) throw new Error("Imported boundary needs at least 3 points.");
+      setPolygon(cleaned);
+      toast.success("Coordinates imported", { description: `${cleaned.length} points loaded.` });
+      navigate({ search: (prev) => ({ ...prev, tab: "map" }) });
+    } catch (e) {
+      toast.error("Import failed", {
+        description: e instanceof Error ? e.message : "Could not read boundary file.",
+      });
+    } finally {
+      if (boundaryFileRef.current) boundaryFileRef.current.value = "";
+    }
+  };
+
   const savePolygon = useMutation({
     mutationFn: async () => {
       if (polygon.length < 3) throw new Error("Draw at least 3 points");
@@ -206,6 +425,7 @@ function LandDetail() {
 
   // Documents upload
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const photosRef = useRef<HTMLInputElement | null>(null);
   const [docKind, setDocKind] = useState<"indenture" | "agreement" | "receipt" | "other">(
     "indenture",
   );
@@ -237,6 +457,48 @@ function LandDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const uploadPhotos = useMutation({
+    mutationFn: async (files: File[]) => {
+      if (!files.length) return;
+      let failed = 0;
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) {
+          failed++;
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          failed++;
+          continue;
+        }
+        const path = `lands/${landId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name}`;
+        const { error: upErr } = await supabase.storage
+          .from("land-documents")
+          .upload(path, file, { contentType: file.type });
+        if (upErr) {
+          failed++;
+          continue;
+        }
+        const { error: docErr } = await supabase.from("documents").insert({
+          land_id: landId,
+          kind: "other",
+          storage_path: path,
+          file_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+          uploaded_by: user?.id,
+        });
+        if (docErr) failed++;
+      }
+      if (failed > 0) throw new Error(`${failed} photo(s) failed to upload.`);
+    },
+    onSuccess: () => {
+      toast.success("Photos uploaded");
+      qc.invalidateQueries({ queryKey: ["land-docs", landId] });
+      if (photosRef.current) photosRef.current.value = "";
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deleteDoc = useMutation({
     mutationFn: async (doc: { id: string; storage_path: string }) => {
       await supabase.storage.from("land-documents").remove([doc.storage_path]);
@@ -258,6 +520,27 @@ function LandDetail() {
     }
     window.open(data.signedUrl, "_blank");
   };
+
+  const docs = documents.data ?? [];
+  const photoDocs = docs.filter((d) => (d.mime_type ?? "").startsWith("image/"));
+  const otherDocs = docs.filter((d) => !(d.mime_type ?? "").startsWith("image/"));
+
+  const photoUrls = useQuery<Record<string, string>>({
+    queryKey: ["land-photo-urls", landId, photoDocs.map((d) => d.storage_path).join("|")],
+    enabled: photoDocs.length > 0,
+    queryFn: async () => {
+      const out: Record<string, string> = {};
+      await Promise.all(
+        photoDocs.map(async (d) => {
+          const { data, error } = await supabase.storage
+            .from("land-documents")
+            .createSignedUrl(d.storage_path, 60 * 60);
+          if (!error && data?.signedUrl) out[d.storage_path] = data.signedUrl;
+        }),
+      );
+      return out;
+    },
+  });
 
   const center: LatLng = {
     lat: form.gps_lat ? Number(form.gps_lat) : 5.7167,
@@ -284,7 +567,11 @@ function LandDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="info" className="mt-4">
+      <Tabs
+        value={search.tab ?? "info"}
+        onValueChange={(v) => navigate({ search: (prev) => ({ ...prev, tab: v }) })}
+        className="mt-4"
+      >
         <TabsList>
           <TabsTrigger value="info">Information</TabsTrigger>
           <TabsTrigger value="map">Coordinates</TabsTrigger>
@@ -420,17 +707,121 @@ function LandDetail() {
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">
+                  Walk to each corner of the land and capture a point (4–6 points). When you have at
+                  least 3 points, the app will connect them into a polygon.
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    ref={boundaryFileRef}
+                    type="file"
+                    accept=".kml,.geojson,.json,.csv,.txt"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void importBoundaryFile(f);
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => boundaryFileRef.current?.click()}
+                  >
+                    Import coordinates
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setSitePlanOpen(true)}>
+                    Site plan coordinates
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void captureGpsPoint()}
+                    disabled={capturingGps}
+                  >
+                    {capturingGps ? "Capturing…" : "Capture GPS point"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={undoLastPoint}
+                    disabled={polygon.length === 0 || capturingGps}
+                  >
+                    Undo last
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearPoints}
+                    disabled={polygon.length === 0 || capturingGps}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
               {coords.isLoading ? (
                 <Skeleton className="h-72 w-full rounded-md" />
               ) : (
-                <PolygonEditor initial={coords.data ?? []} center={center} onChange={setPolygon} />
+                <PolygonEditor initial={polygon} center={center} onChange={setPolygon} />
               )}
+              <Dialog open={sitePlanOpen} onOpenChange={setSitePlanOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Site plan coordinates (Ghana National Grid)</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-2">
+                    <div className="text-sm text-muted-foreground">
+                      Paste coordinates from the site plan. The app supports either one point per
+                      line (E/N or N/E) or full table rows (FROM and TO coordinates). Values are
+                      treated as Ghana National Grid (EPSG:2136) and converted to GPS lat/lng.
+                    </div>
+                    <Textarea
+                      rows={10}
+                      value={sitePlanText}
+                      onChange={(e) => setSitePlanText(e.target.value)}
+                      placeholder={`Example (one point per line)\n1277595.85 386665.09\n1277639.63 386733.33\n1277731.38 386657.28\n1277690.50 386588.45`}
+                    />
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSitePlanOpen(false)}
+                        disabled={convertSitePlan.isPending}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => convertSitePlan.mutate()}
+                        disabled={convertSitePlan.isPending}
+                      >
+                        {convertSitePlan.isPending ? "Converting…" : "Convert & load"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <div className="flex items-center gap-3">
                 <Button onClick={() => savePolygon.mutate()} disabled={savePolygon.isPending}>
                   {savePolygon.isPending ? "Saving…" : "Save polygon"}
                 </Button>
                 <p className="text-xs text-muted-foreground">{polygon.length} points</p>
               </div>
+              {polygon.length > 0 ? (
+                <div className="rounded-md border border-border bg-background p-3">
+                  <div className="mb-2 text-xs font-medium text-muted-foreground">
+                    Captured points
+                  </div>
+                  <div className="grid gap-1 text-xs">
+                    {polygon.map((p, i) => (
+                      <div key={`${p.lat}-${p.lng}-${i}`} className="flex justify-between">
+                        <span className="text-muted-foreground">#{i + 1}</span>
+                        <span className="font-mono">
+                          {p.lat.toFixed(6)}, {p.lng.toFixed(6)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>
@@ -438,9 +829,81 @@ function LandDetail() {
         <TabsContent value="docs" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Documents</CardTitle>
+              <CardTitle className="text-base">Photos & documents</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/30 p-3">
+                <div className="text-sm font-medium">Land photos</div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={photosRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length) uploadPhotos.mutate(files);
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => photosRef.current?.click()}
+                    disabled={uploadPhotos.isPending}
+                  >
+                    <Upload className="mr-1 h-4 w-4" />
+                    {uploadPhotos.isPending ? "Uploading…" : "Add photos"}
+                  </Button>
+                </div>
+              </div>
+
+              {photoDocs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No land photos yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {photoDocs.map((d) => {
+                    const url = photoUrls.data?.[d.storage_path];
+                    return (
+                      <div key={d.id} className="group relative overflow-hidden rounded-md border">
+                        {url ? (
+                          <button
+                            type="button"
+                            className="block w-full"
+                            onClick={() => window.open(url, "_blank")}
+                          >
+                            <img
+                              src={url}
+                              alt={d.file_name}
+                              className="h-32 w-full object-cover"
+                              loading="lazy"
+                            />
+                          </button>
+                        ) : (
+                          <div className="flex h-32 items-center justify-center bg-muted text-xs text-muted-foreground">
+                            Loading…
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between gap-2 border-t bg-background px-2 py-1">
+                          <div className="min-w-0">
+                            <p className="truncate text-[11px]">{d.file_name}</p>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() =>
+                              deleteDoc.mutate({ id: d.id, storage_path: d.storage_path })
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1">
                   <Label>Type</Label>
@@ -476,11 +939,11 @@ function LandDetail() {
                 </Button>
               </div>
 
-              {(documents.data ?? []).length === 0 ? (
+              {otherDocs.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
               ) : (
                 <ul className="divide-y">
-                  {(documents.data ?? []).map((d) => (
+                  {otherDocs.map((d) => (
                     <li key={d.id} className="flex items-center justify-between gap-3 py-2">
                       <div className="flex min-w-0 items-center gap-3">
                         <FileText className="h-4 w-4 text-muted-foreground" />

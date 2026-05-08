@@ -39,16 +39,11 @@ function closeRing(ring: LngLat[]): LngLat[] {
 
 export function normalizeRing(ring: LngLat[]): LngLat[] {
   const cleaned = dedupConsecutive(
-    ring.map(([lng, lat]) => [
-      Number(lng.toFixed(8)),
-      Number(lat.toFixed(8)),
-    ] as LngLat),
+    ring.map(([lng, lat]) => [Number(lng.toFixed(8)), Number(lat.toFixed(8))] as LngLat),
   );
   // Need 3 unique vertices (so >= 4 with closing point)
   if (cleaned.length < 3) {
-    throw new BoundaryParseError(
-      `Polygon needs at least 3 unique points (got ${cleaned.length}).`,
-    );
+    throw new BoundaryParseError(`Polygon needs at least 3 unique points (got ${cleaned.length}).`);
   }
   for (const [lng, lat] of cleaned) {
     if (!inRange(lng, lat)) {
@@ -123,8 +118,7 @@ export function parseKML(text: string): GeoJSONPolygon {
     polys[0]
       .getElementsByTagName("outerBoundaryIs")[0]
       ?.getElementsByTagName("LinearRing")[0]
-      ?.getElementsByTagName("coordinates")[0] ??
-    polys[0].getElementsByTagName("coordinates")[0];
+      ?.getElementsByTagName("coordinates")[0] ?? polys[0].getElementsByTagName("coordinates")[0];
   if (!outerEl) throw new BoundaryParseError("KML polygon missing <coordinates>.");
   const raw = (outerEl.textContent ?? "").trim();
   const ring: LngLat[] = raw
@@ -165,9 +159,7 @@ export function parseCSV(text: string): GeoJSONPolygon {
       (h) => h === "lng" || h === "lon" || h === "long" || h === "longitude",
     );
     if (li === -1 || gi === -1) {
-      throw new BoundaryParseError(
-        "CSV header must include lat and lng (or longitude/latitude).",
-      );
+      throw new BoundaryParseError("CSV header must include lat and lng (or longitude/latitude).");
     }
     latIdx = li;
     lngIdx = gi;
@@ -231,10 +223,18 @@ export function polygonToKML(opts: {
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <name>${escapeXml(opts.name)}</name>
-    <Style id="landStyle">
+    <Style id="landStyle_normal">
       <LineStyle><color>ff15803d</color><width>3</width></LineStyle>
-      <PolyStyle><color>4015803d</color></PolyStyle>
+      <PolyStyle><color>00ffffff</color><fill>0</fill><outline>1</outline></PolyStyle>
     </Style>
+    <Style id="landStyle_highlight">
+      <LineStyle><color>ff15803d</color><width>4</width></LineStyle>
+      <PolyStyle><color>00ffffff</color><fill>0</fill><outline>1</outline></PolyStyle>
+    </Style>
+    <StyleMap id="landStyle">
+      <Pair><key>normal</key><styleUrl>#landStyle_normal</styleUrl></Pair>
+      <Pair><key>highlight</key><styleUrl>#landStyle_highlight</styleUrl></Pair>
+    </StyleMap>
     <Placemark>
       <name>${escapeXml(opts.name)}</name>
       <description><![CDATA[${opts.description}]]></description>
@@ -256,16 +256,15 @@ export function approximateAreaSqm(ring: LngLat[]): number {
   const R = 6378137; // WGS84 equatorial radius
   const toRad = (d: number) => (d * Math.PI) / 180;
   let area = 0;
-  const pts = ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1]
-    ? ring.slice(0, -1)
-    : ring;
+  const pts =
+    ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1]
+      ? ring.slice(0, -1)
+      : ring;
   const n = pts.length;
   for (let i = 0; i < n; i++) {
     const [lng1, lat1] = pts[i];
     const [lng2, lat2] = pts[(i + 1) % n];
-    area +=
-      toRad(lng2 - lng1) *
-      (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));
+    area += toRad(lng2 - lng1) * (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));
   }
   return Math.abs((area * R * R) / 2);
 }

@@ -246,6 +246,7 @@ function LandownerDetail() {
                       <Link
                         to="/lands/$landId"
                         params={{ landId: l.id }}
+                        search={{ tab: undefined }}
                         className="text-sm font-medium text-primary hover:underline"
                       >
                         {l.land_code}

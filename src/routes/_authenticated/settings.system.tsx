@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/format";
 import { TableSkeleton } from "@/components/skeletons";
 import { RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { clearAllData } from "@/lib/seed.functions";
+import { clearAllData, resetSeedData } from "@/lib/seed.functions";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -42,14 +42,17 @@ type ActivityRow = {
 
 function SystemSettingsPage() {
   const auth = useAuth();
-  const canViewLogs = auth.hasAnyRole(["admin", "manager"]);
+  const canViewLogs = auth.hasAnyRole(["admin", "manager", "developer"]);
   const isAdmin = auth.hasRole("admin");
+  const isDeveloper = auth.hasRole("developer");
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
 
   const clearData = useServerFn(clearAllData);
+  const seedData = useServerFn(resetSeedData);
   const [resetting, setResetting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [clearing, setClearing] = useState(false);
 
   const activity = useQuery<{ rows: (ActivityRow & { actorLabel: string })[]; count: number }>({
@@ -171,6 +174,28 @@ function SystemSettingsPage() {
     }
   };
 
+  const handleSeed = async () => {
+    setSeeding(true);
+    try {
+      const res = await seedData();
+      if (!res || res.ok !== true || !res.counts) {
+        throw new Error(
+          "Seed failed: server response was invalid. This feature requires the app to run as a Node.js server (TanStack Start SSR), not as a static Vite site.",
+        );
+      }
+      toast.success("Seed data loaded", {
+        description: `Created ${res.counts.landowners} landowners, ${res.counts.lands} lands and ${res.counts.bills} bills.`,
+      });
+      await qc.invalidateQueries();
+    } catch (e) {
+      toast.error("Seed failed", {
+        description: e instanceof Error ? e.message : "Unknown error",
+      });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   if (!canViewLogs) {
     return (
       <AppShell title="System & Logs">
@@ -179,7 +204,7 @@ function SystemSettingsPage() {
             <CardHeader className="flex flex-row items-center gap-3">
               <ShieldAlert className="h-5 w-5 text-destructive" />
               <div>
-                <CardTitle>Admins or managers only</CardTitle>
+                <CardTitle>Admins, managers or developers only</CardTitle>
                 <CardDescription>You do not have access to system settings.</CardDescription>
               </div>
             </CardHeader>
@@ -361,6 +386,55 @@ function SystemSettingsPage() {
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction onClick={handleReset}>
                         Yes, clear all data
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Developer seed</CardTitle>
+            <CardDescription>
+              Load demo data for testing. For developer accounts only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              Wipes transactional data and loads sample landowners, lands, bills, payments, zones
+              and a few demo parcel boundaries.
+            </div>
+            <div className="flex items-center gap-2">
+              {!isDeveloper ? (
+                <div className="text-xs text-muted-foreground">Developer only</div>
+              ) : seeding ? (
+                <Button variant="outline" size="sm" disabled>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Seeding…
+                </Button>
+              ) : (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Load seed data
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Load seed data?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This wipes current data (except users, land types, settings and roles) and
+                        loads demo records for testing. Use only in non-production environments.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleSeed}>
+                        Yes, load seed data
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

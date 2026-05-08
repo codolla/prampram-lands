@@ -15,17 +15,15 @@ export const resetSeedData = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    // Verify caller is an admin (RLS-respecting client, runs as the user).
+    // Verify caller is a developer (RLS-respecting client, runs as the user).
     const { data: roles, error: rolesErr } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
     if (rolesErr) throw new Error(rolesErr.message);
-    const canReset = (roles ?? []).some(
-      (r) => r.role === "admin" || (r.role as unknown as string) === "developer",
-    );
+    const canReset = (roles ?? []).some((r) => (r.role as unknown as string) === "developer");
     if (!canReset) {
-      throw new Error("Only administrators can reset seed data.");
+      throw new Error("Only developer accounts can load seed data.");
     }
 
     // Use the service-role client to bypass RLS for the wipe + reseed.
@@ -360,6 +358,32 @@ export const resetSeedData = createServerFn({ method: "POST" })
       .insert(landRows)
       .select("id, annual_rent_amount");
     if (landErr) throw new Error(landErr.message);
+
+    const makeSquare = (lat: number, lng: number, delta = 0.0003) => [
+      { lat: lat - delta, lng: lng - delta },
+      { lat: lat - delta, lng: lng + delta },
+      { lat: lat + delta, lng: lng + delta },
+      { lat: lat + delta, lng: lng - delta },
+    ];
+
+    const boundarySeeds: Array<{ landIndex: number; points: Array<{ lat: number; lng: number }> }> =
+      [
+        { landIndex: 0, points: makeSquare(lands[0].lat, lands[0].lng) },
+        { landIndex: 2, points: makeSquare(lands[2].lat, lands[2].lng) },
+        { landIndex: 4, points: makeSquare(lands[4].lat, lands[4].lng, 0.0005) },
+      ];
+
+    const coordRows = boundarySeeds.flatMap((b) =>
+      b.points.map((p, i) => ({
+        land_id: landRows[b.landIndex].id,
+        seq: i,
+        lat: p.lat,
+        lng: p.lng,
+      })),
+    );
+
+    const { error: coordsErr } = await db.from("land_coordinates").insert(coordRows);
+    if (coordsErr) throw new Error(`Failed to create land boundaries: ${coordsErr.message}`);
 
     // Bills: 2024 overdue + 2025 pending for every land
     const billRows = (insertedLands ?? []).flatMap((l) => [

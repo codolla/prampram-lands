@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +44,7 @@ const PAGE_SIZE = 25;
 
 function LandsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { user, hasAnyRole } = useAuth();
   const canDelete = hasAnyRole(["admin"]);
   const [search, setSearch] = useState("");
@@ -247,6 +248,13 @@ function LandsPage() {
       setUploadProgress({ current: 0, total: 0, fileName: "", stage: "idle" });
       qc.invalidateQueries({ queryKey: ["lands"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      if (inserted?.id) {
+        navigate({
+          to: "/lands/$landId",
+          params: { landId: inserted.id as string },
+          search: { tab: "docs" },
+        });
+      }
     },
     onError: (e: Error) => {
       toast.error(e.message);
@@ -566,6 +574,7 @@ function LandsPage() {
                           <Link
                             to="/lands/$landId"
                             params={{ landId: l.id }}
+                            search={{ tab: undefined }}
                             className="text-primary hover:underline"
                           >
                             {l.land_code}

@@ -16,6 +16,51 @@ function normalizeSmsPhone(raw: string): string | null {
   return p;
 }
 
+function providerFailureHint(response: string): string | null {
+  const text = (response ?? "").toString().trim();
+  if (!text) return null;
+
+  const compact = text.replace(/\s+/g, " ").slice(0, 160);
+
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object") return compact;
+
+    const obj = parsed as Record<string, unknown>;
+    const candidates: unknown[] = [
+      obj.message,
+      obj.Message,
+      obj.error,
+      obj.Error,
+      obj.errors,
+      obj.Errors,
+      obj.status,
+      obj.Status,
+      obj.code,
+      obj.Code,
+    ];
+
+    for (const c of candidates) {
+      if (typeof c === "string" && c.trim()) return c.trim().replace(/\s+/g, " ").slice(0, 160);
+      if (Array.isArray(c) && c.length > 0) {
+        const first = c[0] as unknown;
+        if (typeof first === "string" && first.trim())
+          return first.trim().replace(/\s+/g, " ").slice(0, 160);
+        if (first && typeof first === "object") {
+          const fo = first as Record<string, unknown>;
+          const msg = fo.message ?? fo.Message ?? fo.error ?? fo.Error;
+          if (typeof msg === "string" && msg.trim())
+            return msg.trim().replace(/\s+/g, " ").slice(0, 160);
+        }
+      }
+    }
+
+    return compact;
+  } catch {
+    return compact;
+  }
+}
+
 function phoneCandidates(input: string): string[] {
   const raw = input.trim();
   const compact = raw.replace(/[\s\-()]/g, "");
@@ -60,7 +105,26 @@ async function sendArkesel(opts: {
     }),
   });
   const text = await res.text();
-  return { ok: res.ok, response: text.slice(0, 500) };
+  let providerOk = res.ok;
+  try {
+    const parsed = JSON.parse(text) as unknown as Record<string, unknown>;
+    const code = parsed.code ?? parsed.Code ?? parsed.status ?? parsed.Status;
+    const msg = parsed.message ?? parsed.Message;
+    const msgSuccess =
+      typeof msg === "string" &&
+      (msg.toLowerCase().includes("success") || msg.toLowerCase().includes("sent"));
+    let codeOk: boolean | null = null;
+    if (typeof code === "string") {
+      const v = code.toLowerCase();
+      codeOk = v === "ok" || v === "success" || v === "successful" || v === "0" || v === "1000";
+    } else if (typeof code === "number") {
+      codeOk = code === 0 || code === 1000;
+    }
+    providerOk = (codeOk ?? false) || msgSuccess || res.ok;
+  } catch {
+    providerOk = res.ok;
+  }
+  return { ok: providerOk, response: text.slice(0, 500) };
 }
 
 async function sendHubtel(opts: {
@@ -81,7 +145,26 @@ async function sendHubtel(opts: {
     method: "GET",
   });
   const text = await res.text();
-  return { ok: res.ok, response: text.slice(0, 500) };
+  let providerOk = res.ok;
+  try {
+    const parsed = JSON.parse(text) as unknown as Record<string, unknown>;
+    const status = parsed.status ?? parsed.Status ?? parsed.code ?? parsed.Code;
+    const msg = parsed.message ?? parsed.Message;
+    const msgSuccess =
+      typeof msg === "string" &&
+      (msg.toLowerCase().includes("success") || msg.toLowerCase().includes("sent"));
+    let codeOk: boolean | null = null;
+    if (typeof status === "number") {
+      codeOk = status === 0;
+    } else if (typeof status === "string") {
+      const v = status.toLowerCase();
+      codeOk = v === "0" || v === "success" || v === "ok";
+    }
+    providerOk = (codeOk ?? false) || msgSuccess || res.ok;
+  } catch {
+    providerOk = res.ok;
+  }
+  return { ok: providerOk, response: text.slice(0, 500) };
 }
 
 async function sendMnotify(opts: {
@@ -104,7 +187,26 @@ async function sendMnotify(opts: {
     },
   );
   const text = await res.text();
-  return { ok: res.ok, response: text.slice(0, 500) };
+  let providerOk = res.ok;
+  try {
+    const parsed = JSON.parse(text) as unknown as Record<string, unknown>;
+    const code = parsed.code ?? parsed.Code ?? parsed.status ?? parsed.Status;
+    const msg = parsed.message ?? parsed.Message;
+    const msgSuccess =
+      typeof msg === "string" &&
+      (msg.toLowerCase().includes("success") || msg.toLowerCase().includes("sent"));
+    let codeOk: boolean | null = null;
+    if (typeof code === "string") {
+      const v = code.toLowerCase();
+      codeOk = v === "1000" || v === "0" || v === "ok" || v === "success" || v === "successful";
+    } else if (typeof code === "number") {
+      codeOk = code === 1000 || code === 0;
+    }
+    providerOk = (codeOk ?? false) || msgSuccess || res.ok;
+  } catch {
+    providerOk = res.ok;
+  }
+  return { ok: providerOk, response: text.slice(0, 500) };
 }
 
 function sha256(input: string): string {
@@ -272,7 +374,13 @@ export const requestLoginOtp = createServerFn({ method: "POST" })
       provider_response: sendRes.response,
       sent_by: profile.id,
     });
-    if (!sendRes.ok) return { ok: false, error: "Could not send OTP. Try again." };
+    if (!sendRes.ok) {
+      const hint = providerFailureHint(sendRes.response);
+      return {
+        ok: false,
+        error: hint ? `Could not send OTP. ${hint}` : "Could not send OTP. Try again.",
+      };
+    }
 
     await otpDb.from("login_otps").insert({
       phone,
