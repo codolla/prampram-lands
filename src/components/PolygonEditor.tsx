@@ -13,10 +13,12 @@ export function PolygonEditor({
   initial,
   center,
   onChange,
+  minPolygonPoints = 3,
 }: {
   initial: LatLng[];
   center: LatLng;
   onChange: (points: LatLng[]) => void;
+  minPolygonPoints?: number;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -43,7 +45,7 @@ export function PolygonEditor({
       }).addTo(drawn);
     }
 
-    if (latLngs.length >= 3) {
+    if (latLngs.length >= Math.max(3, minPolygonPoints)) {
       const poly = L.polygon(latLngs, { color: "#15803d", weight: 3, fillOpacity: 0.2 });
       drawn.addLayer(poly);
       map.fitBounds(poly.getBounds(), { padding: [20, 20], maxZoom: 19 });

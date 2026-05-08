@@ -4,6 +4,15 @@ import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
@@ -188,6 +197,10 @@ function ParcelBody({
   photos: PhotoRow[];
   photosLoading: boolean;
 }) {
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
+  const [photoCarouselApi, setPhotoCarouselApi] = useState<CarouselApi | null>(null);
+
   const downloadKml = () => {
     window.open(`/api/public/lands/${land.id}/kml`, "_blank", "noopener,noreferrer");
   };
@@ -236,6 +249,46 @@ function ParcelBody({
       "noopener,noreferrer",
     );
   };
+
+  const photoUrls = useQuery<Record<string, string>>({
+    queryKey: ["parcel-detail-photo-urls", land.id, photos.map((p) => p.storage_path).join("|")],
+    enabled: !photosLoading && photos.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const out: Record<string, string> = {};
+      await Promise.all(
+        photos.map(async (p) => {
+          const { data, error } = await supabase.storage
+            .from("land-documents")
+            .createSignedUrl(p.storage_path, 60 * 60);
+          if (!error && data?.signedUrl) out[p.storage_path] = data.signedUrl;
+        }),
+      );
+      return out;
+    },
+  });
+
+  const photoSlides = photos.map((p) => ({
+    id: p.id,
+    name: p.file_name,
+    url: photoUrls.data?.[p.storage_path] ?? null,
+  }));
+
+  useEffect(() => {
+    if (!photoViewerOpen) return;
+    if (!photoCarouselApi) return;
+    photoCarouselApi.scrollTo(photoViewerIndex, true);
+  }, [photoViewerOpen, photoViewerIndex, photoCarouselApi]);
+
+  useEffect(() => {
+    if (!photoCarouselApi) return;
+    const onSelect = () => setPhotoViewerIndex(photoCarouselApi.selectedScrollSnap());
+    onSelect();
+    photoCarouselApi.on("select", onSelect);
+    return () => {
+      photoCarouselApi.off("select", onSelect);
+    };
+  }, [photoCarouselApi]);
 
   return (
     <div className="space-y-5">
@@ -308,11 +361,70 @@ function ParcelBody({
           <p className="text-sm text-muted-foreground">No photos uploaded.</p>
         ) : (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {photos.map((p) => (
-              <PhotoThumb key={p.id} path={p.storage_path} name={p.file_name} />
-            ))}
+            {photos.map((p, idx) => {
+              const url = photoUrls.data?.[p.storage_path] ?? null;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="block h-24 w-24 shrink-0 overflow-hidden rounded-md border border-border bg-muted"
+                  title={p.file_name}
+                  onClick={() => {
+                    setPhotoViewerIndex(idx);
+                    setPhotoViewerOpen(true);
+                  }}
+                >
+                  {url ? (
+                    <img src={url} alt={p.file_name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
+
+        <Dialog open={photoViewerOpen} onOpenChange={setPhotoViewerOpen}>
+          <DialogContent className="max-w-5xl p-0">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div className="text-sm font-medium">
+                Photos{" "}
+                <span className="text-muted-foreground">
+                  ({photoSlides.length ? photoViewerIndex + 1 : 0}/{photoSlides.length})
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setPhotoViewerOpen(false)}>
+                Close
+              </Button>
+            </div>
+            <div className="relative bg-black">
+              <Carousel
+                className="mx-auto w-full"
+                setApi={(api) => setPhotoCarouselApi(api)}
+                opts={{ loop: false }}
+              >
+                <CarouselContent className="ml-0">
+                  {photoSlides.map((p) => (
+                    <CarouselItem key={p.id} className="pl-0">
+                      <div className="flex h-[70vh] w-full items-center justify-center">
+                        {p.url ? (
+                          <img src={p.url} alt={p.name} className="h-full w-full object-contain" />
+                        ) : (
+                          <div className="text-sm text-white/80">Loading…</div>
+                        )}
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="left-4 text-white hover:text-white" />
+                <CarouselNext className="right-4 text-white hover:text-white" />
+              </Carousel>
+            </div>
+          </DialogContent>
+        </Dialog>
       </section>
 
       <Separator />
@@ -411,38 +523,5 @@ function InfoRow({
       </div>
       <div className="mt-0.5">{children}</div>
     </div>
-  );
-}
-
-function PhotoThumb({ path, name }: { path: string; name: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    supabase.storage
-      .from("land-documents")
-      .createSignedUrl(path, 300)
-      .then(({ data }) => {
-        if (!cancelled) setUrl(data?.signedUrl ?? null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [path]);
-  return (
-    <a
-      href={url ?? "#"}
-      target="_blank"
-      rel="noreferrer"
-      className="block h-24 w-24 shrink-0 overflow-hidden rounded-md border border-border bg-muted"
-      title={name}
-    >
-      {url ? (
-        <img src={url} alt={name} className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <ImageIcon className="h-6 w-6 text-muted-foreground" />
-        </div>
-      )}
-    </a>
   );
 }

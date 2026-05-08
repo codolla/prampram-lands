@@ -27,6 +27,14 @@ import { PolygonEditor, type LatLng } from "@/components/PolygonEditor";
 import { useAuth } from "@/lib/auth";
 import { LandStaffAssignments } from "@/components/LandStaffAssignments";
 import { parseBoundaryFile } from "@/lib/boundary";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 export const Route = createFileRoute("/_authenticated/lands/$landId")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -194,6 +202,7 @@ function LandDetail() {
   });
 
   const [polygon, setPolygon] = useState<LatLng[]>([]);
+  const [expectedPoints, setExpectedPoints] = useState(4);
   useEffect(() => {
     if (coords.data) setPolygon(coords.data);
   }, [coords.data]);
@@ -542,6 +551,32 @@ function LandDetail() {
     },
   });
 
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
+  const [photoCarouselApi, setPhotoCarouselApi] = useState<CarouselApi | null>(null);
+
+  const photoSlides = photoDocs.map((d) => ({
+    id: d.id,
+    name: d.file_name,
+    url: photoUrls.data?.[d.storage_path] ?? null,
+  }));
+
+  useEffect(() => {
+    if (!photoViewerOpen) return;
+    if (!photoCarouselApi) return;
+    photoCarouselApi.scrollTo(photoViewerIndex, true);
+  }, [photoViewerOpen, photoViewerIndex, photoCarouselApi]);
+
+  useEffect(() => {
+    if (!photoCarouselApi) return;
+    const onSelect = () => setPhotoViewerIndex(photoCarouselApi.selectedScrollSnap());
+    onSelect();
+    photoCarouselApi.on("select", onSelect);
+    return () => {
+      photoCarouselApi.off("select", onSelect);
+    };
+  }, [photoCarouselApi]);
+
   const center: LatLng = {
     lat: form.gps_lat ? Number(form.gps_lat) : 5.7167,
     lng: form.gps_lng ? Number(form.gps_lng) : 0.117,
@@ -713,6 +748,20 @@ function LandDetail() {
                   least 3 points, the app will connect them into a polygon.
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Points</Label>
+                    <Input
+                      type="number"
+                      min={3}
+                      max={20}
+                      value={expectedPoints}
+                      className="h-9 w-20"
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setExpectedPoints(Number.isFinite(v) ? v : 4);
+                      }}
+                    />
+                  </div>
                   <Input
                     ref={boundaryFileRef}
                     type="file"
@@ -762,7 +811,12 @@ function LandDetail() {
               {coords.isLoading ? (
                 <Skeleton className="h-72 w-full rounded-md" />
               ) : (
-                <PolygonEditor initial={polygon} center={center} onChange={setPolygon} />
+                <PolygonEditor
+                  initial={polygon}
+                  center={center}
+                  onChange={setPolygon}
+                  minPolygonPoints={Math.max(3, expectedPoints || 0)}
+                />
               )}
               <Dialog open={sitePlanOpen} onOpenChange={setSitePlanOpen}>
                 <DialogContent>
@@ -800,10 +854,17 @@ function LandDetail() {
                 </DialogContent>
               </Dialog>
               <div className="flex items-center gap-3">
-                <Button onClick={() => savePolygon.mutate()} disabled={savePolygon.isPending}>
+                <Button
+                  onClick={() => savePolygon.mutate()}
+                  disabled={
+                    savePolygon.isPending || polygon.length < Math.max(3, expectedPoints || 0)
+                  }
+                >
                   {savePolygon.isPending ? "Saving…" : "Save polygon"}
                 </Button>
-                <p className="text-xs text-muted-foreground">{polygon.length} points</p>
+                <p className="text-xs text-muted-foreground">
+                  {polygon.length}/{Math.max(3, expectedPoints || 0)} points
+                </p>
               </div>
               {polygon.length > 0 ? (
                 <div className="rounded-md border border-border bg-background p-3">
@@ -866,24 +927,28 @@ function LandDetail() {
                     const url = photoUrls.data?.[d.storage_path];
                     return (
                       <div key={d.id} className="group relative overflow-hidden rounded-md border">
-                        {url ? (
-                          <button
-                            type="button"
-                            className="block w-full"
-                            onClick={() => window.open(url, "_blank")}
-                          >
+                        <button
+                          type="button"
+                          className="block w-full"
+                          onClick={() => {
+                            const idx = photoDocs.findIndex((p) => p.id === d.id);
+                            setPhotoViewerIndex(Math.max(0, idx));
+                            setPhotoViewerOpen(true);
+                          }}
+                        >
+                          {url ? (
                             <img
                               src={url}
                               alt={d.file_name}
                               className="h-32 w-full object-cover"
                               loading="lazy"
                             />
-                          </button>
-                        ) : (
-                          <div className="flex h-32 items-center justify-center bg-muted text-xs text-muted-foreground">
-                            Loading…
-                          </div>
-                        )}
+                          ) : (
+                            <div className="flex h-32 items-center justify-center bg-muted text-xs text-muted-foreground">
+                              Loading…
+                            </div>
+                          )}
+                        </button>
                         <div className="flex items-center justify-between gap-2 border-t bg-background px-2 py-1">
                           <div className="min-w-0">
                             <p className="truncate text-[11px]">{d.file_name}</p>
@@ -903,6 +968,49 @@ function LandDetail() {
                   })}
                 </div>
               )}
+
+              <Dialog open={photoViewerOpen} onOpenChange={setPhotoViewerOpen}>
+                <DialogContent className="max-w-5xl p-0">
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <div className="text-sm font-medium">
+                      Photos{" "}
+                      <span className="text-muted-foreground">
+                        ({photoSlides.length ? photoViewerIndex + 1 : 0}/{photoSlides.length})
+                      </span>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setPhotoViewerOpen(false)}>
+                      Close
+                    </Button>
+                  </div>
+                  <div className="relative bg-black">
+                    <Carousel
+                      className="mx-auto w-full"
+                      setApi={(api) => setPhotoCarouselApi(api)}
+                      opts={{ loop: false }}
+                    >
+                      <CarouselContent className="ml-0">
+                        {photoSlides.map((p) => (
+                          <CarouselItem key={p.id} className="pl-0">
+                            <div className="flex h-[70vh] w-full items-center justify-center">
+                              {p.url ? (
+                                <img
+                                  src={p.url}
+                                  alt={p.name}
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : (
+                                <div className="text-sm text-white/80">Loading…</div>
+                              )}
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="left-4 text-white hover:text-white" />
+                      <CarouselNext className="right-4 text-white hover:text-white" />
+                    </Carousel>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1">
