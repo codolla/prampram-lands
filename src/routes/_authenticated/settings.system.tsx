@@ -24,6 +24,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/system")({
   component: SystemSettingsPage,
@@ -36,8 +43,8 @@ type ActivityRow = {
   action: string;
   entity: string;
   entity_id: string | null;
-  message: string | null;
-  metadata: Record<string, unknown> | null;
+  message: string;
+  metadata: Record<string, unknown>;
 };
 
 function SystemSettingsPage() {
@@ -48,6 +55,10 @@ function SystemSettingsPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
+  const [selectedLog, setSelectedLog] = useState<(ActivityRow & { actorLabel: string }) | null>(
+    null,
+  );
+  const [logOpen, setLogOpen] = useState(false);
 
   const clearData = useServerFn(clearAllData);
   const seedData = useServerFn(resetSeedData);
@@ -100,12 +111,18 @@ function SystemSettingsPage() {
       const profilesRes =
         actorIds.length === 0
           ? { data: [], error: null as unknown as null }
-          : await supabase.from("profiles").select("id, full_name, email").in("id", actorIds);
+          : await supabase
+              .from("profiles")
+              .select("id, full_name, email, phone")
+              .in("id", actorIds);
       if (profilesRes.error) throw profilesRes.error;
 
-      const byId = new Map<string, { full_name: string | null; email: string | null }>();
+      const byId = new Map<
+        string,
+        { full_name: string | null; email: string | null; phone: string | null }
+      >();
       for (const p of profilesRes.data ?? []) {
-        byId.set(p.id, { full_name: p.full_name, email: p.email });
+        byId.set(p.id, { full_name: p.full_name, email: p.email, phone: p.phone });
       }
 
       const withActors = rows.map((r) => {
@@ -113,10 +130,134 @@ function SystemSettingsPage() {
         const p = byId.get(r.actor_id);
         if (p?.full_name?.trim()) return { ...r, actorLabel: p.full_name.trim() };
         if (p?.email?.trim()) return { ...r, actorLabel: p.email.trim() };
+        if (p?.phone?.trim()) return { ...r, actorLabel: p.phone.trim() };
         return { ...r, actorLabel: r.actor_id.slice(0, 8) + "…" };
       });
 
       return { rows: withActors, count };
+    },
+  });
+
+  const logDetail = useQuery<{
+    log: ActivityRow;
+    actor: {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      phone: string | null;
+    } | null;
+    related: { table: string; row: Record<string, unknown> } | null;
+  }>({
+    queryKey: ["activity_log_detail", selectedLog?.id],
+    enabled: logOpen && !!selectedLog?.id,
+    queryFn: async () => {
+      if (!selectedLog?.id) throw new Error("No activity log selected");
+      const db = supabase as unknown as {
+        from: (t: string) => {
+          select: (columns: string) => {
+            eq: (
+              column: string,
+              value: string,
+            ) => {
+              maybeSingle: () => Promise<{
+                data: unknown | null;
+                error: { message: string } | null;
+              }>;
+            };
+          };
+        };
+      };
+
+      const { data: log, error: logErr } = await db
+        .from("activity_logs")
+        .select("id, created_at, actor_id, action, entity, entity_id, message, metadata")
+        .eq("id", selectedLog.id)
+        .maybeSingle();
+      if (logErr) throw new Error(logErr.message);
+      if (!log) throw new Error("Log not found");
+      const logRow = log as unknown as ActivityRow;
+
+      const actor = await (async () => {
+        const actorId = logRow.actor_id;
+        if (!actorId) return null;
+        const { data, error } = await db
+          .from("profiles")
+          .select("id, full_name, email, phone")
+          .eq("id", actorId)
+          .maybeSingle();
+        if (error) throw new Error(error.message);
+        return (
+          (data as unknown as {
+            id: string;
+            full_name: string | null;
+            email: string | null;
+            phone: string | null;
+          }) ?? null
+        );
+      })();
+
+      const related = await (async () => {
+        const entityId = logRow.entity_id;
+        if (!entityId) return null;
+        const id = entityId;
+        const table = logRow.entity;
+        const safeSelect = async (t: string, columns: string) => {
+          const { data, error } = await db.from(t).select(columns).eq("id", id).maybeSingle();
+          if (error) throw new Error(error.message);
+          return data as unknown as Record<string, unknown> | null;
+        };
+
+        if (table === "payments") {
+          const row = await safeSelect(
+            "payments",
+            "id, kind, amount, method, receipt_number, paid_at, bill_id, land_id, landowner_id, reference, notes",
+          );
+          return row ? { table, row } : null;
+        }
+        if (table === "bills") {
+          const row = await safeSelect(
+            "bills",
+            "id, billing_year, amount, status, due_date, issued_at, land_id, notes",
+          );
+          return row ? { table, row } : null;
+        }
+        if (table === "lands") {
+          const row = await safeSelect(
+            "lands",
+            "id, land_code, plot_number, status, location_description, gps_lat, gps_lng, size_value, size_unit, area_sqm, boundary_type, current_owner_id",
+          );
+          return row ? { table, row } : null;
+        }
+        if (table === "landowners") {
+          const row = await safeSelect(
+            "landowners",
+            "id, full_name, phone, email, address, national_id, notes",
+          );
+          return row ? { table, row } : null;
+        }
+        if (table === "sms_logs") {
+          const row = await safeSelect(
+            "sms_logs",
+            "id, phone, status, provider, message, provider_response, bill_id, landowner_id, sent_by, created_at",
+          );
+          return row ? { table, row } : null;
+        }
+        if (table === "walkin_logs") {
+          const row = await safeSelect(
+            "walkin_logs",
+            "id, kind, visitor_name, phone, subject, detail, created_by, created_at",
+          );
+          return row ? { table, row } : null;
+        }
+        if (table === "user_roles") {
+          const row = await safeSelect("user_roles", "id, user_id, role, created_at");
+          return row ? { table, row } : null;
+        }
+
+        return null;
+      })();
+
+      return { log: logRow, actor, related };
     },
   });
 
@@ -287,7 +428,22 @@ function SystemSettingsPage() {
                     </thead>
                     <tbody>
                       {(activity.data?.rows ?? []).map((r) => (
-                        <tr key={r.id} className="border-t border-border">
+                        <tr
+                          key={r.id}
+                          role="button"
+                          tabIndex={0}
+                          className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          onClick={() => {
+                            setSelectedLog(r);
+                            setLogOpen(true);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key !== "Enter" && e.key !== " ") return;
+                            e.preventDefault();
+                            setSelectedLog(r);
+                            setLogOpen(true);
+                          }}
+                        >
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                             {formatDate(r.created_at)}
                           </td>
@@ -315,6 +471,173 @@ function SystemSettingsPage() {
                     </tbody>
                   </table>
                 </div>
+
+                <Dialog
+                  open={logOpen}
+                  onOpenChange={(open) => {
+                    setLogOpen(open);
+                    if (!open) setSelectedLog(null);
+                  }}
+                >
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Activity log details</DialogTitle>
+                      <DialogDescription>
+                        {logDetail.data?.log
+                          ? formatDate(logDetail.data.log.created_at)
+                          : selectedLog
+                            ? formatDate(selectedLog.created_at)
+                            : ""}
+                      </DialogDescription>
+                    </DialogHeader>
+                    {logDetail.isFetching ? (
+                      <div className="text-sm text-muted-foreground">Loading details…</div>
+                    ) : logDetail.isError ? (
+                      <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+                        Failed to load log details.
+                      </div>
+                    ) : selectedLog ? (
+                      <div className="grid gap-4 text-sm">
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="rounded-md border border-border bg-muted/30 p-3">
+                            <div className="text-xs text-muted-foreground">Actor</div>
+                            <div className="mt-1 font-medium">
+                              {logDetail.data?.actor?.full_name?.trim()
+                                ? logDetail.data.actor.full_name.trim()
+                                : logDetail.data?.actor?.email?.trim()
+                                  ? logDetail.data.actor.email.trim()
+                                  : logDetail.data?.actor?.phone?.trim()
+                                    ? logDetail.data.actor.phone.trim()
+                                    : selectedLog.actorLabel}
+                            </div>
+                            {logDetail.data?.actor?.email?.trim() ? (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {logDetail.data.actor.email.trim()}
+                              </div>
+                            ) : null}
+                            {logDetail.data?.actor?.phone?.trim() ? (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {logDetail.data.actor.phone.trim()}
+                              </div>
+                            ) : null}
+                            {(logDetail.data?.log.actor_id ?? selectedLog.actor_id) ? (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {logDetail.data?.log.actor_id ?? selectedLog.actor_id}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="rounded-md border border-border bg-muted/30 p-3">
+                            <div className="text-xs text-muted-foreground">Action</div>
+                            <div className="mt-1">
+                              <Badge variant="secondary" className="capitalize">
+                                {logDetail.data?.log.action ?? selectedLog.action}
+                              </Badge>
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">Entity</div>
+                            <div className="mt-1 font-medium capitalize">
+                              {logDetail.data?.log.entity ?? selectedLog.entity}
+                            </div>
+                            {(logDetail.data?.log.entity_id ?? selectedLog.entity_id) ? (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {logDetail.data?.log.entity_id ?? selectedLog.entity_id}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {(() => {
+                          const meta = (logDetail.data?.log.metadata ??
+                            selectedLog.metadata) as Record<string, unknown>;
+                          const amount = meta.amount;
+                          const status = meta.status;
+                          const landCode = meta.land_code;
+                          const receipt = meta.receipt_number;
+                          const role = meta.role;
+                          const hasHighlights =
+                            amount != null ||
+                            status != null ||
+                            landCode != null ||
+                            receipt != null ||
+                            role != null;
+                          if (!hasHighlights) return null;
+                          return (
+                            <div className="rounded-md border border-border bg-muted/20 p-3">
+                              <div className="text-xs text-muted-foreground">Highlights</div>
+                              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                {landCode != null ? (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground">Land code</div>
+                                    <div className="mt-0.5 font-medium">{String(landCode)}</div>
+                                  </div>
+                                ) : null}
+                                {amount != null ? (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground">Amount</div>
+                                    <div className="mt-0.5 font-medium">{String(amount)}</div>
+                                  </div>
+                                ) : null}
+                                {status != null ? (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground">Status</div>
+                                    <div className="mt-0.5 font-medium">{String(status)}</div>
+                                  </div>
+                                ) : null}
+                                {receipt != null ? (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground">
+                                      Receipt number
+                                    </div>
+                                    <div className="mt-0.5 font-medium">{String(receipt)}</div>
+                                  </div>
+                                ) : null}
+                                {role != null ? (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground">Role</div>
+                                    <div className="mt-0.5 font-medium">{String(role)}</div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        <div className="rounded-md border border-border p-3">
+                          <div className="text-xs text-muted-foreground">Message</div>
+                          <div className="mt-1 whitespace-pre-wrap text-foreground/90">
+                            {logDetail.data?.log.message ?? selectedLog.message}
+                          </div>
+                        </div>
+
+                        {logDetail.data?.related ? (
+                          <div className="rounded-md border border-border p-3">
+                            <div className="text-xs text-muted-foreground">
+                              Related record ({logDetail.data.related.table})
+                            </div>
+                            <pre className="mt-2 max-h-[45vh] overflow-auto rounded-md bg-muted/40 p-3 text-xs leading-relaxed">
+                              {JSON.stringify(logDetail.data.related.row, null, 2)}
+                            </pre>
+                          </div>
+                        ) : null}
+
+                        <div className="rounded-md border border-border p-3">
+                          <div className="text-xs text-muted-foreground">Metadata</div>
+                          {selectedLog.metadata ? (
+                            <pre className="mt-2 max-h-[45vh] overflow-auto rounded-md bg-muted/40 p-3 text-xs leading-relaxed">
+                              {JSON.stringify(
+                                (logDetail.data?.log.metadata ?? selectedLog.metadata) as Record<
+                                  string,
+                                  unknown
+                                >,
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+                  </DialogContent>
+                </Dialog>
 
                 {totalPages > 1 ? (
                   <div className="mt-4 flex items-center justify-between gap-3">

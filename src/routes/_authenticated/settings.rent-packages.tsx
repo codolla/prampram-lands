@@ -10,13 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CardSkeleton } from "@/components/skeletons";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -48,9 +42,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Loader2, Pencil, Plus, ShieldCheck, Tags, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute(
-  "/_authenticated/settings/rent-packages",
-)({
+export const Route = createFileRoute("/_authenticated/settings/rent-packages")({
   component: RentPackagesPage,
 });
 
@@ -114,9 +106,7 @@ function RentPackagesPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-12">
             <ShieldCheck className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Admin access required.
-            </p>
+            <p className="text-sm text-muted-foreground">Admin access required.</p>
           </CardContent>
         </Card>
       </AppShell>
@@ -147,9 +137,9 @@ function RentPackagesPage() {
           <CardHeader>
             <CardTitle className="text-base">About rent packages</CardTitle>
             <CardDescription>
-              Configure the annual ground-rent amounts for each land type. When
-              recording a land, choose its type and a matching package — bills
-              will use the package's annual amount.
+              Configure the ground-rent rate per plot for each land type (and package variant). When
+              recording a land, choose its type and a matching package — the system will calculate
+              the annual rent using the parcel size (1 plot = 0.16 acres).
             </CardDescription>
           </CardHeader>
         </Card>
@@ -177,75 +167,73 @@ function RentPackagesPage() {
             </CardContent>
           </Card>
         ) : (
-          types.filter((t) => grouped.has(t.id)).map((t) => (
-            <Card key={t.id}>
-              <CardHeader>
-                <CardTitle className="text-base">{t.label}</CardTitle>
-                <CardDescription>
-                  {grouped.get(t.id)!.length} package
-                  {grouped.get(t.id)!.length === 1 ? "" : "s"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                      <th className="pb-2">Package</th>
-                      <th className="pb-2">Annual amount</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2 text-right">Manage</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {grouped.get(t.id)!.map((p) => (
-                      <tr key={p.id} className="border-b last:border-0 align-top">
-                        <td className="py-3">
-                          <div className="font-medium">{p.name}</div>
-                          {p.description && (
-                            <div className="text-xs text-muted-foreground">
-                              {p.description}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 font-mono">
-                          {ghs(Number(p.annual_amount))}
-                        </td>
-                        <td className="py-3">
-                          {p.active ? (
-                            <Badge variant="secondary">Active</Badge>
-                          ) : (
-                            <Badge variant="outline">Inactive</Badge>
-                          )}
-                        </td>
-                        <td className="py-3 text-right">
-                          <div className="flex justify-end gap-1">
-                            <PackageDialog
-                              mode="edit"
-                              pkg={p}
-                              types={types}
-                              onSaved={() =>
-                                qc.invalidateQueries({
-                                  queryKey: ["rent-packages"],
-                                })
-                              }
-                            />
-                            <DeletePackageDialog
-                              pkg={p}
-                              onDeleted={() =>
-                                qc.invalidateQueries({
-                                  queryKey: ["rent-packages"],
-                                })
-                              }
-                            />
-                          </div>
-                        </td>
+          types
+            .filter((t) => grouped.has(t.id))
+            .map((t) => (
+              <Card key={t.id}>
+                <CardHeader>
+                  <CardTitle className="text-base">{t.label}</CardTitle>
+                  <CardDescription>
+                    {grouped.get(t.id)!.length} package
+                    {grouped.get(t.id)!.length === 1 ? "" : "s"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                        <th className="pb-2">Package</th>
+                        <th className="pb-2">Rate per plot</th>
+                        <th className="pb-2">Status</th>
+                        <th className="pb-2 text-right">Manage</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          ))
+                    </thead>
+                    <tbody>
+                      {grouped.get(t.id)!.map((p) => (
+                        <tr key={p.id} className="border-b last:border-0 align-top">
+                          <td className="py-3">
+                            <div className="font-medium">{p.name}</div>
+                            {p.description && (
+                              <div className="text-xs text-muted-foreground">{p.description}</div>
+                            )}
+                          </td>
+                          <td className="py-3 font-mono">{ghs(Number(p.annual_amount))}</td>
+                          <td className="py-3">
+                            {p.active ? (
+                              <Badge variant="secondary">Active</Badge>
+                            ) : (
+                              <Badge variant="outline">Inactive</Badge>
+                            )}
+                          </td>
+                          <td className="py-3 text-right">
+                            <div className="flex justify-end gap-1">
+                              <PackageDialog
+                                mode="edit"
+                                pkg={p}
+                                types={types}
+                                onSaved={() =>
+                                  qc.invalidateQueries({
+                                    queryKey: ["rent-packages"],
+                                  })
+                                }
+                              />
+                              <DeletePackageDialog
+                                pkg={p}
+                                onDeleted={() =>
+                                  qc.invalidateQueries({
+                                    queryKey: ["rent-packages"],
+                                  })
+                                }
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            ))
         )}
       </div>
     </AppShell>
@@ -265,12 +253,8 @@ function PackageDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(pkg?.name ?? "");
-  const [landTypeId, setLandTypeId] = useState<string>(
-    pkg?.land_type_id ?? types[0]?.id ?? "",
-  );
-  const [amount, setAmount] = useState<string>(
-    pkg ? String(pkg.annual_amount) : "",
-  );
+  const [landTypeId, setLandTypeId] = useState<string>(pkg?.land_type_id ?? types[0]?.id ?? "");
+  const [amount, setAmount] = useState<string>(pkg ? String(pkg.annual_amount) : "");
   const [description, setDescription] = useState(pkg?.description ?? "");
   const [active, setActive] = useState(pkg?.active ?? true);
 
@@ -295,10 +279,7 @@ function PackageDialog({
         const { error } = await supabase.from("rent_packages").insert(payload);
         if (error) throw error;
       } else if (pkg) {
-        const { error } = await supabase
-          .from("rent_packages")
-          .update(payload)
-          .eq("id", pkg.id);
+        const { error } = await supabase.from("rent_packages").update(payload).eq("id", pkg.id);
         if (error) throw error;
       }
     },
@@ -311,11 +292,7 @@ function PackageDialog({
   });
 
   const amt = Number(amount);
-  const valid =
-    name.trim().length > 0 &&
-    Number.isFinite(amt) &&
-    amt >= 0 &&
-    landTypeId.length > 0;
+  const valid = name.trim().length > 0 && Number.isFinite(amt) && amt >= 0 && landTypeId.length > 0;
 
   return (
     <Dialog
@@ -342,7 +319,7 @@ function PackageDialog({
             {mode === "create" ? "Create rent package" : "Edit rent package"}
           </DialogTitle>
           <DialogDescription>
-            Set the annual ground-rent amount for a specific land type.
+            Set the rent rate per plot for a specific land type.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
@@ -358,10 +335,7 @@ function PackageDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Land type</Label>
-              <Select
-                value={landTypeId}
-                onValueChange={(v) => setLandTypeId(v)}
-              >
+              <Select value={landTypeId} onValueChange={(v) => setLandTypeId(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -375,7 +349,7 @@ function PackageDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="pkg-amount">Annual amount (GHS)</Label>
+              <Label htmlFor="pkg-amount">Rate per plot (GHS)</Label>
               <Input
                 id="pkg-amount"
                 type="number"
@@ -407,25 +381,15 @@ function PackageDialog({
                 Inactive packages stay on existing lands but can't be picked for new ones.
               </p>
             </div>
-            <Switch
-              id="pkg-active"
-              checked={active}
-              onCheckedChange={setActive}
-            />
+            <Switch id="pkg-active" checked={active} onCheckedChange={setActive} />
           </div>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={save.isPending}
-          >
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={save.isPending}>
             Cancel
           </Button>
           <Button onClick={() => save.mutate()} disabled={!valid || save.isPending}>
-            {save.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {mode === "create" ? "Create" : "Save"}
           </Button>
         </DialogFooter>
@@ -434,19 +398,10 @@ function PackageDialog({
   );
 }
 
-function DeletePackageDialog({
-  pkg,
-  onDeleted,
-}: {
-  pkg: RentPackage;
-  onDeleted: () => void;
-}) {
+function DeletePackageDialog({ pkg, onDeleted }: { pkg: RentPackage; onDeleted: () => void }) {
   const del = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("rent_packages")
-        .delete()
-        .eq("id", pkg.id);
+      const { error } = await supabase.from("rent_packages").delete().eq("id", pkg.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -467,19 +422,14 @@ function DeletePackageDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this package?</AlertDialogTitle>
           <AlertDialogDescription>
-            "{pkg.name}" will be removed. Lands currently linked to it will keep
-            their billing amounts but lose the package reference.
+            "{pkg.name}" will be removed. Lands currently linked to it will keep their billing
+            amounts but lose the package reference.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => del.mutate()}
-            disabled={del.isPending}
-          >
-            {del.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+          <AlertDialogAction onClick={() => del.mutate()} disabled={del.isPending}>
+            {del.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

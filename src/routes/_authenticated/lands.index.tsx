@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,8 @@ export const Route = createFileRoute("/_authenticated/lands/")({
 type Status = "all" | "active" | "disputed" | "leased";
 
 const PAGE_SIZE = 25;
+const ACRES_PER_PLOT = 0.16;
+const ACRES_PER_HECTARE = 2.471053814671653;
 
 function LandsPage() {
   const qc = useQueryClient();
@@ -81,6 +83,27 @@ function LandsPage() {
     },
   });
 
+  type RentPackageRow = {
+    id: string;
+    name: string;
+    land_type_id: string;
+    annual_amount: number;
+    active: boolean;
+  };
+
+  const rentPackages = useQuery({
+    queryKey: ["rent-packages-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rent_packages")
+        .select("id, name, land_type_id, annual_amount, active")
+        .eq("active", true)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as RentPackageRow[];
+    },
+  });
+
   const lands = useQuery({
     queryKey: ["lands", search, status, page],
     queryFn: async () => {
@@ -115,6 +138,7 @@ function LandsPage() {
     annual_rent_amount: "",
     notes: "",
     land_type_id: "",
+    rent_package_id: "",
   });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -169,12 +193,64 @@ function LandsPage() {
       annual_rent_amount: "",
       notes: "",
       land_type_id: "",
+      rent_package_id: "",
     });
   };
+
+  const sizeValueNum = useMemo(() => {
+    const raw = form.size_value.trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }, [form.size_value]);
+
+  const acres = useMemo(() => {
+    if (sizeValueNum == null) return null;
+    return form.size_unit === "hectares" ? sizeValueNum * ACRES_PER_HECTARE : sizeValueNum;
+  }, [form.size_unit, sizeValueNum]);
+
+  const plots = useMemo(() => {
+    if (acres == null) return null;
+    return acres / ACRES_PER_PLOT;
+  }, [acres]);
+
+  const selectedPackage = useMemo(() => {
+    if (!form.rent_package_id) return null;
+    return (rentPackages.data ?? []).find((p) => p.id === form.rent_package_id) ?? null;
+  }, [form.rent_package_id, rentPackages.data]);
+
+  const computedAnnualRent = useMemo(() => {
+    if (!selectedPackage || plots == null) return null;
+    const value = Number(selectedPackage.annual_amount) * plots;
+    return Math.round(value * 100) / 100;
+  }, [plots, selectedPackage]);
+
+  const formatInputNumber = (n: number, maxDecimals = 4) => {
+    const s = n.toFixed(maxDecimals);
+    return s.replace(/\.?0+$/, "");
+  };
+
+  useEffect(() => {
+    if (!form.rent_package_id || computedAnnualRent == null) return;
+    const next = formatInputNumber(computedAnnualRent, 2);
+    setForm((cur) =>
+      cur.annual_rent_amount === next ? cur : { ...cur, annual_rent_amount: next },
+    );
+  }, [computedAnnualRent, form.rent_package_id]);
+
+  useEffect(() => {
+    if (!form.land_type_id) return;
+    const options = (rentPackages.data ?? []).filter((p) => p.land_type_id === form.land_type_id);
+    if (options.length === 0) return;
+    setForm((cur) => (cur.rent_package_id ? cur : { ...cur, rent_package_id: options[0].id }));
+  }, [form.land_type_id, rentPackages.data]);
 
   const create = useMutation({
     mutationFn: async () => {
       if (!form.land_type_id) throw new Error("Land type is required");
+      if (!form.rent_package_id) throw new Error("Rent package is required");
+      if (sizeValueNum == null) throw new Error("Size is required");
+      if (computedAnnualRent == null) throw new Error("Annual rent could not be calculated");
       setUploadProgress({ current: 0, total: images.length, fileName: "", stage: "saving" });
       const payload = {
         plot_number: form.plot_number || null,
@@ -186,9 +262,10 @@ function LandsPage() {
         gps_lng: form.gps_lng ? Number(form.gps_lng) : null,
         status: form.status,
         current_owner_id: form.current_owner_id || null,
-        annual_rent_amount: form.annual_rent_amount ? Number(form.annual_rent_amount) : 0,
+        annual_rent_amount: computedAnnualRent,
         notes: form.notes || null,
         land_type_id: form.land_type_id,
+        rent_package_id: form.rent_package_id,
       };
       const { data: inserted, error } = await supabase
         .from("lands")
@@ -315,7 +392,7 @@ function LandsPage() {
                 value={form.family}
                 onChange={(v) => setForm({ ...form, family: v })}
               />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <FieldInput
                   label="Size"
                   value={form.size_value}
@@ -340,10 +417,29 @@ function LandsPage() {
                   </Select>
                 </div>
                 <FieldInput
+                  label="Plots"
+                  value={plots == null ? "" : formatInputNumber(plots)}
+                  onChange={(v) => {
+                    const raw = v.trim();
+                    if (!raw) {
+                      setForm({ ...form, size_value: "" });
+                      return;
+                    }
+                    const n = Number(raw);
+                    if (!Number.isFinite(n) || n < 0) return;
+                    const nextAcres = n * ACRES_PER_PLOT;
+                    const nextSize =
+                      form.size_unit === "hectares" ? nextAcres / ACRES_PER_HECTARE : nextAcres;
+                    setForm({ ...form, size_value: formatInputNumber(nextSize) });
+                  }}
+                  type="number"
+                />
+                <FieldInput
                   label="Annual rent (GHS)"
                   value={form.annual_rent_amount}
                   onChange={(v) => setForm({ ...form, annual_rent_amount: v })}
                   type="number"
+                  readOnly
                 />
               </div>
               <FieldInput
@@ -386,13 +482,27 @@ function LandsPage() {
                   <Label>Land type *</Label>
                   <SearchableSelect
                     value={form.land_type_id || undefined}
-                    onValueChange={(v) => setForm({ ...form, land_type_id: v })}
+                    onValueChange={(v) =>
+                      setForm({ ...form, land_type_id: v, rent_package_id: "" })
+                    }
                     placeholder="Select land type…"
                     searchPlaceholder="Search land types…"
                     options={(landTypes.data ?? []).map((t) => ({
                       value: t.id,
                       label: t.label,
                     }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Rent package *</Label>
+                  <SearchableSelect
+                    value={form.rent_package_id || undefined}
+                    onValueChange={(v) => setForm({ ...form, rent_package_id: v })}
+                    placeholder={form.land_type_id ? "Select package…" : "Select land type first…"}
+                    searchPlaceholder="Search packages…"
+                    options={(rentPackages.data ?? [])
+                      .filter((p) => p.land_type_id === form.land_type_id)
+                      .map((p) => ({ value: p.id, label: p.name }))}
                   />
                 </div>
                 <div className="space-y-1">
@@ -708,16 +818,23 @@ function FieldInput({
   value,
   onChange,
   type = "text",
+  readOnly,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} type={type} />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        type={type}
+        readOnly={readOnly}
+      />
     </div>
   );
 }

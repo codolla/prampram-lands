@@ -83,6 +83,11 @@ function ProfilePage() {
             email: email.trim(),
           });
           if (eErr) throw eErr;
+          const { error: profEmailErr } = await supabase
+            .from("profiles")
+            .update({ email: email.trim() })
+            .eq("id", user.id);
+          if (profEmailErr) throw profEmailErr;
         } else {
           // Just store the email in the profile for contact purposes.
           await supabase.from("profiles").update({ email: email.trim() }).eq("id", user.id);

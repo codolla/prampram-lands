@@ -74,8 +74,6 @@ export const resetSeedData = createServerFn({ method: "POST" })
     });
 
     // Land types — load active ones; insert defaults if empty.
-
-    // Land types — load active ones; insert defaults if empty.
     const { data: loadedTypes, error: typesErr } = await db
       .from("land_types")
       .select("id, name")
@@ -87,10 +85,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       const defaults = [
         { name: "residential", label: "Residential", sort_order: 1 },
         { name: "commercial", label: "Commercial", sort_order: 2 },
-        { name: "agricultural", label: "Agricultural", sort_order: 3 },
-        { name: "industrial", label: "Industrial", sort_order: 4 },
-        { name: "mixed_use", label: "Mixed Use", sort_order: 5 },
-        { name: "other", label: "Other", sort_order: 6 },
+        { name: "beach", label: "Beach", sort_order: 3 },
       ];
       const { data: inserted, error: insErr } = await db
         .from("land_types")
@@ -98,6 +93,22 @@ export const resetSeedData = createServerFn({ method: "POST" })
         .select("id, name");
       if (insErr) throw new Error(insErr.message);
       types = inserted ?? [];
+    } else {
+      const required = [
+        { name: "residential", label: "Residential", sort_order: 1 },
+        { name: "commercial", label: "Commercial", sort_order: 2 },
+        { name: "beach", label: "Beach", sort_order: 3 },
+      ];
+      const existing = new Set((types ?? []).map((t) => t.name));
+      const missing = required.filter((t) => !existing.has(t.name));
+      if (missing.length) {
+        const { data: inserted, error: insErr } = await db
+          .from("land_types")
+          .insert(missing)
+          .select("id, name");
+        if (insErr) throw new Error(insErr.message);
+        types = [...(types ?? []), ...(inserted ?? [])];
+      }
     }
 
     const typeId = (name: string) => {
@@ -106,22 +117,26 @@ export const resetSeedData = createServerFn({ method: "POST" })
       return t.id;
     };
 
-    // Rent packages (one per land type)
+    // Rent packages (rate per plot)
     const packageDefs = [
       { name: "Residential Standard", land_type_id: typeId("residential"), annual_amount: 250 },
-      { name: "Commercial Standard", land_type_id: typeId("commercial"), annual_amount: 1200 },
-      { name: "Agricultural Standard", land_type_id: typeId("agricultural"), annual_amount: 80 },
-      { name: "Industrial Standard", land_type_id: typeId("industrial"), annual_amount: 2500 },
-      { name: "Mixed Use Standard", land_type_id: typeId("mixed_use"), annual_amount: 600 },
-      { name: "Other Standard", land_type_id: typeId("other"), annual_amount: 150 },
+      { name: "Commercial Standard", land_type_id: typeId("commercial"), annual_amount: 400 },
+      { name: "Prime Commercial", land_type_id: typeId("commercial"), annual_amount: 600 },
+      { name: "Beach Standard", land_type_id: typeId("beach"), annual_amount: 700 },
     ];
     const { data: packages, error: pkgErr } = await db
       .from("rent_packages")
       .insert(packageDefs.map((p) => ({ ...p, active: true })))
-      .select("id, land_type_id, annual_amount");
+      .select("id, land_type_id, annual_amount, name");
     if (pkgErr) throw new Error(pkgErr.message);
-    const pkgFor = (ltId: string) => {
-      const p = packages!.find((x) => x.land_type_id === ltId);
+    const pkgFor = (ltId: string, pkgName?: string) => {
+      const byType = packages!.filter((x) => x.land_type_id === ltId);
+      if (byType.length === 0) throw new Error("Missing rent package");
+      if (pkgName) {
+        const match = byType.find((x) => x.name === pkgName);
+        if (match) return match;
+      }
+      const p = byType[0];
       if (!p) throw new Error("Missing rent package");
       return p;
     };
@@ -245,7 +260,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0005",
         plot: "C-21",
-        type: "agricultural",
+        type: "commercial",
         size: 5.0,
         loc: "Outskirts toward Dawhenya",
         lat: 5.725,
@@ -256,7 +271,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0006",
         plot: "C-22",
-        type: "agricultural",
+        type: "commercial",
         size: 8.0,
         loc: "Outskirts toward Dawhenya",
         lat: 5.726,
@@ -267,7 +282,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0007",
         plot: "D-01",
-        type: "industrial",
+        type: "commercial",
         size: 1.5,
         loc: "Industrial Zone East",
         lat: 5.71,
@@ -278,7 +293,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0008",
         plot: "D-02",
-        type: "industrial",
+        type: "commercial",
         size: 2.0,
         loc: "Industrial Zone East",
         lat: 5.7102,
@@ -289,7 +304,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0009",
         plot: "E-07",
-        type: "mixed_use",
+        type: "commercial",
         size: 0.75,
         loc: "High Street Mixed Block",
         lat: 5.717,
@@ -300,7 +315,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0010",
         plot: "E-08",
-        type: "mixed_use",
+        type: "commercial",
         size: 0.6,
         loc: "High Street Mixed Block",
         lat: 5.7172,
@@ -322,11 +337,12 @@ export const resetSeedData = createServerFn({ method: "POST" })
       {
         code: "PCLS-2024-0012",
         plot: "F-01",
-        type: "other",
-        size: 1.0,
-        loc: "Reserve area",
-        lat: 5.719,
-        lng: 0.127,
+        type: "beach",
+        pkgName: "Beach Standard",
+        size: 0.08,
+        loc: "Beach-front reserve",
+        lat: 5.7138,
+        lng: 0.1215,
         owner: 6,
         status: "disputed",
       },
@@ -336,7 +352,9 @@ export const resetSeedData = createServerFn({ method: "POST" })
 
     const landRows = lands.map((l, i) => {
       const ltId = typeId(l.type);
-      const pkg = pkgFor(ltId);
+      const pkg = pkgFor(ltId, (l as unknown as { pkgName?: string }).pkgName);
+      const plots = Number(l.size) / 0.16;
+      const annual = Math.round(Number(pkg.annual_amount) * plots * 100) / 100;
       return {
         id: `22222222-2222-2222-2222-2222222222${String(i + 1).padStart(2, "0")}`,
         land_code: l.code,
@@ -350,7 +368,7 @@ export const resetSeedData = createServerFn({ method: "POST" })
         gps_lng: l.lng,
         status: l.status as "active" | "leased" | "disputed",
         current_owner_id: ownerId(l.owner),
-        annual_rent_amount: pkg.annual_amount,
+        annual_rent_amount: annual,
       };
     });
     const { data: insertedLands, error: landErr } = await db
