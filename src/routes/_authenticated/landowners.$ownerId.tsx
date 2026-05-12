@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, ArrowLeft } from "lucide-react";
+import { Save, ArrowLeft, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { LandStatusBadge } from "@/components/StatusBadge";
 import { AvatarUpload } from "@/components/AvatarUpload";
@@ -163,11 +163,19 @@ function LandownerDetail() {
     <AppShell
       title={owner.data?.full_name ?? "Landowner"}
       actions={
-        <Button asChild variant="outline" size="sm">
-          <Link to="/landowners">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Back
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/landowners">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/lands" search={{ register: true, ownerId }}>
+              <Landmark className="mr-1 h-4 w-4" />
+              Register land
+            </Link>
+          </Button>
+        </div>
       }
     >
       <div className="grid gap-4 lg:grid-cols-3">

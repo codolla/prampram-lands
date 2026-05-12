@@ -19,7 +19,7 @@ import {
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Upload, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Upload, FileText, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { LandStatusBadge, BillStatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -28,6 +28,7 @@ import { useAuth } from "@/lib/auth";
 import { LandStaffAssignments } from "@/components/LandStaffAssignments";
 import { parseBoundaryFile } from "@/lib/boundary";
 import { Switch } from "@/components/ui/switch";
+import { getUserFacingErrorMessage } from "@/lib/utils";
 import {
   Carousel,
   CarouselContent,
@@ -297,7 +298,7 @@ function LandDetail() {
       qc.invalidateQueries({ queryKey: ["land-history", landId] });
       qc.invalidateQueries({ queryKey: ["lands"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const [polygon, setPolygon] = useState<LatLng[]>([]);
@@ -565,7 +566,7 @@ function LandDetail() {
             : `${normalizePoints(out).length} points loaded.`,
       });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const importBoundaryFile = async (file: File) => {
@@ -622,7 +623,7 @@ function LandDetail() {
       qc.invalidateQueries({ queryKey: ["land-coords", landId] });
       qc.invalidateQueries({ queryKey: ["map-lands"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   // Documents upload
@@ -656,7 +657,7 @@ function LandDetail() {
       qc.invalidateQueries({ queryKey: ["land-docs", landId] });
       if (fileRef.current) fileRef.current.value = "";
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const uploadPhotos = useMutation({
@@ -698,7 +699,7 @@ function LandDetail() {
       qc.invalidateQueries({ queryKey: ["land-docs", landId] });
       if (photosRef.current) photosRef.current.value = "";
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const deleteDoc = useMutation({
@@ -711,7 +712,7 @@ function LandDetail() {
       toast.success("Document deleted");
       qc.invalidateQueries({ queryKey: ["land-docs", landId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const downloadDoc = async (path: string) => {
@@ -777,16 +778,35 @@ function LandDetail() {
   const polygonForEditor = autoOrderPoints
     ? orderByAngle(normalizePoints(polygon))
     : normalizePoints(polygon);
+  const ownerId = (land.data?.landowners?.id ?? land.data?.current_owner_id ?? null) as
+    | string
+    | null;
 
   return (
     <AppShell
       title={land.data?.land_code ?? "Land"}
       actions={
-        <Button asChild variant="outline" size="sm">
-          <Link to="/lands">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Back
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/lands">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/landowners">
+              <Users className="mr-1 h-4 w-4" />
+              Landowners
+            </Link>
+          </Button>
+          {ownerId ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/landowners/$ownerId" params={{ ownerId }}>
+                <Users className="mr-1 h-4 w-4" />
+                Owner
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       }
     >
       <div className="flex items-center justify-between gap-4">

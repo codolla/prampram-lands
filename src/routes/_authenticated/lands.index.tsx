@@ -26,13 +26,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/SearchableSelect";
-import { Plus, Search, Landmark, X, ImagePlus } from "lucide-react";
+import { Plus, Search, Landmark, X, ImagePlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { LandStatusBadge } from "@/components/StatusBadge";
 import { formatCurrency } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
 import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
+import { getUserFacingErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/lands/")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -350,8 +351,8 @@ function LandsPage() {
         });
       }
     },
-    onError: (e: Error) => {
-      toast.error(e.message);
+    onError: (e: unknown) => {
+      toast.error(getUserFacingErrorMessage(e));
       setUploadProgress({ current: 0, total: 0, fileName: "", stage: "idle" });
     },
   });
@@ -366,282 +367,295 @@ function LandsPage() {
       qc.invalidateQueries({ queryKey: ["lands"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   return (
     <AppShell
       title="Lands"
       actions={
-        <Dialog
-          open={open}
-          onOpenChange={(v) => {
-            setOpen(v);
-            if (!v) resetForm();
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="mr-1 h-4 w-4" /> Register land
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Register a new land parcel</DialogTitle>
-              <DialogDescription>
-                You can add polygon coordinates from the land detail page after creation.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Land code</Label>
-                  <Input value="Auto-generated" readOnly disabled />
-                </div>
-                <FieldInput
-                  label="Plot number"
-                  value={form.plot_number}
-                  onChange={(v) => setForm({ ...form, plot_number: v })}
-                />
-              </div>
-              <FieldInput
-                label="Grantor/Family"
-                value={form.family}
-                onChange={(v) => setForm({ ...form, family: v })}
-              />
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <FieldInput
-                  label="Size"
-                  value={form.size_value}
-                  onChange={(v) => setForm({ ...form, size_value: v })}
-                  type="number"
-                />
-                <div className="space-y-1">
-                  <Label>Unit</Label>
-                  <Select
-                    value={form.size_unit}
-                    onValueChange={(v) =>
-                      setForm({ ...form, size_unit: v as typeof form.size_unit })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="acres">Acres</SelectItem>
-                      <SelectItem value="hectares">Hectares</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <FieldInput
-                  label="Plots"
-                  value={plots == null ? "" : formatInputNumber(plots)}
-                  onChange={(v) => {
-                    const raw = v.trim();
-                    if (!raw) {
-                      setForm({ ...form, size_value: "" });
-                      return;
-                    }
-                    const n = Number(raw);
-                    if (!Number.isFinite(n) || n < 0) return;
-                    const nextAcres = n * ACRES_PER_PLOT;
-                    const nextSize =
-                      form.size_unit === "hectares" ? nextAcres / ACRES_PER_HECTARE : nextAcres;
-                    setForm({ ...form, size_value: formatInputNumber(nextSize) });
-                  }}
-                  type="number"
-                />
-                <FieldInput
-                  label="Annual rent (GHS)"
-                  value={form.annual_rent_amount}
-                  onChange={(v) => setForm({ ...form, annual_rent_amount: v })}
-                  type="number"
-                  readOnly
-                />
-              </div>
-              <FieldInput
-                label="Location description"
-                value={form.location_description}
-                onChange={(v) => setForm({ ...form, location_description: v })}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <FieldInput
-                  label="GPS latitude"
-                  value={form.gps_lat}
-                  onChange={(v) => setForm({ ...form, gps_lat: v })}
-                  type="number"
-                />
-                <FieldInput
-                  label="GPS longitude"
-                  value={form.gps_lng}
-                  onChange={(v) => setForm({ ...form, gps_lng: v })}
-                  type="number"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Status</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="disputed">Disputed</SelectItem>
-                      <SelectItem value="leased">Leased</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label>Land type *</Label>
-                  <SearchableSelect
-                    value={form.land_type_id || undefined}
-                    onValueChange={(v) =>
-                      setForm({ ...form, land_type_id: v, rent_package_id: "" })
-                    }
-                    placeholder="Select land type…"
-                    searchPlaceholder="Search land types…"
-                    options={(landTypes.data ?? []).map((t) => ({
-                      value: t.id,
-                      label: t.label,
-                    }))}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>Rent package *</Label>
-                  <SearchableSelect
-                    value={form.rent_package_id || undefined}
-                    onValueChange={(v) => setForm({ ...form, rent_package_id: v })}
-                    placeholder={form.land_type_id ? "Select package…" : "Select land type first…"}
-                    searchPlaceholder="Search packages…"
-                    options={(rentPackages.data ?? [])
-                      .filter((p) => p.land_type_id === form.land_type_id)
-                      .map((p) => ({ value: p.id, label: p.name }))}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>Current owner</Label>
-                  <SearchableSelect
-                    value={form.current_owner_id || "__none__"}
-                    onValueChange={(v) =>
-                      setForm({ ...form, current_owner_id: v === "__none__" ? "" : v })
-                    }
-                    placeholder="Select…"
-                    searchPlaceholder="Search owners…"
-                    options={[
-                      { value: "__none__", label: "— Unassigned —" },
-                      ...(owners.data ?? []).map((o) => ({ value: o.id, label: o.full_name })),
-                    ]}
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label>Notes</Label>
-                <Textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Land photos (optional)</Label>
-                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground transition hover:bg-muted/50">
-                  <ImagePlus className="h-6 w-6" />
-                  <span>Click to add images (JPG/PNG, up to 10MB each)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      addImages(e.target.files);
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-                {previews.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {previews.map((src, i) => (
-                      <div
-                        key={src}
-                        className="group relative aspect-square overflow-hidden rounded-md border"
-                      >
-                        <img
-                          src={src}
-                          alt={images[i]?.name ?? "preview"}
-                          className="h-full w-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(i)}
-                          className="absolute right-1 top-1 rounded-full bg-background/90 p-1 opacity-0 shadow transition group-hover:opacity-100"
-                          aria-label="Remove image"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/landowners">
+              <Users className="mr-1 h-4 w-4" />
+              Landowners
+            </Link>
+          </Button>
+
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) resetForm();
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-1 h-4 w-4" /> Register land
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Register a new land parcel</DialogTitle>
+                <DialogDescription>
+                  You can add polygon coordinates from the land detail page after creation.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Land code</Label>
+                    <Input value="Auto-generated" readOnly disabled />
                   </div>
-                )}
-                {images.length > 0 && (
-                  <p className="text-xs text-muted-foreground">{images.length} image(s) selected</p>
-                )}
-              </div>
-            </div>
-            {create.isPending && (
-              <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium">
-                    {uploadProgress.stage === "saving" && "Saving land details…"}
-                    {uploadProgress.stage === "uploading" &&
-                      `Uploading photo ${uploadProgress.current + (uploadProgress.current < uploadProgress.total ? 1 : 0)} of ${uploadProgress.total}`}
-                    {uploadProgress.stage === "done" && "Finishing up…"}
-                    {uploadProgress.stage === "idle" && "Preparing…"}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {uploadProgress.total > 0
-                      ? `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%`
-                      : ""}
-                  </span>
+                  <FieldInput
+                    label="Plot number"
+                    value={form.plot_number}
+                    onChange={(v) => setForm({ ...form, plot_number: v })}
+                  />
                 </div>
-                <Progress
-                  value={
-                    uploadProgress.stage === "saving"
-                      ? 5
-                      : uploadProgress.stage === "done"
-                        ? 100
-                        : uploadProgress.total > 0
-                          ? (uploadProgress.current / uploadProgress.total) * 100
-                          : 50
-                  }
-                  className="h-1.5"
+                <FieldInput
+                  label="Grantor/Family"
+                  value={form.family}
+                  onChange={(v) => setForm({ ...form, family: v })}
                 />
-                {uploadProgress.fileName && uploadProgress.stage === "uploading" && (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {uploadProgress.fileName}
-                  </p>
-                )}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <FieldInput
+                    label="Size"
+                    value={form.size_value}
+                    onChange={(v) => setForm({ ...form, size_value: v })}
+                    type="number"
+                  />
+                  <div className="space-y-1">
+                    <Label>Unit</Label>
+                    <Select
+                      value={form.size_unit}
+                      onValueChange={(v) =>
+                        setForm({ ...form, size_unit: v as typeof form.size_unit })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="acres">Acres</SelectItem>
+                        <SelectItem value="hectares">Hectares</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FieldInput
+                    label="Plots"
+                    value={plots == null ? "" : formatInputNumber(plots)}
+                    onChange={(v) => {
+                      const raw = v.trim();
+                      if (!raw) {
+                        setForm({ ...form, size_value: "" });
+                        return;
+                      }
+                      const n = Number(raw);
+                      if (!Number.isFinite(n) || n < 0) return;
+                      const nextAcres = n * ACRES_PER_PLOT;
+                      const nextSize =
+                        form.size_unit === "hectares" ? nextAcres / ACRES_PER_HECTARE : nextAcres;
+                      setForm({ ...form, size_value: formatInputNumber(nextSize) });
+                    }}
+                    type="number"
+                  />
+                  <FieldInput
+                    label="Annual rent (GHS)"
+                    value={form.annual_rent_amount}
+                    onChange={(v) => setForm({ ...form, annual_rent_amount: v })}
+                    type="number"
+                    readOnly
+                  />
+                </div>
+                <FieldInput
+                  label="Location description"
+                  value={form.location_description}
+                  onChange={(v) => setForm({ ...form, location_description: v })}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <FieldInput
+                    label="GPS latitude"
+                    value={form.gps_lat}
+                    onChange={(v) => setForm({ ...form, gps_lat: v })}
+                    type="number"
+                  />
+                  <FieldInput
+                    label="GPS longitude"
+                    value={form.gps_lng}
+                    onChange={(v) => setForm({ ...form, gps_lng: v })}
+                    type="number"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Status</Label>
+                    <Select
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="disputed">Disputed</SelectItem>
+                        <SelectItem value="leased">Leased</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Land type *</Label>
+                    <SearchableSelect
+                      value={form.land_type_id || undefined}
+                      onValueChange={(v) =>
+                        setForm({ ...form, land_type_id: v, rent_package_id: "" })
+                      }
+                      placeholder="Select land type…"
+                      searchPlaceholder="Search land types…"
+                      options={(landTypes.data ?? []).map((t) => ({
+                        value: t.id,
+                        label: t.label,
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Rent package *</Label>
+                    <SearchableSelect
+                      value={form.rent_package_id || undefined}
+                      onValueChange={(v) => setForm({ ...form, rent_package_id: v })}
+                      placeholder={
+                        form.land_type_id ? "Select package…" : "Select land type first…"
+                      }
+                      searchPlaceholder="Search packages…"
+                      options={(rentPackages.data ?? [])
+                        .filter((p) => p.land_type_id === form.land_type_id)
+                        .map((p) => ({ value: p.id, label: p.name }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Current owner</Label>
+                    <SearchableSelect
+                      value={form.current_owner_id || "__none__"}
+                      onValueChange={(v) =>
+                        setForm({ ...form, current_owner_id: v === "__none__" ? "" : v })
+                      }
+                      placeholder="Select…"
+                      searchPlaceholder="Search owners…"
+                      options={[
+                        { value: "__none__", label: "— Unassigned —" },
+                        ...(owners.data ?? []).map((o) => ({ value: o.id, label: o.full_name })),
+                      ]}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Notes</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Land photos (optional)</Label>
+                  <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground transition hover:bg-muted/50">
+                    <ImagePlus className="h-6 w-6" />
+                    <span>Click to add images (JPG/PNG, up to 10MB each)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        addImages(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {previews.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {previews.map((src, i) => (
+                        <div
+                          key={src}
+                          className="group relative aspect-square overflow-hidden rounded-md border"
+                        >
+                          <img
+                            src={src}
+                            alt={images[i]?.name ?? "preview"}
+                            className="h-full w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute right-1 top-1 rounded-full bg-background/90 p-1 opacity-0 shadow transition group-hover:opacity-100"
+                            aria-label="Remove image"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {images.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {images.length} image(s) selected
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={() => create.mutate()} disabled={create.isPending}>
-                {create.isPending ? "Saving…" : "Register"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              {create.isPending && (
+                <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">
+                      {uploadProgress.stage === "saving" && "Saving land details…"}
+                      {uploadProgress.stage === "uploading" &&
+                        `Uploading photo ${uploadProgress.current + (uploadProgress.current < uploadProgress.total ? 1 : 0)} of ${uploadProgress.total}`}
+                      {uploadProgress.stage === "done" && "Finishing up…"}
+                      {uploadProgress.stage === "idle" && "Preparing…"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {uploadProgress.total > 0
+                        ? `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%`
+                        : ""}
+                    </span>
+                  </div>
+                  <Progress
+                    value={
+                      uploadProgress.stage === "saving"
+                        ? 5
+                        : uploadProgress.stage === "done"
+                          ? 100
+                          : uploadProgress.total > 0
+                            ? (uploadProgress.current / uploadProgress.total) * 100
+                            : 50
+                    }
+                    className="h-1.5"
+                  />
+                  {uploadProgress.fileName && uploadProgress.stage === "uploading" && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {uploadProgress.fileName}
+                    </p>
+                  )}
+                </div>
+              )}
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOpen(false);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={() => create.mutate()} disabled={create.isPending}>
+                  {create.isPending ? "Saving…" : "Register"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       }
     >
       <Card>

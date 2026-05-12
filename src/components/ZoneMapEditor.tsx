@@ -147,9 +147,6 @@ export function ZoneMapEditor({
   }, [existingZones, initial.length]);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative z-0 h-[480px] w-full rounded-md border border-border"
-    />
+    <div ref={containerRef} className="relative z-0 h-120 w-full rounded-md border border-border" />
   );
 }

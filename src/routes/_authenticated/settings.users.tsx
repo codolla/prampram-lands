@@ -49,7 +49,9 @@ export const Route = createFileRoute("/_authenticated/settings/users")({
   component: UsersPage,
 });
 
-const ROLES: AppRole[] = ["admin", "manager", "frontdesk", "staff", "finance", "developer"];
+type DbRole = Exclude<AppRole, "developer">;
+
+const ROLES: DbRole[] = ["admin", "manager", "frontdesk", "staff", "finance"];
 
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
@@ -161,18 +163,18 @@ function UsersPage() {
   });
 
   const toggleRole = useMutation({
-    mutationFn: async ({ userId, role, has }: { userId: string; role: AppRole; has: boolean }) => {
+    mutationFn: async ({ userId, role, has }: { userId: string; role: DbRole; has: boolean }) => {
       if (has) {
         const { error } = await supabase
           .from("user_roles")
           .delete()
           .eq("user_id", userId)
-          .eq("role", role as unknown as string);
+          .eq("role", role);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("user_roles")
-          .insert({ user_id: userId, role: role as unknown as string });
+          .insert({ user_id: userId, role });
         if (error) throw error;
       }
     },
@@ -268,7 +270,7 @@ function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Assign roles</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {ROLES.filter((r) => isDeveloper || r !== "developer").map((r) => {
+                            {ROLES.map((r) => {
                               const has = u.roles.includes(r);
                               return (
                                 <DropdownMenuCheckboxItem
@@ -455,7 +457,7 @@ function CreateUserDialog({ onCreated }: { onCreated: () => void }) {
           <div className="grid gap-2">
             <Label>Roles</Label>
             <div className="flex flex-wrap gap-3">
-              {ROLES.filter((r) => isDeveloper || r !== "developer").map((r) => (
+              {ROLES.map((r) => (
                 <label key={r} className="flex items-center gap-2 text-sm capitalize">
                   <Checkbox
                     checked={selectedRoles.includes(r)}

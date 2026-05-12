@@ -1,0 +1,4867 @@
+import {
+  DEFAULT_PROTOCOL_ALLOWLIST,
+  arraysEqual,
+  buildDevStylesUrl,
+  createControlledPromise,
+  decodePath,
+  deepEqual,
+  encodePathLikeUrl,
+  escapeHtml,
+  findLast,
+  functionalUpdate,
+  invariant,
+  isDangerousProtocol,
+  isModuleNotFoundError,
+  isNotFound,
+  isPlainArray,
+  isPlainObject,
+  isPromise,
+  isServer,
+  last,
+  notFound,
+  nullReplaceEqualDeep,
+  replaceEqualDeep
+} from "./chunk-SOMTTQOM.js";
+import {
+  createPlugin,
+  createStream
+} from "./chunk-ZCRLZXAQ.js";
+import "./chunk-PR4QN5HX.js";
+
+// node_modules/@tanstack/router-core/dist/esm/lru-cache.js
+function createLRUCache(max) {
+  const cache = /* @__PURE__ */ new Map();
+  let oldest;
+  let newest;
+  const touch = (entry) => {
+    if (!entry.next) return;
+    if (!entry.prev) {
+      entry.next.prev = void 0;
+      oldest = entry.next;
+      entry.next = void 0;
+      if (newest) {
+        entry.prev = newest;
+        newest.next = entry;
+      }
+    } else {
+      entry.prev.next = entry.next;
+      entry.next.prev = entry.prev;
+      entry.next = void 0;
+      if (newest) {
+        newest.next = entry;
+        entry.prev = newest;
+      }
+    }
+    newest = entry;
+  };
+  return {
+    get(key) {
+      const entry = cache.get(key);
+      if (!entry) return void 0;
+      touch(entry);
+      return entry.value;
+    },
+    set(key, value) {
+      if (cache.size >= max && oldest) {
+        const toDelete = oldest;
+        cache.delete(toDelete.key);
+        if (toDelete.next) {
+          oldest = toDelete.next;
+          toDelete.next.prev = void 0;
+        }
+        if (toDelete === newest) newest = void 0;
+      }
+      const existing = cache.get(key);
+      if (existing) {
+        existing.value = value;
+        touch(existing);
+      } else {
+        const entry = {
+          key,
+          value,
+          prev: newest
+        };
+        if (newest) newest.next = entry;
+        newest = entry;
+        if (!oldest) oldest = entry;
+        cache.set(key, entry);
+      }
+    },
+    clear() {
+      cache.clear();
+      oldest = void 0;
+      newest = void 0;
+    }
+  };
+}
+
+// node_modules/@tanstack/router-core/dist/esm/new-process-route-tree.js
+var SEGMENT_TYPE_INDEX = 4;
+var SEGMENT_TYPE_PATHLESS = 5;
+function getOpenAndCloseBraces(part) {
+  const openBrace = part.indexOf("{");
+  if (openBrace === -1) return null;
+  const closeBrace = part.indexOf("}", openBrace);
+  if (closeBrace === -1) return null;
+  if (openBrace + 1 >= part.length) return null;
+  return [openBrace, closeBrace];
+}
+function parseSegment(path, start, output = new Uint16Array(6)) {
+  const next = path.indexOf("/", start);
+  const end = next === -1 ? path.length : next;
+  const part = path.substring(start, end);
+  if (!part || !part.includes("$")) {
+    output[0] = 0;
+    output[1] = start;
+    output[2] = start;
+    output[3] = end;
+    output[4] = end;
+    output[5] = end;
+    return output;
+  }
+  if (part === "$") {
+    const total = path.length;
+    output[0] = 2;
+    output[1] = start;
+    output[2] = start;
+    output[3] = total;
+    output[4] = total;
+    output[5] = total;
+    return output;
+  }
+  if (part.charCodeAt(0) === 36) {
+    output[0] = 1;
+    output[1] = start;
+    output[2] = start + 1;
+    output[3] = end;
+    output[4] = end;
+    output[5] = end;
+    return output;
+  }
+  const braces = getOpenAndCloseBraces(part);
+  if (braces) {
+    const [openBrace, closeBrace] = braces;
+    const firstChar = part.charCodeAt(openBrace + 1);
+    if (firstChar === 45) {
+      if (openBrace + 2 < part.length && part.charCodeAt(openBrace + 2) === 36) {
+        const paramStart = openBrace + 3;
+        const paramEnd = closeBrace;
+        if (paramStart < paramEnd) {
+          output[0] = 3;
+          output[1] = start + openBrace;
+          output[2] = start + paramStart;
+          output[3] = start + paramEnd;
+          output[4] = start + closeBrace + 1;
+          output[5] = end;
+          return output;
+        }
+      }
+    } else if (firstChar === 36) {
+      const dollarPos = openBrace + 1;
+      const afterDollar = openBrace + 2;
+      if (afterDollar === closeBrace) {
+        output[0] = 2;
+        output[1] = start + openBrace;
+        output[2] = start + dollarPos;
+        output[3] = start + afterDollar;
+        output[4] = start + closeBrace + 1;
+        output[5] = path.length;
+        return output;
+      }
+      output[0] = 1;
+      output[1] = start + openBrace;
+      output[2] = start + afterDollar;
+      output[3] = start + closeBrace;
+      output[4] = start + closeBrace + 1;
+      output[5] = end;
+      return output;
+    }
+  }
+  output[0] = 0;
+  output[1] = start;
+  output[2] = start;
+  output[3] = end;
+  output[4] = end;
+  output[5] = end;
+  return output;
+}
+function parseSegments(defaultCaseSensitive, data, route, start, node, depth, onRoute) {
+  onRoute?.(route);
+  let cursor = start;
+  {
+    const path = route.fullPath ?? route.from;
+    const length = path.length;
+    const caseSensitive = route.options?.caseSensitive ?? defaultCaseSensitive;
+    const skipOnParamError = !!(route.options?.params?.parse && route.options?.skipRouteOnParseError?.params);
+    while (cursor < length) {
+      const segment = parseSegment(path, cursor, data);
+      let nextNode;
+      const start2 = cursor;
+      const end = segment[5];
+      cursor = end + 1;
+      depth++;
+      switch (segment[0]) {
+        case 0: {
+          const value = path.substring(segment[2], segment[3]);
+          if (caseSensitive) {
+            const existingNode = node.static?.get(value);
+            if (existingNode) nextNode = existingNode;
+            else {
+              node.static ??= /* @__PURE__ */ new Map();
+              const next = createStaticNode(route.fullPath ?? route.from);
+              next.parent = node;
+              next.depth = depth;
+              nextNode = next;
+              node.static.set(value, next);
+            }
+          } else {
+            const name = value.toLowerCase();
+            const existingNode = node.staticInsensitive?.get(name);
+            if (existingNode) nextNode = existingNode;
+            else {
+              node.staticInsensitive ??= /* @__PURE__ */ new Map();
+              const next = createStaticNode(route.fullPath ?? route.from);
+              next.parent = node;
+              next.depth = depth;
+              nextNode = next;
+              node.staticInsensitive.set(name, next);
+            }
+          }
+          break;
+        }
+        case 1: {
+          const prefix_raw = path.substring(start2, segment[1]);
+          const suffix_raw = path.substring(segment[4], end);
+          const actuallyCaseSensitive = caseSensitive && !!(prefix_raw || suffix_raw);
+          const prefix = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
+          const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
+          const existingNode = !skipOnParamError && node.dynamic?.find((s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix && s.suffix === suffix);
+          if (existingNode) nextNode = existingNode;
+          else {
+            const next = createDynamicNode(1, route.fullPath ?? route.from, actuallyCaseSensitive, prefix, suffix);
+            nextNode = next;
+            next.depth = depth;
+            next.parent = node;
+            node.dynamic ??= [];
+            node.dynamic.push(next);
+          }
+          break;
+        }
+        case 3: {
+          const prefix_raw = path.substring(start2, segment[1]);
+          const suffix_raw = path.substring(segment[4], end);
+          const actuallyCaseSensitive = caseSensitive && !!(prefix_raw || suffix_raw);
+          const prefix = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
+          const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
+          const existingNode = !skipOnParamError && node.optional?.find((s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix && s.suffix === suffix);
+          if (existingNode) nextNode = existingNode;
+          else {
+            const next = createDynamicNode(3, route.fullPath ?? route.from, actuallyCaseSensitive, prefix, suffix);
+            nextNode = next;
+            next.parent = node;
+            next.depth = depth;
+            node.optional ??= [];
+            node.optional.push(next);
+          }
+          break;
+        }
+        case 2: {
+          const prefix_raw = path.substring(start2, segment[1]);
+          const suffix_raw = path.substring(segment[4], end);
+          const actuallyCaseSensitive = caseSensitive && !!(prefix_raw || suffix_raw);
+          const prefix = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
+          const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
+          const next = createDynamicNode(2, route.fullPath ?? route.from, actuallyCaseSensitive, prefix, suffix);
+          nextNode = next;
+          next.parent = node;
+          next.depth = depth;
+          node.wildcard ??= [];
+          node.wildcard.push(next);
+        }
+      }
+      node = nextNode;
+    }
+    if (skipOnParamError && route.children && !route.isRoot && route.id && route.id.charCodeAt(route.id.lastIndexOf("/") + 1) === 95) {
+      const pathlessNode = createStaticNode(route.fullPath ?? route.from);
+      pathlessNode.kind = SEGMENT_TYPE_PATHLESS;
+      pathlessNode.parent = node;
+      depth++;
+      pathlessNode.depth = depth;
+      node.pathless ??= [];
+      node.pathless.push(pathlessNode);
+      node = pathlessNode;
+    }
+    const isLeaf = (route.path || !route.children) && !route.isRoot;
+    if (isLeaf && path.endsWith("/")) {
+      const indexNode = createStaticNode(route.fullPath ?? route.from);
+      indexNode.kind = SEGMENT_TYPE_INDEX;
+      indexNode.parent = node;
+      depth++;
+      indexNode.depth = depth;
+      node.index = indexNode;
+      node = indexNode;
+    }
+    node.parse = route.options?.params?.parse ?? null;
+    node.skipOnParamError = skipOnParamError;
+    node.parsingPriority = route.options?.skipRouteOnParseError?.priority ?? 0;
+    if (isLeaf && !node.route) {
+      node.route = route;
+      node.fullPath = route.fullPath ?? route.from;
+    }
+  }
+  if (route.children) for (const child of route.children) parseSegments(defaultCaseSensitive, data, child, cursor, node, depth, onRoute);
+}
+function sortDynamic(a, b) {
+  if (a.skipOnParamError && !b.skipOnParamError) return -1;
+  if (!a.skipOnParamError && b.skipOnParamError) return 1;
+  if (a.skipOnParamError && b.skipOnParamError && (a.parsingPriority || b.parsingPriority)) return b.parsingPriority - a.parsingPriority;
+  if (a.prefix && b.prefix && a.prefix !== b.prefix) {
+    if (a.prefix.startsWith(b.prefix)) return -1;
+    if (b.prefix.startsWith(a.prefix)) return 1;
+  }
+  if (a.suffix && b.suffix && a.suffix !== b.suffix) {
+    if (a.suffix.endsWith(b.suffix)) return -1;
+    if (b.suffix.endsWith(a.suffix)) return 1;
+  }
+  if (a.prefix && !b.prefix) return -1;
+  if (!a.prefix && b.prefix) return 1;
+  if (a.suffix && !b.suffix) return -1;
+  if (!a.suffix && b.suffix) return 1;
+  if (a.caseSensitive && !b.caseSensitive) return -1;
+  if (!a.caseSensitive && b.caseSensitive) return 1;
+  return 0;
+}
+function sortTreeNodes(node) {
+  if (node.pathless) for (const child of node.pathless) sortTreeNodes(child);
+  if (node.static) for (const child of node.static.values()) sortTreeNodes(child);
+  if (node.staticInsensitive) for (const child of node.staticInsensitive.values()) sortTreeNodes(child);
+  if (node.dynamic?.length) {
+    node.dynamic.sort(sortDynamic);
+    for (const child of node.dynamic) sortTreeNodes(child);
+  }
+  if (node.optional?.length) {
+    node.optional.sort(sortDynamic);
+    for (const child of node.optional) sortTreeNodes(child);
+  }
+  if (node.wildcard?.length) {
+    node.wildcard.sort(sortDynamic);
+    for (const child of node.wildcard) sortTreeNodes(child);
+  }
+}
+function createStaticNode(fullPath) {
+  return {
+    kind: 0,
+    depth: 0,
+    pathless: null,
+    index: null,
+    static: null,
+    staticInsensitive: null,
+    dynamic: null,
+    optional: null,
+    wildcard: null,
+    route: null,
+    fullPath,
+    parent: null,
+    parse: null,
+    skipOnParamError: false,
+    parsingPriority: 0
+  };
+}
+function createDynamicNode(kind, fullPath, caseSensitive, prefix, suffix) {
+  return {
+    kind,
+    depth: 0,
+    pathless: null,
+    index: null,
+    static: null,
+    staticInsensitive: null,
+    dynamic: null,
+    optional: null,
+    wildcard: null,
+    route: null,
+    fullPath,
+    parent: null,
+    parse: null,
+    skipOnParamError: false,
+    parsingPriority: 0,
+    caseSensitive,
+    prefix,
+    suffix
+  };
+}
+function processRouteMasks(routeList, processedTree) {
+  const segmentTree = createStaticNode("/");
+  const data = new Uint16Array(6);
+  for (const route of routeList) parseSegments(false, data, route, 1, segmentTree, 0);
+  sortTreeNodes(segmentTree);
+  processedTree.masksTree = segmentTree;
+  processedTree.flatCache = createLRUCache(1e3);
+}
+function findFlatMatch(path, processedTree) {
+  path ||= "/";
+  const cached = processedTree.flatCache.get(path);
+  if (cached) return cached;
+  const result = findMatch(path, processedTree.masksTree);
+  processedTree.flatCache.set(path, result);
+  return result;
+}
+function findSingleMatch(from, caseSensitive, fuzzy, path, processedTree) {
+  from ||= "/";
+  path ||= "/";
+  const key = caseSensitive ? `case\0${from}` : from;
+  let tree = processedTree.singleCache.get(key);
+  if (!tree) {
+    tree = createStaticNode("/");
+    parseSegments(caseSensitive, new Uint16Array(6), { from }, 1, tree, 0);
+    processedTree.singleCache.set(key, tree);
+  }
+  return findMatch(path, tree, fuzzy);
+}
+function findRouteMatch(path, processedTree, fuzzy = false) {
+  const key = fuzzy ? path : `nofuzz\0${path}`;
+  const cached = processedTree.matchCache.get(key);
+  if (cached !== void 0) return cached;
+  path ||= "/";
+  let result;
+  try {
+    result = findMatch(path, processedTree.segmentTree, fuzzy);
+  } catch (err) {
+    if (err instanceof URIError) result = null;
+    else throw err;
+  }
+  if (result) result.branch = buildRouteBranch(result.route);
+  processedTree.matchCache.set(key, result);
+  return result;
+}
+function trimPathRight(path) {
+  return path === "/" ? path : path.replace(/\/{1,}$/, "");
+}
+function processRouteTree(routeTree, caseSensitive = false, initRoute) {
+  const segmentTree = createStaticNode(routeTree.fullPath);
+  const data = new Uint16Array(6);
+  const routesById = {};
+  const routesByPath = {};
+  let index = 0;
+  parseSegments(caseSensitive, data, routeTree, 1, segmentTree, 0, (route) => {
+    initRoute?.(route, index);
+    if (route.id in routesById) {
+      if (true) throw new Error(`Invariant failed: Duplicate routes found with id: ${String(route.id)}`);
+      invariant();
+    }
+    routesById[route.id] = route;
+    if (index !== 0 && route.path) {
+      const trimmedFullPath = trimPathRight(route.fullPath);
+      if (!routesByPath[trimmedFullPath] || route.fullPath.endsWith("/")) routesByPath[trimmedFullPath] = route;
+    }
+    index++;
+  });
+  sortTreeNodes(segmentTree);
+  return {
+    processedTree: {
+      segmentTree,
+      singleCache: createLRUCache(1e3),
+      matchCache: createLRUCache(1e3),
+      flatCache: null,
+      masksTree: null
+    },
+    routesById,
+    routesByPath
+  };
+}
+function findMatch(path, segmentTree, fuzzy = false) {
+  const parts = path.split("/");
+  const leaf = getNodeMatch(path, parts, segmentTree, fuzzy);
+  if (!leaf) return null;
+  const [rawParams] = extractParams(path, parts, leaf);
+  return {
+    route: leaf.node.route,
+    rawParams,
+    parsedParams: leaf.parsedParams
+  };
+}
+function extractParams(path, parts, leaf) {
+  const list = buildBranch(leaf.node);
+  let nodeParts = null;
+  const rawParams = /* @__PURE__ */ Object.create(null);
+  let partIndex = leaf.extract?.part ?? 0;
+  let nodeIndex = leaf.extract?.node ?? 0;
+  let pathIndex = leaf.extract?.path ?? 0;
+  let segmentCount = leaf.extract?.segment ?? 0;
+  for (; nodeIndex < list.length; partIndex++, nodeIndex++, pathIndex++, segmentCount++) {
+    const node = list[nodeIndex];
+    if (node.kind === SEGMENT_TYPE_INDEX) break;
+    if (node.kind === SEGMENT_TYPE_PATHLESS) {
+      segmentCount--;
+      partIndex--;
+      pathIndex--;
+      continue;
+    }
+    const part = parts[partIndex];
+    const currentPathIndex = pathIndex;
+    if (part) pathIndex += part.length;
+    if (node.kind === 1) {
+      nodeParts ??= leaf.node.fullPath.split("/");
+      const nodePart = nodeParts[segmentCount];
+      const preLength = node.prefix?.length ?? 0;
+      if (nodePart.charCodeAt(preLength) === 123) {
+        const sufLength = node.suffix?.length ?? 0;
+        const name = nodePart.substring(preLength + 2, nodePart.length - sufLength - 1);
+        const value = part.substring(preLength, part.length - sufLength);
+        rawParams[name] = decodeURIComponent(value);
+      } else {
+        const name = nodePart.substring(1);
+        rawParams[name] = decodeURIComponent(part);
+      }
+    } else if (node.kind === 3) {
+      if (leaf.skipped & 1 << nodeIndex) {
+        partIndex--;
+        pathIndex = currentPathIndex - 1;
+        continue;
+      }
+      nodeParts ??= leaf.node.fullPath.split("/");
+      const nodePart = nodeParts[segmentCount];
+      const preLength = node.prefix?.length ?? 0;
+      const sufLength = node.suffix?.length ?? 0;
+      const name = nodePart.substring(preLength + 3, nodePart.length - sufLength - 1);
+      const value = node.suffix || node.prefix ? part.substring(preLength, part.length - sufLength) : part;
+      if (value) rawParams[name] = decodeURIComponent(value);
+    } else if (node.kind === 2) {
+      const n = node;
+      const value = path.substring(currentPathIndex + (n.prefix?.length ?? 0), path.length - (n.suffix?.length ?? 0));
+      const splat = decodeURIComponent(value);
+      rawParams["*"] = splat;
+      rawParams._splat = splat;
+      break;
+    }
+  }
+  if (leaf.rawParams) Object.assign(rawParams, leaf.rawParams);
+  return [rawParams, {
+    part: partIndex,
+    node: nodeIndex,
+    path: pathIndex,
+    segment: segmentCount
+  }];
+}
+function buildRouteBranch(route) {
+  const list = [route];
+  while (route.parentRoute) {
+    route = route.parentRoute;
+    list.push(route);
+  }
+  list.reverse();
+  return list;
+}
+function buildBranch(node) {
+  const list = Array(node.depth + 1);
+  do {
+    list[node.depth] = node;
+    node = node.parent;
+  } while (node);
+  return list;
+}
+function getNodeMatch(path, parts, segmentTree, fuzzy) {
+  if (path === "/" && segmentTree.index) return {
+    node: segmentTree.index,
+    skipped: 0
+  };
+  const trailingSlash = !last(parts);
+  const pathIsIndex = trailingSlash && path !== "/";
+  const partsLength = parts.length - (trailingSlash ? 1 : 0);
+  const stack = [{
+    node: segmentTree,
+    index: 1,
+    skipped: 0,
+    depth: 1,
+    statics: 1,
+    dynamics: 0,
+    optionals: 0
+  }];
+  let wildcardMatch = null;
+  let bestFuzzy = null;
+  let bestMatch = null;
+  while (stack.length) {
+    const frame = stack.pop();
+    const { node, index, skipped, depth, statics, dynamics, optionals } = frame;
+    let { extract, rawParams, parsedParams } = frame;
+    if (node.skipOnParamError) {
+      if (!validateMatchParams(path, parts, frame)) continue;
+      rawParams = frame.rawParams;
+      extract = frame.extract;
+      parsedParams = frame.parsedParams;
+    }
+    if (fuzzy && node.route && node.kind !== SEGMENT_TYPE_INDEX && isFrameMoreSpecific(bestFuzzy, frame)) bestFuzzy = frame;
+    const isBeyondPath = index === partsLength;
+    if (isBeyondPath) {
+      if (node.route && !pathIsIndex && isFrameMoreSpecific(bestMatch, frame)) bestMatch = frame;
+      if (!node.optional && !node.wildcard && !node.index && !node.pathless) continue;
+    }
+    const part = isBeyondPath ? void 0 : parts[index];
+    let lowerPart;
+    if (isBeyondPath && node.index) {
+      const indexFrame = {
+        node: node.index,
+        index,
+        skipped,
+        depth: depth + 1,
+        statics,
+        dynamics,
+        optionals,
+        extract,
+        rawParams,
+        parsedParams
+      };
+      let indexValid = true;
+      if (node.index.skipOnParamError) {
+        if (!validateMatchParams(path, parts, indexFrame)) indexValid = false;
+      }
+      if (indexValid) {
+        if (statics === partsLength && !dynamics && !optionals && !skipped) return indexFrame;
+        if (isFrameMoreSpecific(bestMatch, indexFrame)) bestMatch = indexFrame;
+      }
+    }
+    if (node.wildcard && isFrameMoreSpecific(wildcardMatch, frame)) for (const segment of node.wildcard) {
+      const { prefix, suffix } = segment;
+      if (prefix) {
+        if (isBeyondPath) continue;
+        if (!(segment.caseSensitive ? part : lowerPart ??= part.toLowerCase()).startsWith(prefix)) continue;
+      }
+      if (suffix) {
+        if (isBeyondPath) continue;
+        const end = parts.slice(index).join("/").slice(-suffix.length);
+        if ((segment.caseSensitive ? end : end.toLowerCase()) !== suffix) continue;
+      }
+      const frame2 = {
+        node: segment,
+        index: partsLength,
+        skipped,
+        depth,
+        statics,
+        dynamics,
+        optionals,
+        extract,
+        rawParams,
+        parsedParams
+      };
+      if (segment.skipOnParamError) {
+        if (!validateMatchParams(path, parts, frame2)) continue;
+      }
+      wildcardMatch = frame2;
+      break;
+    }
+    if (node.optional) {
+      const nextSkipped = skipped | 1 << depth;
+      const nextDepth = depth + 1;
+      for (let i = node.optional.length - 1; i >= 0; i--) {
+        const segment = node.optional[i];
+        stack.push({
+          node: segment,
+          index,
+          skipped: nextSkipped,
+          depth: nextDepth,
+          statics,
+          dynamics,
+          optionals,
+          extract,
+          rawParams,
+          parsedParams
+        });
+      }
+      if (!isBeyondPath) for (let i = node.optional.length - 1; i >= 0; i--) {
+        const segment = node.optional[i];
+        const { prefix, suffix } = segment;
+        if (prefix || suffix) {
+          const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
+          if (prefix && !casePart.startsWith(prefix)) continue;
+          if (suffix && !casePart.endsWith(suffix)) continue;
+        }
+        stack.push({
+          node: segment,
+          index: index + 1,
+          skipped,
+          depth: nextDepth,
+          statics,
+          dynamics,
+          optionals: optionals + 1,
+          extract,
+          rawParams,
+          parsedParams
+        });
+      }
+    }
+    if (!isBeyondPath && node.dynamic && part) for (let i = node.dynamic.length - 1; i >= 0; i--) {
+      const segment = node.dynamic[i];
+      const { prefix, suffix } = segment;
+      if (prefix || suffix) {
+        const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
+        if (prefix && !casePart.startsWith(prefix)) continue;
+        if (suffix && !casePart.endsWith(suffix)) continue;
+      }
+      stack.push({
+        node: segment,
+        index: index + 1,
+        skipped,
+        depth: depth + 1,
+        statics,
+        dynamics: dynamics + 1,
+        optionals,
+        extract,
+        rawParams,
+        parsedParams
+      });
+    }
+    if (!isBeyondPath && node.staticInsensitive) {
+      const match = node.staticInsensitive.get(lowerPart ??= part.toLowerCase());
+      if (match) stack.push({
+        node: match,
+        index: index + 1,
+        skipped,
+        depth: depth + 1,
+        statics: statics + 1,
+        dynamics,
+        optionals,
+        extract,
+        rawParams,
+        parsedParams
+      });
+    }
+    if (!isBeyondPath && node.static) {
+      const match = node.static.get(part);
+      if (match) stack.push({
+        node: match,
+        index: index + 1,
+        skipped,
+        depth: depth + 1,
+        statics: statics + 1,
+        dynamics,
+        optionals,
+        extract,
+        rawParams,
+        parsedParams
+      });
+    }
+    if (node.pathless) {
+      const nextDepth = depth + 1;
+      for (let i = node.pathless.length - 1; i >= 0; i--) {
+        const segment = node.pathless[i];
+        stack.push({
+          node: segment,
+          index,
+          skipped,
+          depth: nextDepth,
+          statics,
+          dynamics,
+          optionals,
+          extract,
+          rawParams,
+          parsedParams
+        });
+      }
+    }
+  }
+  if (bestMatch && wildcardMatch) return isFrameMoreSpecific(wildcardMatch, bestMatch) ? bestMatch : wildcardMatch;
+  if (bestMatch) return bestMatch;
+  if (wildcardMatch) return wildcardMatch;
+  if (fuzzy && bestFuzzy) {
+    let sliceIndex = bestFuzzy.index;
+    for (let i = 0; i < bestFuzzy.index; i++) sliceIndex += parts[i].length;
+    const splat = sliceIndex === path.length ? "/" : path.slice(sliceIndex);
+    bestFuzzy.rawParams ??= /* @__PURE__ */ Object.create(null);
+    bestFuzzy.rawParams["**"] = decodeURIComponent(splat);
+    return bestFuzzy;
+  }
+  return null;
+}
+function validateMatchParams(path, parts, frame) {
+  try {
+    const [rawParams, state] = extractParams(path, parts, frame);
+    frame.rawParams = rawParams;
+    frame.extract = state;
+    const parsed = frame.node.parse(rawParams);
+    frame.parsedParams = Object.assign(/* @__PURE__ */ Object.create(null), frame.parsedParams, parsed);
+    return true;
+  } catch {
+    return null;
+  }
+}
+function isFrameMoreSpecific(prev, next) {
+  if (!prev) return true;
+  return next.statics > prev.statics || next.statics === prev.statics && (next.dynamics > prev.dynamics || next.dynamics === prev.dynamics && (next.optionals > prev.optionals || next.optionals === prev.optionals && ((next.node.kind === SEGMENT_TYPE_INDEX) > (prev.node.kind === SEGMENT_TYPE_INDEX) || next.node.kind === SEGMENT_TYPE_INDEX === (prev.node.kind === SEGMENT_TYPE_INDEX) && next.depth > prev.depth)));
+}
+
+// node_modules/@tanstack/router-core/dist/esm/path.js
+function joinPaths(paths) {
+  return cleanPath(paths.filter((val) => {
+    return val !== void 0;
+  }).join("/"));
+}
+function cleanPath(path) {
+  return path.replace(/\/{2,}/g, "/");
+}
+function trimPathLeft(path) {
+  return path === "/" ? path : path.replace(/^\/{1,}/, "");
+}
+function trimPathRight2(path) {
+  const len = path.length;
+  return len > 1 && path[len - 1] === "/" ? path.replace(/\/{1,}$/, "") : path;
+}
+function trimPath(path) {
+  return trimPathRight2(trimPathLeft(path));
+}
+function removeTrailingSlash(value, basepath) {
+  if (value?.endsWith("/") && value !== "/" && value !== `${basepath}/`) return value.slice(0, -1);
+  return value;
+}
+function exactPathTest(pathName1, pathName2, basepath) {
+  return removeTrailingSlash(pathName1, basepath) === removeTrailingSlash(pathName2, basepath);
+}
+function resolvePath({ base, to, trailingSlash = "never", cache }) {
+  const isAbsolute = to.startsWith("/");
+  const isBase = !isAbsolute && to === ".";
+  let key;
+  if (cache) {
+    key = isAbsolute ? to : isBase ? base : base + "\0" + to;
+    const cached = cache.get(key);
+    if (cached) return cached;
+  }
+  let baseSegments;
+  if (isBase) baseSegments = base.split("/");
+  else if (isAbsolute) baseSegments = to.split("/");
+  else {
+    baseSegments = base.split("/");
+    while (baseSegments.length > 1 && last(baseSegments) === "") baseSegments.pop();
+    const toSegments = to.split("/");
+    for (let index = 0, length = toSegments.length; index < length; index++) {
+      const value = toSegments[index];
+      if (value === "") {
+        if (!index) baseSegments = [value];
+        else if (index === length - 1) baseSegments.push(value);
+      } else if (value === "..") baseSegments.pop();
+      else if (value === ".") {
+      } else baseSegments.push(value);
+    }
+  }
+  if (baseSegments.length > 1) {
+    if (last(baseSegments) === "") {
+      if (trailingSlash === "never") baseSegments.pop();
+    } else if (trailingSlash === "always") baseSegments.push("");
+  }
+  let segment;
+  let joined = "";
+  for (let i = 0; i < baseSegments.length; i++) {
+    if (i > 0) joined += "/";
+    const part = baseSegments[i];
+    if (!part) continue;
+    segment = parseSegment(part, 0, segment);
+    const kind = segment[0];
+    if (kind === 0) {
+      joined += part;
+      continue;
+    }
+    const end = segment[5];
+    const prefix = part.substring(0, segment[1]);
+    const suffix = part.substring(segment[4], end);
+    const value = part.substring(segment[2], segment[3]);
+    if (kind === 1) joined += prefix || suffix ? `${prefix}{$${value}}${suffix}` : `$${value}`;
+    else if (kind === 2) joined += prefix || suffix ? `${prefix}{$}${suffix}` : "$";
+    else joined += `${prefix}{-$${value}}${suffix}`;
+  }
+  joined = cleanPath(joined);
+  const result = joined || "/";
+  if (key && cache) cache.set(key, result);
+  return result;
+}
+function compileDecodeCharMap(pathParamsAllowedCharacters) {
+  const charMap = new Map(pathParamsAllowedCharacters.map((char) => [encodeURIComponent(char), char]));
+  const pattern = Array.from(charMap.keys()).map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const regex = new RegExp(pattern, "g");
+  return (encoded) => encoded.replace(regex, (match) => charMap.get(match) ?? match);
+}
+function encodeParam(key, params, decoder) {
+  const value = params[key];
+  if (typeof value !== "string") return value;
+  if (key === "_splat") {
+    if (/^[a-zA-Z0-9\-._~!/]*$/.test(value)) return value;
+    return value.split("/").map((segment) => encodePathParam(segment, decoder)).join("/");
+  } else return encodePathParam(value, decoder);
+}
+function interpolatePath({ path, params, decoder, ...rest }) {
+  let isMissingParams = false;
+  const usedParams = /* @__PURE__ */ Object.create(null);
+  if (!path || path === "/") return {
+    interpolatedPath: "/",
+    usedParams,
+    isMissingParams
+  };
+  if (!path.includes("$")) return {
+    interpolatedPath: path,
+    usedParams,
+    isMissingParams
+  };
+  if (isServer ?? rest.server) {
+    if (path.indexOf("{") === -1) {
+      const length2 = path.length;
+      let cursor2 = 0;
+      let joined2 = "";
+      while (cursor2 < length2) {
+        while (cursor2 < length2 && path.charCodeAt(cursor2) === 47) cursor2++;
+        if (cursor2 >= length2) break;
+        const start = cursor2;
+        let end = path.indexOf("/", cursor2);
+        if (end === -1) end = length2;
+        cursor2 = end;
+        const part = path.substring(start, end);
+        if (!part) continue;
+        if (part.charCodeAt(0) === 36) if (part.length === 1) {
+          const splat = params._splat;
+          usedParams._splat = splat;
+          usedParams["*"] = splat;
+          if (!splat) {
+            isMissingParams = true;
+            continue;
+          }
+          const value = encodeParam("_splat", params, decoder);
+          joined2 += "/" + value;
+        } else {
+          const key = part.substring(1);
+          if (!isMissingParams && !(key in params)) isMissingParams = true;
+          usedParams[key] = params[key];
+          const value = encodeParam(key, params, decoder) ?? "undefined";
+          joined2 += "/" + value;
+        }
+        else joined2 += "/" + part;
+      }
+      if (path.endsWith("/")) joined2 += "/";
+      return {
+        usedParams,
+        interpolatedPath: joined2 || "/",
+        isMissingParams
+      };
+    }
+  }
+  const length = path.length;
+  let cursor = 0;
+  let segment;
+  let joined = "";
+  while (cursor < length) {
+    const start = cursor;
+    segment = parseSegment(path, start, segment);
+    const end = segment[5];
+    cursor = end + 1;
+    if (start === end) continue;
+    const kind = segment[0];
+    if (kind === 0) {
+      joined += "/" + path.substring(start, end);
+      continue;
+    }
+    if (kind === 2) {
+      const splat = params._splat;
+      usedParams._splat = splat;
+      usedParams["*"] = splat;
+      const prefix = path.substring(start, segment[1]);
+      const suffix = path.substring(segment[4], end);
+      if (!splat) {
+        isMissingParams = true;
+        if (prefix || suffix) joined += "/" + prefix + suffix;
+        continue;
+      }
+      const value = encodeParam("_splat", params, decoder);
+      joined += "/" + prefix + value + suffix;
+      continue;
+    }
+    if (kind === 1) {
+      const key = path.substring(segment[2], segment[3]);
+      if (!isMissingParams && !(key in params)) isMissingParams = true;
+      usedParams[key] = params[key];
+      const prefix = path.substring(start, segment[1]);
+      const suffix = path.substring(segment[4], end);
+      const value = encodeParam(key, params, decoder) ?? "undefined";
+      joined += "/" + prefix + value + suffix;
+      continue;
+    }
+    if (kind === 3) {
+      const key = path.substring(segment[2], segment[3]);
+      const valueRaw = params[key];
+      if (valueRaw == null) continue;
+      usedParams[key] = valueRaw;
+      const prefix = path.substring(start, segment[1]);
+      const suffix = path.substring(segment[4], end);
+      const value = encodeParam(key, params, decoder) ?? "";
+      joined += "/" + prefix + value + suffix;
+      continue;
+    }
+  }
+  if (path.endsWith("/")) joined += "/";
+  return {
+    usedParams,
+    interpolatedPath: joined || "/",
+    isMissingParams
+  };
+}
+function encodePathParam(value, decoder) {
+  const encoded = encodeURIComponent(value);
+  return decoder?.(encoded) ?? encoded;
+}
+
+// node_modules/@tanstack/router-core/dist/esm/scroll-restoration.js
+function getSafeSessionStorage() {
+  try {
+    return typeof window !== "undefined" && typeof window.sessionStorage === "object" ? window.sessionStorage : void 0;
+  } catch {
+    return;
+  }
+}
+var storageKey = "tsr-scroll-restoration-v1_3";
+function createScrollRestorationCache() {
+  const safeSessionStorage = getSafeSessionStorage();
+  if (!safeSessionStorage) return null;
+  let state = {};
+  try {
+    const parsed = JSON.parse(safeSessionStorage.getItem("tsr-scroll-restoration-v1_3") || "{}");
+    if (isPlainObject(parsed)) state = parsed;
+  } catch {
+  }
+  const persist = () => {
+    try {
+      safeSessionStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      if (true) console.warn("[ts-router] Could not persist scroll restoration state to sessionStorage.");
+    }
+  };
+  return {
+    get state() {
+      return state;
+    },
+    set: (updater) => {
+      state = functionalUpdate(updater, state) || state;
+    },
+    persist
+  };
+}
+var scrollRestorationCache = createScrollRestorationCache();
+var defaultGetScrollRestorationKey = (location) => {
+  return location.state.__TSR_key || location.href;
+};
+function getCssSelector(el) {
+  const path = [];
+  let parent;
+  while (parent = el.parentNode) {
+    path.push(`${el.tagName}:nth-child(${Array.prototype.indexOf.call(parent.children, el) + 1})`);
+    el = parent;
+  }
+  return `${path.reverse().join(" > ")}`.toLowerCase();
+}
+function getElementScrollRestorationEntry(router, options) {
+  const restoreKey = (options.getKey || defaultGetScrollRestorationKey)(router.latestLocation);
+  if (options.id) return scrollRestorationCache?.state[restoreKey]?.[`[${scrollRestorationIdAttribute}="${options.id}"]`];
+  const element = options.getElement?.();
+  if (!element) return;
+  return scrollRestorationCache?.state[restoreKey]?.[element instanceof Window ? windowScrollTarget : getCssSelector(element)];
+}
+var ignoreScroll = false;
+var windowScrollTarget = "window";
+var scrollRestorationIdAttribute = "data-scroll-restoration-id";
+function setupScrollRestoration(router, force) {
+  if (!scrollRestorationCache && !(isServer ?? router.isServer)) return;
+  const cache = scrollRestorationCache;
+  if (force ?? router.options.scrollRestoration ?? false) router.isScrollRestoring = true;
+  if ((isServer ?? router.isServer) || router.isScrollRestorationSetup || !cache) return;
+  router.isScrollRestorationSetup = true;
+  ignoreScroll = false;
+  const getKey = router.options.getScrollRestorationKey || defaultGetScrollRestorationKey;
+  const trackedScrollEntries = /* @__PURE__ */ new Map();
+  window.history.scrollRestoration = "manual";
+  const onScroll = (event) => {
+    if (ignoreScroll || !router.isScrollRestoring) return;
+    if (event.target === document || event.target === window) trackedScrollEntries.set(windowScrollTarget, {
+      scrollX: window.scrollX || 0,
+      scrollY: window.scrollY || 0
+    });
+    else {
+      const target = event.target;
+      trackedScrollEntries.set(target, {
+        scrollX: target.scrollLeft || 0,
+        scrollY: target.scrollTop || 0
+      });
+    }
+  };
+  const snapshotCurrentScrollTargets = (restoreKey) => {
+    if (!router.isScrollRestoring || !restoreKey || trackedScrollEntries.size === 0 || !cache) return;
+    const keyEntry = cache.state[restoreKey] ||= {};
+    for (const [target, position] of trackedScrollEntries) {
+      let selector;
+      if (target === windowScrollTarget) selector = windowScrollTarget;
+      else if (target.isConnected) {
+        const attrId = target.getAttribute(scrollRestorationIdAttribute);
+        selector = attrId ? `[${scrollRestorationIdAttribute}="${attrId}"]` : getCssSelector(target);
+      }
+      if (!selector) continue;
+      keyEntry[selector] = position;
+    }
+  };
+  document.addEventListener("scroll", onScroll, true);
+  router.subscribe("onBeforeLoad", (event) => {
+    snapshotCurrentScrollTargets(event.fromLocation ? getKey(event.fromLocation) : void 0);
+    trackedScrollEntries.clear();
+  });
+  window.addEventListener("pagehide", () => {
+    snapshotCurrentScrollTargets(getKey(router.stores.resolvedLocation.get() ?? router.stores.location.get()));
+    cache.persist();
+  });
+  router.subscribe("onRendered", (event) => {
+    const cacheKey = getKey(event.toLocation);
+    const behavior = router.options.scrollRestorationBehavior;
+    const scrollToTopSelectors = router.options.scrollToTopSelectors;
+    trackedScrollEntries.clear();
+    if (!router.resetNextScroll) {
+      router.resetNextScroll = true;
+      return;
+    }
+    if (typeof router.options.scrollRestoration === "function" && !router.options.scrollRestoration({ location: router.latestLocation })) return;
+    ignoreScroll = true;
+    try {
+      const elementEntries = router.isScrollRestoring ? cache.state[cacheKey] : void 0;
+      let restored = false;
+      if (elementEntries) for (const elementSelector in elementEntries) {
+        const entry = elementEntries[elementSelector];
+        if (!isPlainObject(entry)) continue;
+        const { scrollX, scrollY } = entry;
+        if (!Number.isFinite(scrollX) || !Number.isFinite(scrollY)) continue;
+        if (elementSelector === windowScrollTarget) {
+          window.scrollTo({
+            top: scrollY,
+            left: scrollX,
+            behavior
+          });
+          restored = true;
+        } else if (elementSelector) {
+          let element;
+          try {
+            element = document.querySelector(elementSelector);
+          } catch {
+            continue;
+          }
+          if (element) {
+            element.scrollLeft = scrollX;
+            element.scrollTop = scrollY;
+            restored = true;
+          }
+        }
+      }
+      if (!restored) {
+        const hash = router.history.location.hash.slice(1);
+        if (hash) {
+          const hashScrollIntoViewOptions = window.history.state?.__hashScrollIntoViewOptions ?? true;
+          if (hashScrollIntoViewOptions) {
+            const el = document.getElementById(hash);
+            if (el) el.scrollIntoView(hashScrollIntoViewOptions);
+          }
+        } else {
+          const scrollOptions = {
+            top: 0,
+            left: 0,
+            behavior
+          };
+          window.scrollTo(scrollOptions);
+          if (scrollToTopSelectors) for (const selector of scrollToTopSelectors) {
+            if (selector === windowScrollTarget) continue;
+            const element = typeof selector === "function" ? selector() : document.querySelector(selector);
+            if (element) element.scrollTo(scrollOptions);
+          }
+        }
+      }
+    } finally {
+      ignoreScroll = false;
+    }
+    if (router.isScrollRestoring) cache.set((state) => {
+      state[cacheKey] ||= {};
+      return state;
+    });
+  });
+}
+
+// node_modules/@tanstack/router-core/dist/esm/qss.js
+function encode(obj, stringify = String) {
+  const result = new URLSearchParams();
+  for (const key in obj) {
+    const val = obj[key];
+    if (val !== void 0) result.set(key, stringify(val));
+  }
+  return result.toString();
+}
+function toValue(str) {
+  if (!str) return "";
+  if (str === "false") return false;
+  if (str === "true") return true;
+  return +str * 0 === 0 && +str + "" === str ? +str : str;
+}
+function decode(str) {
+  const searchParams = new URLSearchParams(str);
+  const result = /* @__PURE__ */ Object.create(null);
+  for (const [key, value] of searchParams.entries()) {
+    const previousValue = result[key];
+    if (previousValue == null) result[key] = toValue(value);
+    else if (Array.isArray(previousValue)) previousValue.push(toValue(value));
+    else result[key] = [previousValue, toValue(value)];
+  }
+  return result;
+}
+
+// node_modules/@tanstack/router-core/dist/esm/searchParams.js
+var defaultParseSearch = parseSearchWith(JSON.parse);
+var defaultStringifySearch = stringifySearchWith(JSON.stringify, JSON.parse);
+function parseSearchWith(parser) {
+  return (searchStr) => {
+    if (searchStr[0] === "?") searchStr = searchStr.substring(1);
+    const query = decode(searchStr);
+    for (const key in query) {
+      const value = query[key];
+      if (typeof value === "string") try {
+        query[key] = parser(value);
+      } catch (_err) {
+      }
+    }
+    return query;
+  };
+}
+function stringifySearchWith(stringify, parser) {
+  const hasParser = typeof parser === "function";
+  function stringifyValue(val) {
+    if (typeof val === "object" && val !== null) try {
+      return stringify(val);
+    } catch (_err) {
+    }
+    else if (hasParser && typeof val === "string") try {
+      parser(val);
+      return stringify(val);
+    } catch (_err) {
+    }
+    return val;
+  }
+  return (search) => {
+    const searchStr = encode(search, stringifyValue);
+    return searchStr ? `?${searchStr}` : "";
+  };
+}
+
+// node_modules/@tanstack/router-core/dist/esm/root.js
+var rootRouteId = "__root__";
+
+// node_modules/@tanstack/router-core/dist/esm/redirect.js
+function redirect(opts) {
+  opts.statusCode = opts.statusCode || opts.code || 307;
+  if (!opts._builtLocation && !opts.reloadDocument && typeof opts.href === "string") try {
+    new URL(opts.href);
+    opts.reloadDocument = true;
+  } catch {
+  }
+  const headers = new Headers(opts.headers);
+  if (opts.href && headers.get("Location") === null) headers.set("Location", opts.href);
+  const response = new Response(null, {
+    status: opts.statusCode,
+    headers
+  });
+  response.options = opts;
+  if (opts.throw) throw response;
+  return response;
+}
+function isRedirect(obj) {
+  return obj instanceof Response && !!obj.options;
+}
+function isResolvedRedirect(obj) {
+  return isRedirect(obj) && !!obj.options.href;
+}
+function parseRedirect(obj) {
+  if (obj !== null && typeof obj === "object" && obj.isSerializedRedirect) return redirect(obj);
+}
+
+// node_modules/@tanstack/router-core/dist/esm/rewrite.js
+function composeRewrites(rewrites) {
+  return {
+    input: ({ url }) => {
+      for (const rewrite of rewrites) url = executeRewriteInput(rewrite, url);
+      return url;
+    },
+    output: ({ url }) => {
+      for (let i = rewrites.length - 1; i >= 0; i--) url = executeRewriteOutput(rewrites[i], url);
+      return url;
+    }
+  };
+}
+function rewriteBasepath(opts) {
+  const trimmedBasepath = trimPath(opts.basepath);
+  const normalizedBasepath = `/${trimmedBasepath}`;
+  const normalizedBasepathWithSlash = `${normalizedBasepath}/`;
+  const checkBasepath = opts.caseSensitive ? normalizedBasepath : normalizedBasepath.toLowerCase();
+  const checkBasepathWithSlash = opts.caseSensitive ? normalizedBasepathWithSlash : normalizedBasepathWithSlash.toLowerCase();
+  return {
+    input: ({ url }) => {
+      const pathname = opts.caseSensitive ? url.pathname : url.pathname.toLowerCase();
+      if (pathname === checkBasepath) url.pathname = "/";
+      else if (pathname.startsWith(checkBasepathWithSlash)) url.pathname = url.pathname.slice(normalizedBasepath.length);
+      return url;
+    },
+    output: ({ url }) => {
+      url.pathname = joinPaths([
+        "/",
+        trimmedBasepath,
+        url.pathname
+      ]);
+      return url;
+    }
+  };
+}
+function executeRewriteInput(rewrite, url) {
+  const res = rewrite?.input?.({ url });
+  if (res) {
+    if (typeof res === "string") return new URL(res);
+    else if (res instanceof URL) return res;
+  }
+  return url;
+}
+function executeRewriteOutput(rewrite, url) {
+  const res = rewrite?.output?.({ url });
+  if (res) {
+    if (typeof res === "string") return new URL(res);
+    else if (res instanceof URL) return res;
+  }
+  return url;
+}
+
+// node_modules/@tanstack/router-core/dist/esm/stores.js
+function createNonReactiveMutableStore(initialValue) {
+  let value = initialValue;
+  return {
+    get() {
+      return value;
+    },
+    set(nextOrUpdater) {
+      value = functionalUpdate(nextOrUpdater, value);
+    }
+  };
+}
+function createNonReactiveReadonlyStore(read) {
+  return { get() {
+    return read();
+  } };
+}
+function createRouterStores(initialState, config) {
+  const { createMutableStore, createReadonlyStore, batch, init } = config;
+  const matchStores = /* @__PURE__ */ new Map();
+  const pendingMatchStores = /* @__PURE__ */ new Map();
+  const cachedMatchStores = /* @__PURE__ */ new Map();
+  const status = createMutableStore(initialState.status);
+  const loadedAt = createMutableStore(initialState.loadedAt);
+  const isLoading = createMutableStore(initialState.isLoading);
+  const isTransitioning = createMutableStore(initialState.isTransitioning);
+  const location = createMutableStore(initialState.location);
+  const resolvedLocation = createMutableStore(initialState.resolvedLocation);
+  const statusCode = createMutableStore(initialState.statusCode);
+  const redirect2 = createMutableStore(initialState.redirect);
+  const matchesId = createMutableStore([]);
+  const pendingIds = createMutableStore([]);
+  const cachedIds = createMutableStore([]);
+  const matches = createReadonlyStore(() => readPoolMatches(matchStores, matchesId.get()));
+  const pendingMatches = createReadonlyStore(() => readPoolMatches(pendingMatchStores, pendingIds.get()));
+  const cachedMatches = createReadonlyStore(() => readPoolMatches(cachedMatchStores, cachedIds.get()));
+  const firstId = createReadonlyStore(() => matchesId.get()[0]);
+  const hasPending = createReadonlyStore(() => matchesId.get().some((matchId) => {
+    return matchStores.get(matchId)?.get().status === "pending";
+  }));
+  const matchRouteDeps = createReadonlyStore(() => ({
+    locationHref: location.get().href,
+    resolvedLocationHref: resolvedLocation.get()?.href,
+    status: status.get()
+  }));
+  const __store = createReadonlyStore(() => ({
+    status: status.get(),
+    loadedAt: loadedAt.get(),
+    isLoading: isLoading.get(),
+    isTransitioning: isTransitioning.get(),
+    matches: matches.get(),
+    location: location.get(),
+    resolvedLocation: resolvedLocation.get(),
+    statusCode: statusCode.get(),
+    redirect: redirect2.get()
+  }));
+  const matchStoreByRouteIdCache = createLRUCache(64);
+  function getRouteMatchStore(routeId) {
+    let cached = matchStoreByRouteIdCache.get(routeId);
+    if (!cached) {
+      cached = createReadonlyStore(() => {
+        const ids = matchesId.get();
+        for (const id of ids) {
+          const matchStore = matchStores.get(id);
+          if (matchStore && matchStore.routeId === routeId) return matchStore.get();
+        }
+      });
+      matchStoreByRouteIdCache.set(routeId, cached);
+    }
+    return cached;
+  }
+  const store = {
+    status,
+    loadedAt,
+    isLoading,
+    isTransitioning,
+    location,
+    resolvedLocation,
+    statusCode,
+    redirect: redirect2,
+    matchesId,
+    pendingIds,
+    cachedIds,
+    matches,
+    pendingMatches,
+    cachedMatches,
+    firstId,
+    hasPending,
+    matchRouteDeps,
+    matchStores,
+    pendingMatchStores,
+    cachedMatchStores,
+    __store,
+    getRouteMatchStore,
+    setMatches,
+    setPending,
+    setCached
+  };
+  setMatches(initialState.matches);
+  init?.(store);
+  function setMatches(nextMatches) {
+    reconcileMatchPool(nextMatches, matchStores, matchesId, createMutableStore, batch);
+  }
+  function setPending(nextMatches) {
+    reconcileMatchPool(nextMatches, pendingMatchStores, pendingIds, createMutableStore, batch);
+  }
+  function setCached(nextMatches) {
+    reconcileMatchPool(nextMatches, cachedMatchStores, cachedIds, createMutableStore, batch);
+  }
+  return store;
+}
+function readPoolMatches(pool, ids) {
+  const matches = [];
+  for (const id of ids) {
+    const matchStore = pool.get(id);
+    if (matchStore) matches.push(matchStore.get());
+  }
+  return matches;
+}
+function reconcileMatchPool(nextMatches, pool, idStore, createMutableStore, batch) {
+  const nextIds = nextMatches.map((d) => d.id);
+  const nextIdSet = new Set(nextIds);
+  batch(() => {
+    for (const id of pool.keys()) if (!nextIdSet.has(id)) pool.delete(id);
+    for (const nextMatch of nextMatches) {
+      const existing = pool.get(nextMatch.id);
+      if (!existing) {
+        const matchStore = createMutableStore(nextMatch);
+        matchStore.routeId = nextMatch.routeId;
+        pool.set(nextMatch.id, matchStore);
+        continue;
+      }
+      existing.routeId = nextMatch.routeId;
+      if (existing.get() !== nextMatch) existing.set(nextMatch);
+    }
+    if (!arraysEqual(idStore.get(), nextIds)) idStore.set(nextIds);
+  });
+}
+
+// node_modules/@tanstack/router-core/dist/esm/load-matches.js
+var triggerOnReady = (inner) => {
+  if (!inner.rendered) {
+    inner.rendered = true;
+    return inner.onReady?.();
+  }
+};
+var hasForcePendingActiveMatch = (router) => {
+  return router.stores.matchesId.get().some((matchId) => {
+    return router.stores.matchStores.get(matchId)?.get()._forcePending;
+  });
+};
+var resolvePreload = (inner, matchId) => {
+  return !!(inner.preload && !inner.router.stores.matchStores.has(matchId));
+};
+var buildMatchContext = (inner, index, includeCurrentMatch = true) => {
+  const context = { ...inner.router.options.context ?? {} };
+  const end = includeCurrentMatch ? index : index - 1;
+  for (let i = 0; i <= end; i++) {
+    const innerMatch = inner.matches[i];
+    if (!innerMatch) continue;
+    const m = inner.router.getMatch(innerMatch.id);
+    if (!m) continue;
+    Object.assign(context, m.__routeContext, m.__beforeLoadContext);
+  }
+  return context;
+};
+var getNotFoundBoundaryIndex = (inner, err) => {
+  if (!inner.matches.length) return;
+  const requestedRouteId = err.routeId;
+  const matchedRootIndex = inner.matches.findIndex((m) => m.routeId === inner.router.routeTree.id);
+  const rootIndex = matchedRootIndex >= 0 ? matchedRootIndex : 0;
+  let startIndex = requestedRouteId ? inner.matches.findIndex((match) => match.routeId === requestedRouteId) : inner.firstBadMatchIndex ?? inner.matches.length - 1;
+  if (startIndex < 0) startIndex = rootIndex;
+  for (let i = startIndex; i >= 0; i--) {
+    const match = inner.matches[i];
+    if (inner.router.looseRoutesById[match.routeId].options.notFoundComponent) return i;
+  }
+  return requestedRouteId ? startIndex : rootIndex;
+};
+var handleRedirectAndNotFound = (inner, match, err) => {
+  if (!isRedirect(err) && !isNotFound(err)) return;
+  if (isRedirect(err) && err.redirectHandled && !err.options.reloadDocument) throw err;
+  if (match) {
+    match._nonReactive.beforeLoadPromise?.resolve();
+    match._nonReactive.loaderPromise?.resolve();
+    match._nonReactive.beforeLoadPromise = void 0;
+    match._nonReactive.loaderPromise = void 0;
+    match._nonReactive.error = err;
+    inner.updateMatch(match.id, (prev) => ({
+      ...prev,
+      status: isRedirect(err) ? "redirected" : isNotFound(err) ? "notFound" : prev.status === "pending" ? "success" : prev.status,
+      context: buildMatchContext(inner, match.index),
+      isFetching: false,
+      error: err
+    }));
+    if (isNotFound(err) && !err.routeId) err.routeId = match.routeId;
+    match._nonReactive.loadPromise?.resolve();
+  }
+  if (isRedirect(err)) {
+    inner.rendered = true;
+    err.options._fromLocation = inner.location;
+    err.redirectHandled = true;
+    err = inner.router.resolveRedirect(err);
+  }
+  throw err;
+};
+var shouldSkipLoader = (inner, matchId) => {
+  const match = inner.router.getMatch(matchId);
+  if (!match) return true;
+  if (!(isServer ?? inner.router.isServer) && match._nonReactive.dehydrated) return true;
+  if ((isServer ?? inner.router.isServer) && match.ssr === false) return true;
+  return false;
+};
+var syncMatchContext = (inner, matchId, index) => {
+  const nextContext = buildMatchContext(inner, index);
+  inner.updateMatch(matchId, (prev) => {
+    return {
+      ...prev,
+      context: nextContext
+    };
+  });
+};
+var handleSerialError = (inner, index, err, routerCode) => {
+  const { id: matchId, routeId } = inner.matches[index];
+  const route = inner.router.looseRoutesById[routeId];
+  if (err instanceof Promise) throw err;
+  err.routerCode = routerCode;
+  inner.firstBadMatchIndex ??= index;
+  handleRedirectAndNotFound(inner, inner.router.getMatch(matchId), err);
+  try {
+    route.options.onError?.(err);
+  } catch (errorHandlerErr) {
+    err = errorHandlerErr;
+    handleRedirectAndNotFound(inner, inner.router.getMatch(matchId), err);
+  }
+  inner.updateMatch(matchId, (prev) => {
+    prev._nonReactive.beforeLoadPromise?.resolve();
+    prev._nonReactive.beforeLoadPromise = void 0;
+    prev._nonReactive.loadPromise?.resolve();
+    return {
+      ...prev,
+      error: err,
+      status: "error",
+      isFetching: false,
+      updatedAt: Date.now(),
+      abortController: new AbortController()
+    };
+  });
+  if (!inner.preload && !isRedirect(err) && !isNotFound(err)) inner.serialError ??= err;
+};
+var isBeforeLoadSsr = (inner, matchId, index, route) => {
+  const existingMatch = inner.router.getMatch(matchId);
+  const parentMatchId = inner.matches[index - 1]?.id;
+  const parentMatch = parentMatchId ? inner.router.getMatch(parentMatchId) : void 0;
+  if (inner.router.isShell()) {
+    existingMatch.ssr = route.id === rootRouteId;
+    return;
+  }
+  if (parentMatch?.ssr === false) {
+    existingMatch.ssr = false;
+    return;
+  }
+  const parentOverride = (tempSsr2) => {
+    if (tempSsr2 === true && parentMatch?.ssr === "data-only") return "data-only";
+    return tempSsr2;
+  };
+  const defaultSsr = inner.router.options.defaultSsr ?? true;
+  if (route.options.ssr === void 0) {
+    existingMatch.ssr = parentOverride(defaultSsr);
+    return;
+  }
+  if (typeof route.options.ssr !== "function") {
+    existingMatch.ssr = parentOverride(route.options.ssr);
+    return;
+  }
+  const { search, params } = existingMatch;
+  const ssrFnContext = {
+    search: makeMaybe(search, existingMatch.searchError),
+    params: makeMaybe(params, existingMatch.paramsError),
+    location: inner.location,
+    matches: inner.matches.map((match) => ({
+      index: match.index,
+      pathname: match.pathname,
+      fullPath: match.fullPath,
+      staticData: match.staticData,
+      id: match.id,
+      routeId: match.routeId,
+      search: makeMaybe(match.search, match.searchError),
+      params: makeMaybe(match.params, match.paramsError),
+      ssr: match.ssr
+    }))
+  };
+  const tempSsr = route.options.ssr(ssrFnContext);
+  if (isPromise(tempSsr)) return tempSsr.then((ssr) => {
+    existingMatch.ssr = parentOverride(ssr ?? defaultSsr);
+  });
+  existingMatch.ssr = parentOverride(tempSsr ?? defaultSsr);
+};
+var setupPendingTimeout = (inner, matchId, route, match) => {
+  if (match._nonReactive.pendingTimeout !== void 0) return;
+  const pendingMs = route.options.pendingMs ?? inner.router.options.defaultPendingMs;
+  if (!!(inner.onReady && !(isServer ?? inner.router.isServer) && !resolvePreload(inner, matchId) && (route.options.loader || route.options.beforeLoad || routeNeedsPreload(route)) && typeof pendingMs === "number" && pendingMs !== Infinity && (route.options.pendingComponent ?? inner.router.options?.defaultPendingComponent))) {
+    const pendingTimeout = setTimeout(() => {
+      triggerOnReady(inner);
+    }, pendingMs);
+    match._nonReactive.pendingTimeout = pendingTimeout;
+  }
+};
+var preBeforeLoadSetup = (inner, matchId, route) => {
+  const existingMatch = inner.router.getMatch(matchId);
+  if (!existingMatch._nonReactive.beforeLoadPromise && !existingMatch._nonReactive.loaderPromise) return;
+  setupPendingTimeout(inner, matchId, route, existingMatch);
+  const then = () => {
+    const match = inner.router.getMatch(matchId);
+    if (match.preload && (match.status === "redirected" || match.status === "notFound")) handleRedirectAndNotFound(inner, match, match.error);
+  };
+  return existingMatch._nonReactive.beforeLoadPromise ? existingMatch._nonReactive.beforeLoadPromise.then(then) : then();
+};
+var executeBeforeLoad = (inner, matchId, index, route) => {
+  const match = inner.router.getMatch(matchId);
+  let prevLoadPromise = match._nonReactive.loadPromise;
+  match._nonReactive.loadPromise = createControlledPromise(() => {
+    prevLoadPromise?.resolve();
+    prevLoadPromise = void 0;
+  });
+  const { paramsError, searchError } = match;
+  if (paramsError) handleSerialError(inner, index, paramsError, "PARSE_PARAMS");
+  if (searchError) handleSerialError(inner, index, searchError, "VALIDATE_SEARCH");
+  setupPendingTimeout(inner, matchId, route, match);
+  const abortController = new AbortController();
+  let isPending = false;
+  const pending = () => {
+    if (isPending) return;
+    isPending = true;
+    inner.updateMatch(matchId, (prev) => ({
+      ...prev,
+      isFetching: "beforeLoad",
+      fetchCount: prev.fetchCount + 1,
+      abortController
+    }));
+  };
+  const resolve = () => {
+    match._nonReactive.beforeLoadPromise?.resolve();
+    match._nonReactive.beforeLoadPromise = void 0;
+    inner.updateMatch(matchId, (prev) => ({
+      ...prev,
+      isFetching: false
+    }));
+  };
+  if (!route.options.beforeLoad) {
+    inner.router.batch(() => {
+      pending();
+      resolve();
+    });
+    return;
+  }
+  match._nonReactive.beforeLoadPromise = createControlledPromise();
+  const context = {
+    ...buildMatchContext(inner, index, false),
+    ...match.__routeContext
+  };
+  const { search, params, cause } = match;
+  const preload = resolvePreload(inner, matchId);
+  const beforeLoadFnContext = {
+    search,
+    abortController,
+    params,
+    preload,
+    context,
+    location: inner.location,
+    navigate: (opts) => inner.router.navigate({
+      ...opts,
+      _fromLocation: inner.location
+    }),
+    buildLocation: inner.router.buildLocation,
+    cause: preload ? "preload" : cause,
+    matches: inner.matches,
+    routeId: route.id,
+    ...inner.router.options.additionalContext
+  };
+  const updateContext = (beforeLoadContext2) => {
+    if (beforeLoadContext2 === void 0) {
+      inner.router.batch(() => {
+        pending();
+        resolve();
+      });
+      return;
+    }
+    if (isRedirect(beforeLoadContext2) || isNotFound(beforeLoadContext2)) {
+      pending();
+      handleSerialError(inner, index, beforeLoadContext2, "BEFORE_LOAD");
+    }
+    inner.router.batch(() => {
+      pending();
+      inner.updateMatch(matchId, (prev) => ({
+        ...prev,
+        __beforeLoadContext: beforeLoadContext2
+      }));
+      resolve();
+    });
+  };
+  let beforeLoadContext;
+  try {
+    beforeLoadContext = route.options.beforeLoad(beforeLoadFnContext);
+    if (isPromise(beforeLoadContext)) {
+      pending();
+      return beforeLoadContext.catch((err) => {
+        handleSerialError(inner, index, err, "BEFORE_LOAD");
+      }).then(updateContext);
+    }
+  } catch (err) {
+    pending();
+    handleSerialError(inner, index, err, "BEFORE_LOAD");
+  }
+  updateContext(beforeLoadContext);
+};
+var handleBeforeLoad = (inner, index) => {
+  const { id: matchId, routeId } = inner.matches[index];
+  const route = inner.router.looseRoutesById[routeId];
+  const serverSsr = () => {
+    if (isServer ?? inner.router.isServer) {
+      const maybePromise = isBeforeLoadSsr(inner, matchId, index, route);
+      if (isPromise(maybePromise)) return maybePromise.then(queueExecution);
+    }
+    return queueExecution();
+  };
+  const execute = () => executeBeforeLoad(inner, matchId, index, route);
+  const queueExecution = () => {
+    if (shouldSkipLoader(inner, matchId)) return;
+    const result = preBeforeLoadSetup(inner, matchId, route);
+    return isPromise(result) ? result.then(execute) : execute();
+  };
+  return serverSsr();
+};
+var executeHead = (inner, matchId, route) => {
+  const match = inner.router.getMatch(matchId);
+  if (!match) return;
+  if (!route.options.head && !route.options.scripts && !route.options.headers) return;
+  const assetContext = {
+    ssr: inner.router.options.ssr,
+    matches: inner.matches,
+    match,
+    params: match.params,
+    loaderData: match.loaderData
+  };
+  return Promise.all([
+    route.options.head?.(assetContext),
+    route.options.scripts?.(assetContext),
+    route.options.headers?.(assetContext)
+  ]).then(([headFnContent, scripts, headers]) => {
+    return {
+      meta: headFnContent?.meta,
+      links: headFnContent?.links,
+      headScripts: headFnContent?.scripts,
+      headers,
+      scripts,
+      styles: headFnContent?.styles
+    };
+  });
+};
+var getLoaderContext = (inner, matchPromises, matchId, index, route) => {
+  const parentMatchPromise = matchPromises[index - 1];
+  const { params, loaderDeps, abortController, cause } = inner.router.getMatch(matchId);
+  const context = buildMatchContext(inner, index);
+  const preload = resolvePreload(inner, matchId);
+  return {
+    params,
+    deps: loaderDeps,
+    preload: !!preload,
+    parentMatchPromise,
+    abortController,
+    context,
+    location: inner.location,
+    navigate: (opts) => inner.router.navigate({
+      ...opts,
+      _fromLocation: inner.location
+    }),
+    cause: preload ? "preload" : cause,
+    route,
+    ...inner.router.options.additionalContext
+  };
+};
+var runLoader = async (inner, matchPromises, matchId, index, route) => {
+  try {
+    const match = inner.router.getMatch(matchId);
+    try {
+      if (!(isServer ?? inner.router.isServer) || match.ssr === true) loadRouteChunk(route);
+      const routeLoader = route.options.loader;
+      const loader = typeof routeLoader === "function" ? routeLoader : routeLoader?.handler;
+      const loaderResult = loader?.(getLoaderContext(inner, matchPromises, matchId, index, route));
+      const loaderResultIsPromise = !!loader && isPromise(loaderResult);
+      if (!!(loaderResultIsPromise || route._lazyPromise || route._componentsPromise || route.options.head || route.options.scripts || route.options.headers || match._nonReactive.minPendingPromise)) inner.updateMatch(matchId, (prev) => ({
+        ...prev,
+        isFetching: "loader"
+      }));
+      if (loader) {
+        const loaderData = loaderResultIsPromise ? await loaderResult : loaderResult;
+        handleRedirectAndNotFound(inner, inner.router.getMatch(matchId), loaderData);
+        if (loaderData !== void 0) inner.updateMatch(matchId, (prev) => ({
+          ...prev,
+          loaderData
+        }));
+      }
+      if (route._lazyPromise) await route._lazyPromise;
+      const pendingPromise = match._nonReactive.minPendingPromise;
+      if (pendingPromise) await pendingPromise;
+      if (route._componentsPromise) await route._componentsPromise;
+      inner.updateMatch(matchId, (prev) => ({
+        ...prev,
+        error: void 0,
+        context: buildMatchContext(inner, index),
+        status: "success",
+        isFetching: false,
+        updatedAt: Date.now()
+      }));
+    } catch (e) {
+      let error = e;
+      if (error?.name === "AbortError") {
+        if (match.abortController.signal.aborted) {
+          match._nonReactive.loaderPromise?.resolve();
+          match._nonReactive.loaderPromise = void 0;
+          return;
+        }
+        inner.updateMatch(matchId, (prev) => ({
+          ...prev,
+          status: prev.status === "pending" ? "success" : prev.status,
+          isFetching: false,
+          context: buildMatchContext(inner, index)
+        }));
+        return;
+      }
+      const pendingPromise = match._nonReactive.minPendingPromise;
+      if (pendingPromise) await pendingPromise;
+      if (isNotFound(e)) await route.options.notFoundComponent?.preload?.();
+      handleRedirectAndNotFound(inner, inner.router.getMatch(matchId), e);
+      try {
+        route.options.onError?.(e);
+      } catch (onErrorError) {
+        error = onErrorError;
+        handleRedirectAndNotFound(inner, inner.router.getMatch(matchId), onErrorError);
+      }
+      if (!isRedirect(error) && !isNotFound(error)) await loadRouteChunk(route, ["errorComponent"]);
+      inner.updateMatch(matchId, (prev) => ({
+        ...prev,
+        error,
+        context: buildMatchContext(inner, index),
+        status: "error",
+        isFetching: false
+      }));
+    }
+  } catch (err) {
+    const match = inner.router.getMatch(matchId);
+    if (match) match._nonReactive.loaderPromise = void 0;
+    handleRedirectAndNotFound(inner, match, err);
+  }
+};
+var loadRouteMatch = async (inner, matchPromises, index) => {
+  async function handleLoader(preload, prevMatch, previousRouteMatchId, match2, route2) {
+    const age = Date.now() - prevMatch.updatedAt;
+    const staleAge = preload ? route2.options.preloadStaleTime ?? inner.router.options.defaultPreloadStaleTime ?? 3e4 : route2.options.staleTime ?? inner.router.options.defaultStaleTime ?? 0;
+    const shouldReloadOption = route2.options.shouldReload;
+    const shouldReload = typeof shouldReloadOption === "function" ? shouldReloadOption(getLoaderContext(inner, matchPromises, matchId, index, route2)) : shouldReloadOption;
+    const { status, invalid } = match2;
+    const staleMatchShouldReload = age >= staleAge && (!!inner.forceStaleReload || match2.cause === "enter" || previousRouteMatchId !== void 0 && previousRouteMatchId !== match2.id);
+    loaderShouldRunAsync = status === "success" && (invalid || (shouldReload ?? staleMatchShouldReload));
+    if (preload && route2.options.preload === false) {
+    } else if (loaderShouldRunAsync && !inner.sync && shouldReloadInBackground) {
+      loaderIsRunningAsync = true;
+      (async () => {
+        try {
+          await runLoader(inner, matchPromises, matchId, index, route2);
+          const match3 = inner.router.getMatch(matchId);
+          match3._nonReactive.loaderPromise?.resolve();
+          match3._nonReactive.loadPromise?.resolve();
+          match3._nonReactive.loaderPromise = void 0;
+          match3._nonReactive.loadPromise = void 0;
+        } catch (err) {
+          if (isRedirect(err)) await inner.router.navigate(err.options);
+        }
+      })();
+    } else if (status !== "success" || loaderShouldRunAsync) await runLoader(inner, matchPromises, matchId, index, route2);
+    else syncMatchContext(inner, matchId, index);
+  }
+  const { id: matchId, routeId } = inner.matches[index];
+  let loaderShouldRunAsync = false;
+  let loaderIsRunningAsync = false;
+  const route = inner.router.looseRoutesById[routeId];
+  const routeLoader = route.options.loader;
+  const shouldReloadInBackground = ((typeof routeLoader === "function" ? void 0 : routeLoader?.staleReloadMode) ?? inner.router.options.defaultStaleReloadMode) !== "blocking";
+  if (shouldSkipLoader(inner, matchId)) {
+    if (!inner.router.getMatch(matchId)) return inner.matches[index];
+    syncMatchContext(inner, matchId, index);
+    if (isServer ?? inner.router.isServer) return inner.router.getMatch(matchId);
+  } else {
+    const prevMatch = inner.router.getMatch(matchId);
+    const activeIdAtIndex = inner.router.stores.matchesId.get()[index];
+    const previousRouteMatchId = (activeIdAtIndex && inner.router.stores.matchStores.get(activeIdAtIndex) || null)?.routeId === routeId ? activeIdAtIndex : inner.router.stores.matches.get().find((d) => d.routeId === routeId)?.id;
+    const preload = resolvePreload(inner, matchId);
+    if (prevMatch._nonReactive.loaderPromise) {
+      if (prevMatch.status === "success" && !inner.sync && !prevMatch.preload && shouldReloadInBackground) return prevMatch;
+      await prevMatch._nonReactive.loaderPromise;
+      const match2 = inner.router.getMatch(matchId);
+      const error = match2._nonReactive.error || match2.error;
+      if (error) handleRedirectAndNotFound(inner, match2, error);
+      if (match2.status === "pending") await handleLoader(preload, prevMatch, previousRouteMatchId, match2, route);
+    } else {
+      const nextPreload = preload && !inner.router.stores.matchStores.has(matchId);
+      const match2 = inner.router.getMatch(matchId);
+      match2._nonReactive.loaderPromise = createControlledPromise();
+      if (nextPreload !== match2.preload) inner.updateMatch(matchId, (prev) => ({
+        ...prev,
+        preload: nextPreload
+      }));
+      await handleLoader(preload, prevMatch, previousRouteMatchId, match2, route);
+    }
+  }
+  const match = inner.router.getMatch(matchId);
+  if (!loaderIsRunningAsync) {
+    match._nonReactive.loaderPromise?.resolve();
+    match._nonReactive.loadPromise?.resolve();
+    match._nonReactive.loadPromise = void 0;
+  }
+  clearTimeout(match._nonReactive.pendingTimeout);
+  match._nonReactive.pendingTimeout = void 0;
+  if (!loaderIsRunningAsync) match._nonReactive.loaderPromise = void 0;
+  match._nonReactive.dehydrated = void 0;
+  const nextIsFetching = loaderIsRunningAsync ? match.isFetching : false;
+  if (nextIsFetching !== match.isFetching || match.invalid !== false) {
+    inner.updateMatch(matchId, (prev) => ({
+      ...prev,
+      isFetching: nextIsFetching,
+      invalid: false
+    }));
+    return inner.router.getMatch(matchId);
+  } else return match;
+};
+async function loadMatches(arg) {
+  const inner = arg;
+  const matchPromises = [];
+  if (!(isServer ?? inner.router.isServer) && hasForcePendingActiveMatch(inner.router)) triggerOnReady(inner);
+  let beforeLoadNotFound;
+  for (let i = 0; i < inner.matches.length; i++) {
+    try {
+      const beforeLoad = handleBeforeLoad(inner, i);
+      if (isPromise(beforeLoad)) await beforeLoad;
+    } catch (err) {
+      if (isRedirect(err)) throw err;
+      if (isNotFound(err)) beforeLoadNotFound = err;
+      else if (!inner.preload) throw err;
+      break;
+    }
+    if (inner.serialError || inner.firstBadMatchIndex != null) break;
+  }
+  const baseMaxIndexExclusive = inner.firstBadMatchIndex ?? inner.matches.length;
+  const boundaryIndex = beforeLoadNotFound && !inner.preload ? getNotFoundBoundaryIndex(inner, beforeLoadNotFound) : void 0;
+  const maxIndexExclusive = beforeLoadNotFound && inner.preload ? 0 : boundaryIndex !== void 0 ? Math.min(boundaryIndex + 1, baseMaxIndexExclusive) : baseMaxIndexExclusive;
+  let firstNotFound;
+  let firstUnhandledRejection;
+  for (let i = 0; i < maxIndexExclusive; i++) matchPromises.push(loadRouteMatch(inner, matchPromises, i));
+  try {
+    await Promise.all(matchPromises);
+  } catch {
+    const settled = await Promise.allSettled(matchPromises);
+    for (const result of settled) {
+      if (result.status !== "rejected") continue;
+      const reason = result.reason;
+      if (isRedirect(reason)) throw reason;
+      if (isNotFound(reason)) firstNotFound ??= reason;
+      else firstUnhandledRejection ??= reason;
+    }
+    if (firstUnhandledRejection !== void 0) throw firstUnhandledRejection;
+  }
+  const notFoundToThrow = firstNotFound ?? (beforeLoadNotFound && !inner.preload ? beforeLoadNotFound : void 0);
+  let headMaxIndex = inner.firstBadMatchIndex !== void 0 ? inner.firstBadMatchIndex : inner.matches.length - 1;
+  if (!notFoundToThrow && beforeLoadNotFound && inner.preload) return inner.matches;
+  if (notFoundToThrow) {
+    const renderedBoundaryIndex = getNotFoundBoundaryIndex(inner, notFoundToThrow);
+    if (renderedBoundaryIndex === void 0) {
+      if (true) throw new Error("Invariant failed: Could not find match for notFound boundary");
+      invariant();
+    }
+    const boundaryMatch = inner.matches[renderedBoundaryIndex];
+    const boundaryRoute = inner.router.looseRoutesById[boundaryMatch.routeId];
+    const defaultNotFoundComponent = inner.router.options?.defaultNotFoundComponent;
+    if (!boundaryRoute.options.notFoundComponent && defaultNotFoundComponent) boundaryRoute.options.notFoundComponent = defaultNotFoundComponent;
+    notFoundToThrow.routeId = boundaryMatch.routeId;
+    const boundaryIsRoot = boundaryMatch.routeId === inner.router.routeTree.id;
+    inner.updateMatch(boundaryMatch.id, (prev) => ({
+      ...prev,
+      ...boundaryIsRoot ? {
+        status: "success",
+        globalNotFound: true,
+        error: void 0
+      } : {
+        status: "notFound",
+        error: notFoundToThrow
+      },
+      isFetching: false
+    }));
+    headMaxIndex = renderedBoundaryIndex;
+    await loadRouteChunk(boundaryRoute, ["notFoundComponent"]);
+  } else if (!inner.preload) {
+    const rootMatch = inner.matches[0];
+    if (!rootMatch.globalNotFound) {
+      if (inner.router.getMatch(rootMatch.id)?.globalNotFound) inner.updateMatch(rootMatch.id, (prev) => ({
+        ...prev,
+        globalNotFound: false,
+        error: void 0
+      }));
+    }
+  }
+  if (inner.serialError && inner.firstBadMatchIndex !== void 0) {
+    const errorRoute = inner.router.looseRoutesById[inner.matches[inner.firstBadMatchIndex].routeId];
+    await loadRouteChunk(errorRoute, ["errorComponent"]);
+  }
+  for (let i = 0; i <= headMaxIndex; i++) {
+    const { id: matchId, routeId } = inner.matches[i];
+    const route = inner.router.looseRoutesById[routeId];
+    try {
+      const headResult = executeHead(inner, matchId, route);
+      if (headResult) {
+        const head = await headResult;
+        inner.updateMatch(matchId, (prev) => ({
+          ...prev,
+          ...head
+        }));
+      }
+    } catch (err) {
+      console.error(`Error executing head for route ${routeId}:`, err);
+    }
+  }
+  const readyPromise = triggerOnReady(inner);
+  if (isPromise(readyPromise)) await readyPromise;
+  if (notFoundToThrow) throw notFoundToThrow;
+  if (inner.serialError && !inner.preload && !inner.onReady) throw inner.serialError;
+  return inner.matches;
+}
+function preloadRouteComponents(route, componentTypesToLoad) {
+  const preloads = componentTypesToLoad.map((type) => route.options[type]?.preload?.()).filter(Boolean);
+  if (preloads.length === 0) return void 0;
+  return Promise.all(preloads);
+}
+function loadRouteChunk(route, componentTypesToLoad = componentTypes) {
+  if (!route._lazyLoaded && route._lazyPromise === void 0) if (route.lazyFn) route._lazyPromise = route.lazyFn().then((lazyRoute) => {
+    const { id: _id, ...options } = lazyRoute.options;
+    Object.assign(route.options, options);
+    route._lazyLoaded = true;
+    route._lazyPromise = void 0;
+  });
+  else route._lazyLoaded = true;
+  const runAfterLazy = () => route._componentsLoaded ? void 0 : componentTypesToLoad === componentTypes ? (() => {
+    if (route._componentsPromise === void 0) {
+      const componentsPromise = preloadRouteComponents(route, componentTypes);
+      if (componentsPromise) route._componentsPromise = componentsPromise.then(() => {
+        route._componentsLoaded = true;
+        route._componentsPromise = void 0;
+      });
+      else route._componentsLoaded = true;
+    }
+    return route._componentsPromise;
+  })() : preloadRouteComponents(route, componentTypesToLoad);
+  return route._lazyPromise ? route._lazyPromise.then(runAfterLazy) : runAfterLazy();
+}
+function makeMaybe(value, error) {
+  if (error) return {
+    status: "error",
+    error
+  };
+  return {
+    status: "success",
+    value
+  };
+}
+function routeNeedsPreload(route) {
+  for (const componentType of componentTypes) if (route.options[componentType]?.preload) return true;
+  return false;
+}
+var componentTypes = [
+  "component",
+  "errorComponent",
+  "pendingComponent",
+  "notFoundComponent"
+];
+
+// node_modules/@tanstack/history/dist/esm/index.js
+var stateIndexKey = "__TSR_index";
+var popStateEvent = "popstate";
+var beforeUnloadEvent = "beforeunload";
+function createHistory(opts) {
+  let location = opts.getLocation();
+  const subscribers = /* @__PURE__ */ new Set();
+  const notify = (action) => {
+    location = opts.getLocation();
+    subscribers.forEach((subscriber) => subscriber({
+      location,
+      action
+    }));
+  };
+  const handleIndexChange = (action) => {
+    if (opts.notifyOnIndexChange ?? true) notify(action);
+    else location = opts.getLocation();
+  };
+  const tryNavigation = async ({ task, navigateOpts, ...actionInfo }) => {
+    if (navigateOpts?.ignoreBlocker ?? false) {
+      task();
+      return;
+    }
+    const blockers = opts.getBlockers?.() ?? [];
+    const isPushOrReplace = actionInfo.type === "PUSH" || actionInfo.type === "REPLACE";
+    if (typeof document !== "undefined" && blockers.length && isPushOrReplace) for (const blocker of blockers) {
+      const nextLocation = parseHref(actionInfo.path, actionInfo.state);
+      if (await blocker.blockerFn({
+        currentLocation: location,
+        nextLocation,
+        action: actionInfo.type
+      })) {
+        opts.onBlocked?.();
+        return;
+      }
+    }
+    task();
+  };
+  return {
+    get location() {
+      return location;
+    },
+    get length() {
+      return opts.getLength();
+    },
+    subscribers,
+    subscribe: (cb) => {
+      subscribers.add(cb);
+      return () => {
+        subscribers.delete(cb);
+      };
+    },
+    push: (path, state, navigateOpts) => {
+      const currentIndex = location.state[stateIndexKey];
+      state = assignKeyAndIndex(currentIndex + 1, state);
+      tryNavigation({
+        task: () => {
+          opts.pushState(path, state);
+          notify({ type: "PUSH" });
+        },
+        navigateOpts,
+        type: "PUSH",
+        path,
+        state
+      });
+    },
+    replace: (path, state, navigateOpts) => {
+      const currentIndex = location.state[stateIndexKey];
+      state = assignKeyAndIndex(currentIndex, state);
+      tryNavigation({
+        task: () => {
+          opts.replaceState(path, state);
+          notify({ type: "REPLACE" });
+        },
+        navigateOpts,
+        type: "REPLACE",
+        path,
+        state
+      });
+    },
+    go: (index, navigateOpts) => {
+      tryNavigation({
+        task: () => {
+          opts.go(index);
+          handleIndexChange({
+            type: "GO",
+            index
+          });
+        },
+        navigateOpts,
+        type: "GO"
+      });
+    },
+    back: (navigateOpts) => {
+      tryNavigation({
+        task: () => {
+          opts.back(navigateOpts?.ignoreBlocker ?? false);
+          handleIndexChange({ type: "BACK" });
+        },
+        navigateOpts,
+        type: "BACK"
+      });
+    },
+    forward: (navigateOpts) => {
+      tryNavigation({
+        task: () => {
+          opts.forward(navigateOpts?.ignoreBlocker ?? false);
+          handleIndexChange({ type: "FORWARD" });
+        },
+        navigateOpts,
+        type: "FORWARD"
+      });
+    },
+    canGoBack: () => location.state[stateIndexKey] !== 0,
+    createHref: (str) => opts.createHref(str),
+    block: (blocker) => {
+      if (!opts.setBlockers) return () => {
+      };
+      const blockers = opts.getBlockers?.() ?? [];
+      opts.setBlockers([...blockers, blocker]);
+      return () => {
+        const blockers2 = opts.getBlockers?.() ?? [];
+        opts.setBlockers?.(blockers2.filter((b) => b !== blocker));
+      };
+    },
+    flush: () => opts.flush?.(),
+    destroy: () => opts.destroy?.(),
+    notify
+  };
+}
+function assignKeyAndIndex(index, state) {
+  if (!state) state = {};
+  const key = createRandomKey();
+  return {
+    ...state,
+    key,
+    __TSR_key: key,
+    [stateIndexKey]: index
+  };
+}
+function createBrowserHistory(opts) {
+  const win = opts?.window ?? (typeof document !== "undefined" ? window : void 0);
+  const originalPushState = win.history.pushState;
+  const originalReplaceState = win.history.replaceState;
+  let blockers = [];
+  const _getBlockers = () => blockers;
+  const _setBlockers = (newBlockers) => blockers = newBlockers;
+  const createHref = opts?.createHref ?? ((path) => path);
+  const parseLocation = opts?.parseLocation ?? (() => parseHref(`${win.location.pathname}${win.location.search}${win.location.hash}`, win.history.state));
+  if (!win.history.state?.__TSR_key && !win.history.state?.key) {
+    const addedKey = createRandomKey();
+    win.history.replaceState({
+      [stateIndexKey]: 0,
+      key: addedKey,
+      __TSR_key: addedKey
+    }, "");
+  }
+  let currentLocation = parseLocation();
+  let rollbackLocation;
+  let nextPopIsGo = false;
+  let ignoreNextPop = false;
+  let skipBlockerNextPop = false;
+  let ignoreNextBeforeUnload = false;
+  const getLocation = () => currentLocation;
+  let next;
+  let scheduled;
+  const flush = () => {
+    if (!next) return;
+    history._ignoreSubscribers = true;
+    (next.isPush ? win.history.pushState : win.history.replaceState)(next.state, "", next.href);
+    history._ignoreSubscribers = false;
+    next = void 0;
+    scheduled = void 0;
+    rollbackLocation = void 0;
+  };
+  const queueHistoryAction = (type, destHref, state) => {
+    const href = createHref(destHref);
+    if (!scheduled) rollbackLocation = currentLocation;
+    currentLocation = parseHref(destHref, state);
+    next = {
+      href,
+      state,
+      isPush: next?.isPush || type === "push"
+    };
+    if (!scheduled) scheduled = Promise.resolve().then(() => flush());
+  };
+  const onPushPop = (type) => {
+    currentLocation = parseLocation();
+    history.notify({ type });
+  };
+  const onPushPopEvent = async () => {
+    if (ignoreNextPop) {
+      ignoreNextPop = false;
+      return;
+    }
+    const nextLocation = parseLocation();
+    const delta = nextLocation.state[stateIndexKey] - currentLocation.state[stateIndexKey];
+    const isForward = delta === 1;
+    const isBack = delta === -1;
+    const isGo = !isForward && !isBack || nextPopIsGo;
+    nextPopIsGo = false;
+    const action = isGo ? "GO" : isBack ? "BACK" : "FORWARD";
+    const notify = isGo ? {
+      type: "GO",
+      index: delta
+    } : { type: isBack ? "BACK" : "FORWARD" };
+    if (skipBlockerNextPop) skipBlockerNextPop = false;
+    else {
+      const blockers2 = _getBlockers();
+      if (typeof document !== "undefined" && blockers2.length) {
+        for (const blocker of blockers2) if (await blocker.blockerFn({
+          currentLocation,
+          nextLocation,
+          action
+        })) {
+          ignoreNextPop = true;
+          win.history.go(1);
+          history.notify(notify);
+          return;
+        }
+      }
+    }
+    currentLocation = parseLocation();
+    history.notify(notify);
+  };
+  const onBeforeUnload = (e) => {
+    if (ignoreNextBeforeUnload) {
+      ignoreNextBeforeUnload = false;
+      return;
+    }
+    let shouldBlock = false;
+    const blockers2 = _getBlockers();
+    if (typeof document !== "undefined" && blockers2.length) for (const blocker of blockers2) {
+      const shouldHaveBeforeUnload = blocker.enableBeforeUnload ?? true;
+      if (shouldHaveBeforeUnload === true) {
+        shouldBlock = true;
+        break;
+      }
+      if (typeof shouldHaveBeforeUnload === "function" && shouldHaveBeforeUnload() === true) {
+        shouldBlock = true;
+        break;
+      }
+    }
+    if (shouldBlock) {
+      e.preventDefault();
+      return e.returnValue = "";
+    }
+  };
+  const history = createHistory({
+    getLocation,
+    getLength: () => win.history.length,
+    pushState: (href, state) => queueHistoryAction("push", href, state),
+    replaceState: (href, state) => queueHistoryAction("replace", href, state),
+    back: (ignoreBlocker) => {
+      if (ignoreBlocker) skipBlockerNextPop = true;
+      ignoreNextBeforeUnload = true;
+      return win.history.back();
+    },
+    forward: (ignoreBlocker) => {
+      if (ignoreBlocker) skipBlockerNextPop = true;
+      ignoreNextBeforeUnload = true;
+      win.history.forward();
+    },
+    go: (n) => {
+      nextPopIsGo = true;
+      win.history.go(n);
+    },
+    createHref: (href) => createHref(href),
+    flush,
+    destroy: () => {
+      win.history.pushState = originalPushState;
+      win.history.replaceState = originalReplaceState;
+      win.removeEventListener(beforeUnloadEvent, onBeforeUnload, { capture: true });
+      win.removeEventListener(popStateEvent, onPushPopEvent);
+    },
+    onBlocked: () => {
+      if (rollbackLocation && currentLocation !== rollbackLocation) currentLocation = rollbackLocation;
+    },
+    getBlockers: _getBlockers,
+    setBlockers: _setBlockers,
+    notifyOnIndexChange: false
+  });
+  win.addEventListener(beforeUnloadEvent, onBeforeUnload, { capture: true });
+  win.addEventListener(popStateEvent, onPushPopEvent);
+  win.history.pushState = function(...args) {
+    const res = originalPushState.apply(win.history, args);
+    if (!history._ignoreSubscribers) onPushPop("PUSH");
+    return res;
+  };
+  win.history.replaceState = function(...args) {
+    const res = originalReplaceState.apply(win.history, args);
+    if (!history._ignoreSubscribers) onPushPop("REPLACE");
+    return res;
+  };
+  return history;
+}
+function sanitizePath(path) {
+  let sanitized = path.replace(/[\x00-\x1f\x7f]/g, "");
+  if (sanitized.startsWith("//")) sanitized = "/" + sanitized.replace(/^\/+/, "");
+  return sanitized;
+}
+function parseHref(href, state) {
+  const sanitizedHref = sanitizePath(href);
+  const hashIndex = sanitizedHref.indexOf("#");
+  const searchIndex = sanitizedHref.indexOf("?");
+  const addedKey = createRandomKey();
+  return {
+    href: sanitizedHref,
+    pathname: sanitizedHref.substring(0, hashIndex > 0 ? searchIndex > 0 ? Math.min(hashIndex, searchIndex) : hashIndex : searchIndex > 0 ? searchIndex : sanitizedHref.length),
+    hash: hashIndex > -1 ? sanitizedHref.substring(hashIndex) : "",
+    search: searchIndex > -1 ? sanitizedHref.slice(searchIndex, hashIndex === -1 ? void 0 : hashIndex) : "",
+    state: state || {
+      [stateIndexKey]: 0,
+      key: addedKey,
+      __TSR_key: addedKey
+    }
+  };
+}
+function createRandomKey() {
+  return (Math.random() + 1).toString(36).substring(7);
+}
+
+// node_modules/@tanstack/router-core/dist/esm/router.js
+function defaultSerializeError(err) {
+  if (err instanceof Error) {
+    const obj = {
+      name: err.name,
+      message: err.message
+    };
+    if (true) obj.stack = err.stack;
+    return obj;
+  }
+  return { data: err };
+}
+var trailingSlashOptions = {
+  always: "always",
+  never: "never",
+  preserve: "preserve"
+};
+function getLocationChangeInfo(location, resolvedLocation) {
+  const fromLocation = resolvedLocation;
+  const toLocation = location;
+  return {
+    fromLocation,
+    toLocation,
+    pathChanged: fromLocation?.pathname !== toLocation.pathname,
+    hrefChanged: fromLocation?.href !== toLocation.href,
+    hashChanged: fromLocation?.hash !== toLocation.hash
+  };
+}
+var RouterCore = class {
+  /**
+  * @deprecated Use the `createRouter` function instead
+  */
+  constructor(options, getStoreConfig) {
+    this.tempLocationKey = `${Math.round(Math.random() * 1e7)}`;
+    this.resetNextScroll = true;
+    this.shouldViewTransition = void 0;
+    this.isViewTransitionTypesSupported = void 0;
+    this.subscribers = /* @__PURE__ */ new Set();
+    this.isScrollRestoring = false;
+    this.isScrollRestorationSetup = false;
+    this.startTransition = (fn) => fn();
+    this.update = (newOptions) => {
+      if (true) {
+        if (newOptions.notFoundRoute) console.warn("The notFoundRoute API is deprecated and will be removed in the next major version. See https://tanstack.com/router/v1/docs/framework/react/guide/not-found-errors#migrating-from-notfoundroute for more info.");
+      }
+      const prevOptions = this.options;
+      const prevBasepath = this.basepath ?? prevOptions?.basepath ?? "/";
+      const basepathWasUnset = this.basepath === void 0;
+      const prevRewriteOption = prevOptions?.rewrite;
+      this.options = {
+        ...prevOptions,
+        ...newOptions
+      };
+      this.isServer = this.options.isServer ?? typeof document === "undefined";
+      this.protocolAllowlist = new Set(this.options.protocolAllowlist);
+      if (this.options.pathParamsAllowedCharacters) this.pathParamsDecoder = compileDecodeCharMap(this.options.pathParamsAllowedCharacters);
+      if (!this.history || this.options.history && this.options.history !== this.history) if (!this.options.history) {
+        if (!(isServer ?? this.isServer)) this.history = createBrowserHistory();
+      } else this.history = this.options.history;
+      this.origin = this.options.origin;
+      if (!this.origin) if (!(isServer ?? this.isServer) && window?.origin && window.origin !== "null") this.origin = window.origin;
+      else this.origin = "http://localhost";
+      if (this.history) this.updateLatestLocation();
+      if (this.options.routeTree !== this.routeTree) {
+        this.routeTree = this.options.routeTree;
+        let processRouteTreeResult;
+        if ((isServer ?? this.isServer) && false) {
+          const cached = globalThis.__TSR_CACHE__;
+          this.resolvePathCache = cached.resolvePathCache;
+          processRouteTreeResult = cached.processRouteTreeResult;
+        } else {
+          this.resolvePathCache = createLRUCache(1e3);
+          processRouteTreeResult = this.buildRouteTree();
+          if ((isServer ?? this.isServer) && false) globalThis.__TSR_CACHE__ = {
+            routeTree: this.routeTree,
+            processRouteTreeResult,
+            resolvePathCache: this.resolvePathCache
+          };
+        }
+        this.setRoutes(processRouteTreeResult);
+      }
+      if (!this.stores && this.latestLocation) {
+        const config = this.getStoreConfig(this);
+        this.batch = config.batch;
+        this.stores = createRouterStores(getInitialRouterState(this.latestLocation), config);
+        if (!(isServer ?? this.isServer)) setupScrollRestoration(this);
+      }
+      let needsLocationUpdate = false;
+      const nextBasepath = this.options.basepath ?? "/";
+      const nextRewriteOption = this.options.rewrite;
+      if (basepathWasUnset || prevBasepath !== nextBasepath || prevRewriteOption !== nextRewriteOption) {
+        this.basepath = nextBasepath;
+        const rewrites = [];
+        const trimmed = trimPath(nextBasepath);
+        if (trimmed && trimmed !== "/") rewrites.push(rewriteBasepath({ basepath: nextBasepath }));
+        if (nextRewriteOption) rewrites.push(nextRewriteOption);
+        this.rewrite = rewrites.length === 0 ? void 0 : rewrites.length === 1 ? rewrites[0] : composeRewrites(rewrites);
+        if (this.history) this.updateLatestLocation();
+        needsLocationUpdate = true;
+      }
+      if (needsLocationUpdate && this.stores) this.stores.location.set(this.latestLocation);
+      if (typeof window !== "undefined" && "CSS" in window && typeof window.CSS?.supports === "function") this.isViewTransitionTypesSupported = window.CSS.supports("selector(:active-view-transition-type(a)");
+    };
+    this.updateLatestLocation = () => {
+      this.latestLocation = this.parseLocation(this.history.location, this.latestLocation);
+    };
+    this.buildRouteTree = () => {
+      const result = processRouteTree(this.routeTree, this.options.caseSensitive, (route, i) => {
+        route.init({ originalIndex: i });
+      });
+      if (this.options.routeMasks) processRouteMasks(this.options.routeMasks, result.processedTree);
+      return result;
+    };
+    this.subscribe = (eventType, fn) => {
+      const listener = {
+        eventType,
+        fn
+      };
+      this.subscribers.add(listener);
+      return () => {
+        this.subscribers.delete(listener);
+      };
+    };
+    this.emit = (routerEvent) => {
+      this.subscribers.forEach((listener) => {
+        if (listener.eventType === routerEvent.type) listener.fn(routerEvent);
+      });
+    };
+    this.parseLocation = (locationToParse, previousLocation) => {
+      const parse = ({ pathname, search, hash, href, state }) => {
+        if (!this.rewrite && !/[ \x00-\x1f\x7f\u0080-\uffff]/.test(pathname)) {
+          const parsedSearch2 = this.options.parseSearch(search);
+          const searchStr2 = this.options.stringifySearch(parsedSearch2);
+          return {
+            href: pathname + searchStr2 + hash,
+            publicHref: pathname + searchStr2 + hash,
+            pathname: decodePath(pathname).path,
+            external: false,
+            searchStr: searchStr2,
+            search: nullReplaceEqualDeep(previousLocation?.search, parsedSearch2),
+            hash: decodePath(hash.slice(1)).path,
+            state: replaceEqualDeep(previousLocation?.state, state)
+          };
+        }
+        const fullUrl = new URL(href, this.origin);
+        const url = executeRewriteInput(this.rewrite, fullUrl);
+        const parsedSearch = this.options.parseSearch(url.search);
+        const searchStr = this.options.stringifySearch(parsedSearch);
+        url.search = searchStr;
+        return {
+          href: url.href.replace(url.origin, ""),
+          publicHref: href,
+          pathname: decodePath(url.pathname).path,
+          external: !!this.rewrite && url.origin !== this.origin,
+          searchStr,
+          search: nullReplaceEqualDeep(previousLocation?.search, parsedSearch),
+          hash: decodePath(url.hash.slice(1)).path,
+          state: replaceEqualDeep(previousLocation?.state, state)
+        };
+      };
+      const location = parse(locationToParse);
+      const { __tempLocation, __tempKey } = location.state;
+      if (__tempLocation && (!__tempKey || __tempKey === this.tempLocationKey)) {
+        const parsedTempLocation = parse(__tempLocation);
+        parsedTempLocation.state.key = location.state.key;
+        parsedTempLocation.state.__TSR_key = location.state.__TSR_key;
+        delete parsedTempLocation.state.__tempLocation;
+        return {
+          ...parsedTempLocation,
+          maskedLocation: location
+        };
+      }
+      return location;
+    };
+    this.resolvePathWithBase = (from, path) => {
+      return resolvePath({
+        base: from,
+        to: cleanPath(path),
+        trailingSlash: this.options.trailingSlash,
+        cache: this.resolvePathCache
+      });
+    };
+    this.matchRoutes = (pathnameOrNext, locationSearchOrOpts, opts) => {
+      if (typeof pathnameOrNext === "string") return this.matchRoutesInternal({
+        pathname: pathnameOrNext,
+        search: locationSearchOrOpts
+      }, opts);
+      return this.matchRoutesInternal(pathnameOrNext, locationSearchOrOpts);
+    };
+    this.getMatchedRoutes = (pathname) => {
+      return getMatchedRoutes({
+        pathname,
+        routesById: this.routesById,
+        processedTree: this.processedTree
+      });
+    };
+    this.cancelMatch = (id) => {
+      const match = this.getMatch(id);
+      if (!match) return;
+      match.abortController.abort();
+      clearTimeout(match._nonReactive.pendingTimeout);
+      match._nonReactive.pendingTimeout = void 0;
+    };
+    this.cancelMatches = () => {
+      this.stores.pendingIds.get().forEach((matchId) => {
+        this.cancelMatch(matchId);
+      });
+      this.stores.matchesId.get().forEach((matchId) => {
+        if (this.stores.pendingMatchStores.has(matchId)) return;
+        const match = this.stores.matchStores.get(matchId)?.get();
+        if (!match) return;
+        if (match.status === "pending" || match.isFetching === "loader") this.cancelMatch(matchId);
+      });
+    };
+    this.buildLocation = (opts) => {
+      const build = (dest = {}) => {
+        const currentLocation = dest._fromLocation || this.pendingBuiltLocation || this.latestLocation;
+        const lightweightResult = this.matchRoutesLightweight(currentLocation);
+        if (dest.from && true && dest._isNavigate) {
+          const allFromMatches = this.getMatchedRoutes(dest.from).matchedRoutes;
+          const matchedFrom = findLast(lightweightResult.matchedRoutes, (d) => {
+            return comparePaths(d.fullPath, dest.from);
+          });
+          const matchedCurrent = findLast(allFromMatches, (d) => {
+            return comparePaths(d.fullPath, lightweightResult.fullPath);
+          });
+          if (!matchedFrom && !matchedCurrent) console.warn(`Could not find match for from: ${dest.from}`);
+        }
+        const defaultedFromPath = dest.unsafeRelative === "path" ? currentLocation.pathname : dest.from ?? lightweightResult.fullPath;
+        const fromPath = this.resolvePathWithBase(defaultedFromPath, ".");
+        const fromSearch = lightweightResult.search;
+        const fromParams = Object.assign(/* @__PURE__ */ Object.create(null), lightweightResult.params);
+        const nextTo = dest.to ? this.resolvePathWithBase(fromPath, `${dest.to}`) : this.resolvePathWithBase(fromPath, ".");
+        const nextParams = dest.params === false || dest.params === null ? /* @__PURE__ */ Object.create(null) : (dest.params ?? true) === true ? fromParams : Object.assign(fromParams, functionalUpdate(dest.params, fromParams));
+        const destMatchResult = this.getMatchedRoutes(nextTo);
+        let destRoutes = destMatchResult.matchedRoutes;
+        if ((!destMatchResult.foundRoute || destMatchResult.foundRoute.path !== "/" && destMatchResult.routeParams["**"]) && this.options.notFoundRoute) destRoutes = [...destRoutes, this.options.notFoundRoute];
+        if (Object.keys(nextParams).length > 0) for (const route of destRoutes) {
+          const fn = route.options.params?.stringify ?? route.options.stringifyParams;
+          if (fn) try {
+            Object.assign(nextParams, fn(nextParams));
+          } catch {
+          }
+        }
+        const nextPathname = opts.leaveParams ? nextTo : decodePath(interpolatePath({
+          path: nextTo,
+          params: nextParams,
+          decoder: this.pathParamsDecoder,
+          server: this.isServer
+        }).interpolatedPath).path;
+        let nextSearch = fromSearch;
+        if (opts._includeValidateSearch && this.options.search?.strict) {
+          const validatedSearch = {};
+          destRoutes.forEach((route) => {
+            if (route.options.validateSearch) try {
+              Object.assign(validatedSearch, validateSearch(route.options.validateSearch, {
+                ...validatedSearch,
+                ...nextSearch
+              }));
+            } catch {
+            }
+          });
+          nextSearch = validatedSearch;
+        }
+        nextSearch = applySearchMiddleware({
+          search: nextSearch,
+          dest,
+          destRoutes,
+          _includeValidateSearch: opts._includeValidateSearch
+        });
+        nextSearch = nullReplaceEqualDeep(fromSearch, nextSearch);
+        const searchStr = this.options.stringifySearch(nextSearch);
+        const hash = dest.hash === true ? currentLocation.hash : dest.hash ? functionalUpdate(dest.hash, currentLocation.hash) : void 0;
+        const hashStr = hash ? `#${hash}` : "";
+        let nextState = dest.state === true ? currentLocation.state : dest.state ? functionalUpdate(dest.state, currentLocation.state) : {};
+        nextState = replaceEqualDeep(currentLocation.state, nextState);
+        const fullPath = `${nextPathname}${searchStr}${hashStr}`;
+        let href;
+        let publicHref;
+        let external = false;
+        if (this.rewrite) {
+          const url = new URL(fullPath, this.origin);
+          const rewrittenUrl = executeRewriteOutput(this.rewrite, url);
+          href = url.href.replace(url.origin, "");
+          if (rewrittenUrl.origin !== this.origin) {
+            publicHref = rewrittenUrl.href;
+            external = true;
+          } else publicHref = rewrittenUrl.pathname + rewrittenUrl.search + rewrittenUrl.hash;
+        } else {
+          href = encodePathLikeUrl(fullPath);
+          publicHref = href;
+        }
+        return {
+          publicHref,
+          href,
+          pathname: nextPathname,
+          search: nextSearch,
+          searchStr,
+          state: nextState,
+          hash: hash ?? "",
+          external,
+          unmaskOnReload: dest.unmaskOnReload
+        };
+      };
+      const buildWithMatches = (dest = {}, maskedDest) => {
+        const next = build(dest);
+        let maskedNext = maskedDest ? build(maskedDest) : void 0;
+        if (!maskedNext) {
+          const params = /* @__PURE__ */ Object.create(null);
+          if (this.options.routeMasks) {
+            const match = findFlatMatch(next.pathname, this.processedTree);
+            if (match) {
+              Object.assign(params, match.rawParams);
+              const { from: _from, params: maskParams, ...maskProps } = match.route;
+              const nextParams = maskParams === false || maskParams === null ? /* @__PURE__ */ Object.create(null) : (maskParams ?? true) === true ? params : Object.assign(params, functionalUpdate(maskParams, params));
+              maskedDest = {
+                from: opts.from,
+                ...maskProps,
+                params: nextParams
+              };
+              maskedNext = build(maskedDest);
+            }
+          }
+        }
+        if (maskedNext) next.maskedLocation = maskedNext;
+        return next;
+      };
+      if (opts.mask) return buildWithMatches(opts, {
+        from: opts.from,
+        ...opts.mask
+      });
+      return buildWithMatches(opts);
+    };
+    this.commitLocation = async ({ viewTransition, ignoreBlocker, ...next }) => {
+      const isSameState = () => {
+        const ignoredProps = [
+          "key",
+          "__TSR_key",
+          "__TSR_index",
+          "__hashScrollIntoViewOptions"
+        ];
+        ignoredProps.forEach((prop) => {
+          next.state[prop] = this.latestLocation.state[prop];
+        });
+        const isEqual = deepEqual(next.state, this.latestLocation.state);
+        ignoredProps.forEach((prop) => {
+          delete next.state[prop];
+        });
+        return isEqual;
+      };
+      const isSameUrl = trimPathRight2(this.latestLocation.href) === trimPathRight2(next.href);
+      let previousCommitPromise = this.commitLocationPromise;
+      this.commitLocationPromise = createControlledPromise(() => {
+        previousCommitPromise?.resolve();
+        previousCommitPromise = void 0;
+      });
+      if (isSameUrl && isSameState()) this.load();
+      else {
+        let { maskedLocation, hashScrollIntoView, ...nextHistory } = next;
+        if (maskedLocation) {
+          nextHistory = {
+            ...maskedLocation,
+            state: {
+              ...maskedLocation.state,
+              __tempKey: void 0,
+              __tempLocation: {
+                ...nextHistory,
+                search: nextHistory.searchStr,
+                state: {
+                  ...nextHistory.state,
+                  __tempKey: void 0,
+                  __tempLocation: void 0,
+                  __TSR_key: void 0,
+                  key: void 0
+                }
+              }
+            }
+          };
+          if (nextHistory.unmaskOnReload ?? this.options.unmaskOnReload ?? false) nextHistory.state.__tempKey = this.tempLocationKey;
+        }
+        nextHistory.state.__hashScrollIntoViewOptions = hashScrollIntoView ?? this.options.defaultHashScrollIntoView ?? true;
+        this.shouldViewTransition = viewTransition;
+        this.history[next.replace ? "replace" : "push"](nextHistory.publicHref, nextHistory.state, { ignoreBlocker });
+      }
+      this.resetNextScroll = next.resetScroll ?? true;
+      if (!this.history.subscribers.size) this.load();
+      return this.commitLocationPromise;
+    };
+    this.buildAndCommitLocation = ({ replace, resetScroll, hashScrollIntoView, viewTransition, ignoreBlocker, href, ...rest } = {}) => {
+      if (href) {
+        const currentIndex = this.history.location.state.__TSR_index;
+        const parsed = parseHref(href, { __TSR_index: replace ? currentIndex : currentIndex + 1 });
+        const hrefUrl = new URL(parsed.pathname, this.origin);
+        rest.to = executeRewriteInput(this.rewrite, hrefUrl).pathname;
+        rest.search = this.options.parseSearch(parsed.search);
+        rest.hash = parsed.hash.slice(1);
+      }
+      const location = this.buildLocation({
+        ...rest,
+        _includeValidateSearch: true
+      });
+      this.pendingBuiltLocation = location;
+      const commitPromise = this.commitLocation({
+        ...location,
+        viewTransition,
+        replace,
+        resetScroll,
+        hashScrollIntoView,
+        ignoreBlocker
+      });
+      Promise.resolve().then(() => {
+        if (this.pendingBuiltLocation === location) this.pendingBuiltLocation = void 0;
+      });
+      return commitPromise;
+    };
+    this.navigate = async ({ to, reloadDocument, href, publicHref, ...rest }) => {
+      let hrefIsUrl = false;
+      if (href) try {
+        new URL(`${href}`);
+        hrefIsUrl = true;
+      } catch {
+      }
+      if (hrefIsUrl && !reloadDocument) reloadDocument = true;
+      if (reloadDocument) {
+        if (to !== void 0 || !href) {
+          const location = this.buildLocation({
+            to,
+            ...rest
+          });
+          href = href ?? location.publicHref;
+          publicHref = publicHref ?? location.publicHref;
+        }
+        const reloadHref = !hrefIsUrl && publicHref ? publicHref : href;
+        if (isDangerousProtocol(reloadHref, this.protocolAllowlist)) {
+          if (true) console.warn(`Blocked navigation to dangerous protocol: ${reloadHref}`);
+          return Promise.resolve();
+        }
+        if (!rest.ignoreBlocker) {
+          const blockers = this.history.getBlockers?.() ?? [];
+          for (const blocker of blockers) if (blocker?.blockerFn) {
+            if (await blocker.blockerFn({
+              currentLocation: this.latestLocation,
+              nextLocation: this.latestLocation,
+              action: "PUSH"
+            })) return Promise.resolve();
+          }
+        }
+        if (rest.replace) window.location.replace(reloadHref);
+        else window.location.href = reloadHref;
+        return Promise.resolve();
+      }
+      return this.buildAndCommitLocation({
+        ...rest,
+        href,
+        to,
+        _isNavigate: true
+      });
+    };
+    this.beforeLoad = () => {
+      this.cancelMatches();
+      this.updateLatestLocation();
+      if (isServer ?? this.isServer) {
+        const nextLocation = this.buildLocation({
+          to: this.latestLocation.pathname,
+          search: true,
+          params: true,
+          hash: true,
+          state: true,
+          _includeValidateSearch: true
+        });
+        if (this.latestLocation.publicHref !== nextLocation.publicHref) {
+          const href = this.getParsedLocationHref(nextLocation);
+          if (nextLocation.external) throw redirect({ href });
+          else throw redirect({
+            href,
+            _builtLocation: nextLocation
+          });
+        }
+      }
+      const pendingMatches = this.matchRoutes(this.latestLocation);
+      const nextCachedMatches = this.stores.cachedMatches.get().filter((d) => !pendingMatches.some((e) => e.id === d.id));
+      this.batch(() => {
+        this.stores.status.set("pending");
+        this.stores.statusCode.set(200);
+        this.stores.isLoading.set(true);
+        this.stores.location.set(this.latestLocation);
+        this.stores.setPending(pendingMatches);
+        this.stores.setCached(nextCachedMatches);
+      });
+    };
+    this.load = async (opts) => {
+      let redirect2;
+      let notFound2;
+      let loadPromise;
+      const previousLocation = this.stores.resolvedLocation.get() ?? this.stores.location.get();
+      loadPromise = new Promise((resolve) => {
+        this.startTransition(async () => {
+          try {
+            this.beforeLoad();
+            const next = this.latestLocation;
+            const locationChangeInfo = getLocationChangeInfo(next, this.stores.resolvedLocation.get());
+            if (!this.stores.redirect.get()) this.emit({
+              type: "onBeforeNavigate",
+              ...locationChangeInfo
+            });
+            this.emit({
+              type: "onBeforeLoad",
+              ...locationChangeInfo
+            });
+            await loadMatches({
+              router: this,
+              sync: opts?.sync,
+              forceStaleReload: previousLocation.href === next.href,
+              matches: this.stores.pendingMatches.get(),
+              location: next,
+              updateMatch: this.updateMatch,
+              onReady: async () => {
+                this.startTransition(() => {
+                  this.startViewTransition(async () => {
+                    let exitingMatches = null;
+                    let hookExitingMatches = null;
+                    let hookEnteringMatches = null;
+                    let hookStayingMatches = null;
+                    this.batch(() => {
+                      const pendingMatches = this.stores.pendingMatches.get();
+                      const mountPending = pendingMatches.length;
+                      const currentMatches = this.stores.matches.get();
+                      exitingMatches = mountPending ? currentMatches.filter((match) => !this.stores.pendingMatchStores.has(match.id)) : null;
+                      const pendingRouteIds = /* @__PURE__ */ new Set();
+                      for (const s of this.stores.pendingMatchStores.values()) if (s.routeId) pendingRouteIds.add(s.routeId);
+                      const activeRouteIds = /* @__PURE__ */ new Set();
+                      for (const s of this.stores.matchStores.values()) if (s.routeId) activeRouteIds.add(s.routeId);
+                      hookExitingMatches = mountPending ? currentMatches.filter((match) => !pendingRouteIds.has(match.routeId)) : null;
+                      hookEnteringMatches = mountPending ? pendingMatches.filter((match) => !activeRouteIds.has(match.routeId)) : null;
+                      hookStayingMatches = mountPending ? pendingMatches.filter((match) => activeRouteIds.has(match.routeId)) : currentMatches;
+                      this.stores.isLoading.set(false);
+                      this.stores.loadedAt.set(Date.now());
+                      if (mountPending) {
+                        this.stores.setMatches(pendingMatches);
+                        this.stores.setPending([]);
+                        this.stores.setCached([...this.stores.cachedMatches.get(), ...exitingMatches.filter((d) => d.status !== "error" && d.status !== "notFound" && d.status !== "redirected")]);
+                        this.clearExpiredCache();
+                      }
+                    });
+                    for (const [matches, hook] of [
+                      [hookExitingMatches, "onLeave"],
+                      [hookEnteringMatches, "onEnter"],
+                      [hookStayingMatches, "onStay"]
+                    ]) {
+                      if (!matches) continue;
+                      for (const match of matches) this.looseRoutesById[match.routeId].options[hook]?.(match);
+                    }
+                  });
+                });
+              }
+            });
+          } catch (err) {
+            if (isRedirect(err)) {
+              redirect2 = err;
+              if (!(isServer ?? this.isServer)) this.navigate({
+                ...redirect2.options,
+                replace: true,
+                ignoreBlocker: true
+              });
+            } else if (isNotFound(err)) notFound2 = err;
+            const nextStatusCode = redirect2 ? redirect2.status : notFound2 ? 404 : this.stores.matches.get().some((d) => d.status === "error") ? 500 : 200;
+            this.batch(() => {
+              this.stores.statusCode.set(nextStatusCode);
+              this.stores.redirect.set(redirect2);
+            });
+          }
+          if (this.latestLoadPromise === loadPromise) {
+            this.commitLocationPromise?.resolve();
+            this.latestLoadPromise = void 0;
+            this.commitLocationPromise = void 0;
+          }
+          resolve();
+        });
+      });
+      this.latestLoadPromise = loadPromise;
+      await loadPromise;
+      while (this.latestLoadPromise && loadPromise !== this.latestLoadPromise) await this.latestLoadPromise;
+      let newStatusCode = void 0;
+      if (this.hasNotFoundMatch()) newStatusCode = 404;
+      else if (this.stores.matches.get().some((d) => d.status === "error")) newStatusCode = 500;
+      if (newStatusCode !== void 0) this.stores.statusCode.set(newStatusCode);
+    };
+    this.startViewTransition = (fn) => {
+      const shouldViewTransition = this.shouldViewTransition ?? this.options.defaultViewTransition;
+      this.shouldViewTransition = void 0;
+      if (shouldViewTransition && typeof document !== "undefined" && "startViewTransition" in document && typeof document.startViewTransition === "function") {
+        let startViewTransitionParams;
+        if (typeof shouldViewTransition === "object" && this.isViewTransitionTypesSupported) {
+          const next = this.latestLocation;
+          const prevLocation = this.stores.resolvedLocation.get();
+          const resolvedViewTransitionTypes = typeof shouldViewTransition.types === "function" ? shouldViewTransition.types(getLocationChangeInfo(next, prevLocation)) : shouldViewTransition.types;
+          if (resolvedViewTransitionTypes === false) {
+            fn();
+            return;
+          }
+          startViewTransitionParams = {
+            update: fn,
+            types: resolvedViewTransitionTypes
+          };
+        } else startViewTransitionParams = fn;
+        document.startViewTransition(startViewTransitionParams);
+      } else fn();
+    };
+    this.updateMatch = (id, updater) => {
+      this.startTransition(() => {
+        const pendingMatch = this.stores.pendingMatchStores.get(id);
+        if (pendingMatch) {
+          pendingMatch.set(updater);
+          return;
+        }
+        const activeMatch = this.stores.matchStores.get(id);
+        if (activeMatch) {
+          activeMatch.set(updater);
+          return;
+        }
+        const cachedMatch = this.stores.cachedMatchStores.get(id);
+        if (cachedMatch) {
+          const next = updater(cachedMatch.get());
+          if (next.status === "redirected") {
+            if (this.stores.cachedMatchStores.delete(id)) this.stores.cachedIds.set((prev) => prev.filter((matchId) => matchId !== id));
+          } else cachedMatch.set(next);
+        }
+      });
+    };
+    this.getMatch = (matchId) => {
+      return this.stores.cachedMatchStores.get(matchId)?.get() ?? this.stores.pendingMatchStores.get(matchId)?.get() ?? this.stores.matchStores.get(matchId)?.get();
+    };
+    this.invalidate = (opts) => {
+      const invalidate = (d) => {
+        if (opts?.filter?.(d) ?? true) return {
+          ...d,
+          invalid: true,
+          ...opts?.forcePending || d.status === "error" || d.status === "notFound" ? {
+            status: "pending",
+            error: void 0
+          } : void 0
+        };
+        return d;
+      };
+      this.batch(() => {
+        this.stores.setMatches(this.stores.matches.get().map(invalidate));
+        this.stores.setCached(this.stores.cachedMatches.get().map(invalidate));
+        this.stores.setPending(this.stores.pendingMatches.get().map(invalidate));
+      });
+      this.shouldViewTransition = false;
+      return this.load({ sync: opts?.sync });
+    };
+    this.getParsedLocationHref = (location) => {
+      return location.publicHref || "/";
+    };
+    this.resolveRedirect = (redirect2) => {
+      const locationHeader = redirect2.headers.get("Location");
+      if (!redirect2.options.href || redirect2.options._builtLocation) {
+        const location = redirect2.options._builtLocation ?? this.buildLocation(redirect2.options);
+        const href = this.getParsedLocationHref(location);
+        redirect2.options.href = href;
+        redirect2.headers.set("Location", href);
+      } else if (locationHeader) try {
+        const url = new URL(locationHeader);
+        if (this.origin && url.origin === this.origin) {
+          const href = url.pathname + url.search + url.hash;
+          redirect2.options.href = href;
+          redirect2.headers.set("Location", href);
+        }
+      } catch {
+      }
+      if (redirect2.options.href && !redirect2.options._builtLocation && isDangerousProtocol(redirect2.options.href, this.protocolAllowlist)) throw new Error(true ? `Redirect blocked: unsafe protocol in href "${redirect2.options.href}". Allowed protocols: ${Array.from(this.protocolAllowlist).join(", ")}.` : "Redirect blocked: unsafe protocol");
+      if (!redirect2.headers.get("Location")) redirect2.headers.set("Location", redirect2.options.href);
+      return redirect2;
+    };
+    this.clearCache = (opts) => {
+      const filter = opts?.filter;
+      if (filter !== void 0) this.stores.setCached(this.stores.cachedMatches.get().filter((m) => !filter(m)));
+      else this.stores.setCached([]);
+    };
+    this.clearExpiredCache = () => {
+      const now = Date.now();
+      const filter = (d) => {
+        const route = this.looseRoutesById[d.routeId];
+        if (!route.options.loader) return true;
+        const gcTime = (d.preload ? route.options.preloadGcTime ?? this.options.defaultPreloadGcTime : route.options.gcTime ?? this.options.defaultGcTime) ?? 300 * 1e3;
+        if (d.status === "error") return true;
+        return now - d.updatedAt >= gcTime;
+      };
+      this.clearCache({ filter });
+    };
+    this.loadRouteChunk = loadRouteChunk;
+    this.preloadRoute = async (opts) => {
+      const next = opts._builtLocation ?? this.buildLocation(opts);
+      let matches = this.matchRoutes(next, {
+        throwOnError: true,
+        preload: true,
+        dest: opts
+      });
+      const activeMatchIds = /* @__PURE__ */ new Set([...this.stores.matchesId.get(), ...this.stores.pendingIds.get()]);
+      const loadedMatchIds = /* @__PURE__ */ new Set([...activeMatchIds, ...this.stores.cachedIds.get()]);
+      const matchesToCache = matches.filter((match) => !loadedMatchIds.has(match.id));
+      if (matchesToCache.length) {
+        const cachedMatches = this.stores.cachedMatches.get();
+        this.stores.setCached([...cachedMatches, ...matchesToCache]);
+      }
+      try {
+        matches = await loadMatches({
+          router: this,
+          matches,
+          location: next,
+          preload: true,
+          updateMatch: (id, updater) => {
+            if (activeMatchIds.has(id)) matches = matches.map((d) => d.id === id ? updater(d) : d);
+            else this.updateMatch(id, updater);
+          }
+        });
+        return matches;
+      } catch (err) {
+        if (isRedirect(err)) {
+          if (err.options.reloadDocument) return;
+          return await this.preloadRoute({
+            ...err.options,
+            _fromLocation: next
+          });
+        }
+        if (!isNotFound(err)) console.error(err);
+        return;
+      }
+    };
+    this.matchRoute = (location, opts) => {
+      const matchLocation = {
+        ...location,
+        to: location.to ? this.resolvePathWithBase(location.from || "", location.to) : void 0,
+        params: location.params || {},
+        leaveParams: true
+      };
+      const next = this.buildLocation(matchLocation);
+      if (opts?.pending && this.stores.status.get() !== "pending") return false;
+      const baseLocation = (opts?.pending === void 0 ? !this.stores.isLoading.get() : opts.pending) ? this.latestLocation : this.stores.resolvedLocation.get() || this.stores.location.get();
+      const match = findSingleMatch(next.pathname, opts?.caseSensitive ?? false, opts?.fuzzy ?? false, baseLocation.pathname, this.processedTree);
+      if (!match) return false;
+      if (location.params) {
+        if (!deepEqual(match.rawParams, location.params, { partial: true })) return false;
+      }
+      if (opts?.includeSearch ?? true) return deepEqual(baseLocation.search, next.search, { partial: true }) ? match.rawParams : false;
+      return match.rawParams;
+    };
+    this.hasNotFoundMatch = () => {
+      return this.stores.matches.get().some((d) => d.status === "notFound" || d.globalNotFound);
+    };
+    this.getStoreConfig = getStoreConfig;
+    this.update({
+      defaultPreloadDelay: 50,
+      defaultPendingMs: 1e3,
+      defaultPendingMinMs: 500,
+      context: void 0,
+      ...options,
+      caseSensitive: options.caseSensitive ?? false,
+      notFoundMode: options.notFoundMode ?? "fuzzy",
+      stringifySearch: options.stringifySearch ?? defaultStringifySearch,
+      parseSearch: options.parseSearch ?? defaultParseSearch,
+      protocolAllowlist: options.protocolAllowlist ?? DEFAULT_PROTOCOL_ALLOWLIST
+    });
+    if (typeof document !== "undefined") self.__TSR_ROUTER__ = this;
+  }
+  isShell() {
+    return !!this.options.isShell;
+  }
+  isPrerendering() {
+    return !!this.options.isPrerendering;
+  }
+  get state() {
+    return this.stores.__store.get();
+  }
+  setRoutes({ routesById, routesByPath, processedTree }) {
+    this.routesById = routesById;
+    this.routesByPath = routesByPath;
+    this.processedTree = processedTree;
+    const notFoundRoute = this.options.notFoundRoute;
+    if (notFoundRoute) {
+      notFoundRoute.init({ originalIndex: 99999999999 });
+      this.routesById[notFoundRoute.id] = notFoundRoute;
+    }
+  }
+  get looseRoutesById() {
+    return this.routesById;
+  }
+  getParentContext(parentMatch) {
+    return !parentMatch?.id ? this.options.context ?? void 0 : parentMatch.context ?? this.options.context ?? void 0;
+  }
+  matchRoutesInternal(next, opts) {
+    const matchedRoutesResult = this.getMatchedRoutes(next.pathname);
+    const { foundRoute, routeParams, parsedParams } = matchedRoutesResult;
+    let { matchedRoutes } = matchedRoutesResult;
+    let isGlobalNotFound = false;
+    if (foundRoute ? foundRoute.path !== "/" && routeParams["**"] : trimPathRight2(next.pathname)) if (this.options.notFoundRoute) matchedRoutes = [...matchedRoutes, this.options.notFoundRoute];
+    else isGlobalNotFound = true;
+    const globalNotFoundRouteId = isGlobalNotFound ? findGlobalNotFoundRouteId(this.options.notFoundMode, matchedRoutes) : void 0;
+    const matches = new Array(matchedRoutes.length);
+    const previousActiveMatchesByRouteId = /* @__PURE__ */ new Map();
+    for (const store of this.stores.matchStores.values()) if (store.routeId) previousActiveMatchesByRouteId.set(store.routeId, store.get());
+    for (let index = 0; index < matchedRoutes.length; index++) {
+      const route = matchedRoutes[index];
+      const parentMatch = matches[index - 1];
+      let preMatchSearch;
+      let strictMatchSearch;
+      let searchError;
+      {
+        const parentSearch = parentMatch?.search ?? next.search;
+        const parentStrictSearch = parentMatch?._strictSearch ?? void 0;
+        try {
+          const strictSearch = validateSearch(route.options.validateSearch, { ...parentSearch }) ?? void 0;
+          preMatchSearch = {
+            ...parentSearch,
+            ...strictSearch
+          };
+          strictMatchSearch = {
+            ...parentStrictSearch,
+            ...strictSearch
+          };
+          searchError = void 0;
+        } catch (err) {
+          let searchParamError = err;
+          if (!(err instanceof SearchParamError)) searchParamError = new SearchParamError(err.message, { cause: err });
+          if (opts?.throwOnError) throw searchParamError;
+          preMatchSearch = parentSearch;
+          strictMatchSearch = {};
+          searchError = searchParamError;
+        }
+      }
+      const loaderDeps = route.options.loaderDeps?.({ search: preMatchSearch }) ?? "";
+      const loaderDepsHash = loaderDeps ? JSON.stringify(loaderDeps) : "";
+      const { interpolatedPath, usedParams } = interpolatePath({
+        path: route.fullPath,
+        params: routeParams,
+        decoder: this.pathParamsDecoder,
+        server: this.isServer
+      });
+      const matchId = route.id + interpolatedPath + loaderDepsHash;
+      const existingMatch = this.getMatch(matchId);
+      const previousMatch = previousActiveMatchesByRouteId.get(route.id);
+      const strictParams = existingMatch?._strictParams ?? usedParams;
+      let paramsError = void 0;
+      if (!existingMatch) try {
+        extractStrictParams(route, usedParams, parsedParams, strictParams);
+      } catch (err) {
+        if (isNotFound(err) || isRedirect(err)) paramsError = err;
+        else paramsError = new PathParamError(err.message, { cause: err });
+        if (opts?.throwOnError) throw paramsError;
+      }
+      Object.assign(routeParams, strictParams);
+      const cause = previousMatch ? "stay" : "enter";
+      let match;
+      if (existingMatch) match = {
+        ...existingMatch,
+        cause,
+        params: previousMatch?.params ?? routeParams,
+        _strictParams: strictParams,
+        search: previousMatch ? nullReplaceEqualDeep(previousMatch.search, preMatchSearch) : nullReplaceEqualDeep(existingMatch.search, preMatchSearch),
+        _strictSearch: strictMatchSearch
+      };
+      else {
+        const status = route.options.loader || route.options.beforeLoad || route.lazyFn || routeNeedsPreload(route) ? "pending" : "success";
+        match = {
+          id: matchId,
+          ssr: isServer ?? this.isServer ? void 0 : route.options.ssr,
+          index,
+          routeId: route.id,
+          params: previousMatch?.params ?? routeParams,
+          _strictParams: strictParams,
+          pathname: interpolatedPath,
+          updatedAt: Date.now(),
+          search: previousMatch ? nullReplaceEqualDeep(previousMatch.search, preMatchSearch) : preMatchSearch,
+          _strictSearch: strictMatchSearch,
+          searchError: void 0,
+          status,
+          isFetching: false,
+          error: void 0,
+          paramsError,
+          __routeContext: void 0,
+          _nonReactive: { loadPromise: createControlledPromise() },
+          __beforeLoadContext: void 0,
+          context: {},
+          abortController: new AbortController(),
+          fetchCount: 0,
+          cause,
+          loaderDeps: previousMatch ? replaceEqualDeep(previousMatch.loaderDeps, loaderDeps) : loaderDeps,
+          invalid: false,
+          preload: false,
+          links: void 0,
+          scripts: void 0,
+          headScripts: void 0,
+          meta: void 0,
+          staticData: route.options.staticData || {},
+          fullPath: route.fullPath
+        };
+      }
+      if (!opts?.preload) match.globalNotFound = globalNotFoundRouteId === route.id;
+      match.searchError = searchError;
+      const parentContext = this.getParentContext(parentMatch);
+      match.context = {
+        ...parentContext,
+        ...match.__routeContext,
+        ...match.__beforeLoadContext
+      };
+      matches[index] = match;
+    }
+    for (let index = 0; index < matches.length; index++) {
+      const match = matches[index];
+      const route = this.looseRoutesById[match.routeId];
+      const existingMatch = this.getMatch(match.id);
+      const previousMatch = previousActiveMatchesByRouteId.get(match.routeId);
+      match.params = previousMatch ? nullReplaceEqualDeep(previousMatch.params, routeParams) : routeParams;
+      if (!existingMatch) {
+        const parentMatch = matches[index - 1];
+        const parentContext = this.getParentContext(parentMatch);
+        if (route.options.context) {
+          const contextFnContext = {
+            deps: match.loaderDeps,
+            params: match.params,
+            context: parentContext ?? {},
+            location: next,
+            navigate: (opts2) => this.navigate({
+              ...opts2,
+              _fromLocation: next
+            }),
+            buildLocation: this.buildLocation,
+            cause: match.cause,
+            abortController: match.abortController,
+            preload: !!match.preload,
+            matches,
+            routeId: route.id
+          };
+          match.__routeContext = route.options.context(contextFnContext) ?? void 0;
+        }
+        match.context = {
+          ...parentContext,
+          ...match.__routeContext,
+          ...match.__beforeLoadContext
+        };
+      }
+    }
+    return matches;
+  }
+  /**
+  * Lightweight route matching for buildLocation.
+  * Only computes fullPath, accumulated search, and params - skipping expensive
+  * operations like AbortController, ControlledPromise, loaderDeps, and full match objects.
+  */
+  matchRoutesLightweight(location) {
+    const { matchedRoutes, routeParams, parsedParams } = this.getMatchedRoutes(location.pathname);
+    const lastRoute = last(matchedRoutes);
+    const accumulatedSearch = { ...location.search };
+    for (const route of matchedRoutes) try {
+      Object.assign(accumulatedSearch, validateSearch(route.options.validateSearch, accumulatedSearch));
+    } catch {
+    }
+    const lastStateMatchId = last(this.stores.matchesId.get());
+    const lastStateMatch = lastStateMatchId && this.stores.matchStores.get(lastStateMatchId)?.get();
+    const canReuseParams = lastStateMatch && lastStateMatch.routeId === lastRoute.id && lastStateMatch.pathname === location.pathname;
+    let params;
+    if (canReuseParams) params = lastStateMatch.params;
+    else {
+      const strictParams = Object.assign(/* @__PURE__ */ Object.create(null), routeParams);
+      for (const route of matchedRoutes) try {
+        extractStrictParams(route, routeParams, parsedParams ?? {}, strictParams);
+      } catch {
+      }
+      params = strictParams;
+    }
+    return {
+      matchedRoutes,
+      fullPath: lastRoute.fullPath,
+      search: accumulatedSearch,
+      params
+    };
+  }
+};
+var SearchParamError = class extends Error {
+};
+var PathParamError = class extends Error {
+};
+var normalize = (str) => str.endsWith("/") && str.length > 1 ? str.slice(0, -1) : str;
+function comparePaths(a, b) {
+  return normalize(a) === normalize(b);
+}
+function lazyFn(fn, key) {
+  return async (...args) => {
+    return (await fn())[key || "default"](...args);
+  };
+}
+function getInitialRouterState(location) {
+  return {
+    loadedAt: 0,
+    isLoading: false,
+    isTransitioning: false,
+    status: "idle",
+    resolvedLocation: void 0,
+    location,
+    matches: [],
+    statusCode: 200
+  };
+}
+function validateSearch(validateSearch2, input) {
+  if (validateSearch2 == null) return {};
+  if ("~standard" in validateSearch2) {
+    const result = validateSearch2["~standard"].validate(input);
+    if (result instanceof Promise) throw new SearchParamError("Async validation not supported");
+    if (result.issues) throw new SearchParamError(JSON.stringify(result.issues, void 0, 2), { cause: result });
+    return result.value;
+  }
+  if ("parse" in validateSearch2) return validateSearch2.parse(input);
+  if (typeof validateSearch2 === "function") return validateSearch2(input);
+  return {};
+}
+function getMatchedRoutes({ pathname, routesById, processedTree }) {
+  const routeParams = /* @__PURE__ */ Object.create(null);
+  const trimmedPath = trimPathRight2(pathname);
+  let foundRoute = void 0;
+  let parsedParams = void 0;
+  const match = findRouteMatch(trimmedPath, processedTree, true);
+  if (match) {
+    foundRoute = match.route;
+    Object.assign(routeParams, match.rawParams);
+    parsedParams = Object.assign(/* @__PURE__ */ Object.create(null), match.parsedParams);
+  }
+  return {
+    matchedRoutes: match?.branch || [routesById["__root__"]],
+    routeParams,
+    foundRoute,
+    parsedParams
+  };
+}
+function applySearchMiddleware({ search, dest, destRoutes, _includeValidateSearch }) {
+  return buildMiddlewareChain(destRoutes)(search, dest, _includeValidateSearch ?? false);
+}
+function buildMiddlewareChain(destRoutes) {
+  const context = {
+    dest: null,
+    _includeValidateSearch: false,
+    middlewares: []
+  };
+  for (const route of destRoutes) {
+    if ("search" in route.options) {
+      if (route.options.search?.middlewares) context.middlewares.push(...route.options.search.middlewares);
+    } else if (route.options.preSearchFilters || route.options.postSearchFilters) {
+      const legacyMiddleware = ({ search, next }) => {
+        let nextSearch = search;
+        if ("preSearchFilters" in route.options && route.options.preSearchFilters) nextSearch = route.options.preSearchFilters.reduce((prev, next2) => next2(prev), search);
+        const result = next(nextSearch);
+        if ("postSearchFilters" in route.options && route.options.postSearchFilters) return route.options.postSearchFilters.reduce((prev, next2) => next2(prev), result);
+        return result;
+      };
+      context.middlewares.push(legacyMiddleware);
+    }
+    if (route.options.validateSearch) {
+      const validate = ({ search, next }) => {
+        const result = next(search);
+        if (!context._includeValidateSearch) return result;
+        try {
+          return {
+            ...result,
+            ...validateSearch(route.options.validateSearch, result) ?? void 0
+          };
+        } catch {
+          return result;
+        }
+      };
+      context.middlewares.push(validate);
+    }
+  }
+  const final = ({ search }) => {
+    const dest = context.dest;
+    if (!dest.search) return {};
+    if (dest.search === true) return search;
+    return functionalUpdate(dest.search, search);
+  };
+  context.middlewares.push(final);
+  const applyNext = (index, currentSearch, middlewares) => {
+    if (index >= middlewares.length) return currentSearch;
+    const middleware = middlewares[index];
+    const next = (newSearch) => {
+      return applyNext(index + 1, newSearch, middlewares);
+    };
+    return middleware({
+      search: currentSearch,
+      next
+    });
+  };
+  return function middleware(search, dest, _includeValidateSearch) {
+    context.dest = dest;
+    context._includeValidateSearch = _includeValidateSearch;
+    return applyNext(0, search, context.middlewares);
+  };
+}
+function findGlobalNotFoundRouteId(notFoundMode, routes) {
+  if (notFoundMode !== "root") for (let i = routes.length - 1; i >= 0; i--) {
+    const route = routes[i];
+    if (route.children) return route.id;
+  }
+  return rootRouteId;
+}
+function extractStrictParams(route, referenceParams, parsedParams, accumulatedParams) {
+  const parseParams = route.options.params?.parse ?? route.options.parseParams;
+  if (parseParams) if (route.options.skipRouteOnParseError) {
+    for (const key in referenceParams) if (key in parsedParams) accumulatedParams[key] = parsedParams[key];
+  } else {
+    const result = parseParams(accumulatedParams);
+    Object.assign(accumulatedParams, result);
+  }
+}
+
+// node_modules/@tanstack/router-core/dist/esm/defer.js
+var TSR_DEFERRED_PROMISE = /* @__PURE__ */ Symbol.for("TSR_DEFERRED_PROMISE");
+function defer(_promise, options) {
+  const promise = _promise;
+  if (promise[TSR_DEFERRED_PROMISE]) return promise;
+  promise[TSR_DEFERRED_PROMISE] = { status: "pending" };
+  promise.then((data) => {
+    promise[TSR_DEFERRED_PROMISE].status = "success";
+    promise[TSR_DEFERRED_PROMISE].data = data;
+  }).catch((error) => {
+    promise[TSR_DEFERRED_PROMISE].status = "error";
+    promise[TSR_DEFERRED_PROMISE].error = {
+      data: (options?.serializeError ?? defaultSerializeError)(error),
+      __isServerError: true
+    };
+  });
+  return promise;
+}
+
+// node_modules/@tanstack/router-core/dist/esm/link.js
+var preloadWarning = "Error preloading route! ☝️";
+
+// node_modules/@tanstack/router-core/dist/esm/manifest.js
+function getAssetCrossOrigin(assetCrossOrigin, kind) {
+  if (!assetCrossOrigin) return;
+  if (typeof assetCrossOrigin === "string") return assetCrossOrigin;
+  return assetCrossOrigin[kind];
+}
+function resolveManifestAssetLink(link) {
+  if (typeof link === "string") return {
+    href: link,
+    crossOrigin: void 0
+  };
+  return link;
+}
+
+// node_modules/@tanstack/router-core/dist/esm/Matches.js
+var isMatch = (match, path) => {
+  const parts = path.split(".");
+  let part;
+  let i = 0;
+  let value = match;
+  while ((part = parts[i++]) != null && value != null) value = value[part];
+  return value != null;
+};
+
+// node_modules/@tanstack/router-core/dist/esm/route.js
+var BaseRoute = class {
+  get to() {
+    return this._to;
+  }
+  get id() {
+    return this._id;
+  }
+  get path() {
+    return this._path;
+  }
+  get fullPath() {
+    return this._fullPath;
+  }
+  constructor(options) {
+    this.init = (opts) => {
+      this.originalIndex = opts.originalIndex;
+      const options2 = this.options;
+      const isRoot = !options2?.path && !options2?.id;
+      this.parentRoute = this.options.getParentRoute?.();
+      if (isRoot) this._path = rootRouteId;
+      else if (!this.parentRoute) {
+        if (true) throw new Error(`Invariant failed: Child Route instances must pass a 'getParentRoute: () => ParentRoute' option that returns a Route instance.`);
+        invariant();
+      }
+      let path = isRoot ? rootRouteId : options2?.path;
+      if (path && path !== "/") path = trimPathLeft(path);
+      const customId = options2?.id || path;
+      let id = isRoot ? rootRouteId : joinPaths([this.parentRoute.id === "__root__" ? "" : this.parentRoute.id, customId]);
+      if (path === "__root__") path = "/";
+      if (id !== "__root__") id = joinPaths(["/", id]);
+      const fullPath = id === "__root__" ? "/" : joinPaths([this.parentRoute.fullPath, path]);
+      this._path = path;
+      this._id = id;
+      this._fullPath = fullPath;
+      this._to = trimPathRight2(fullPath);
+    };
+    this.addChildren = (children) => {
+      return this._addFileChildren(children);
+    };
+    this._addFileChildren = (children) => {
+      if (Array.isArray(children)) this.children = children;
+      if (typeof children === "object" && children !== null) this.children = Object.values(children);
+      return this;
+    };
+    this._addFileTypes = () => {
+      return this;
+    };
+    this.updateLoader = (options2) => {
+      Object.assign(this.options, options2);
+      return this;
+    };
+    this.update = (options2) => {
+      Object.assign(this.options, options2);
+      return this;
+    };
+    this.lazy = (lazyFn2) => {
+      this.lazyFn = lazyFn2;
+      return this;
+    };
+    this.redirect = (opts) => redirect({
+      from: this.fullPath,
+      ...opts
+    });
+    this.options = options || {};
+    this.isRoot = !options?.getParentRoute;
+    if (options?.id && options?.path) throw new Error(`Route cannot have both an 'id' and a 'path' option.`);
+  }
+};
+var BaseRouteApi = class {
+  constructor({ id }) {
+    this.notFound = (opts) => {
+      return notFound({
+        routeId: this.id,
+        ...opts
+      });
+    };
+    this.redirect = (opts) => redirect({
+      from: this.id,
+      ...opts
+    });
+    this.id = id;
+  }
+};
+var BaseRootRoute = class extends BaseRoute {
+  constructor(options) {
+    super(options);
+  }
+};
+
+// node_modules/@tanstack/router-core/dist/esm/config.js
+var createRouterConfig = (options) => {
+  return {
+    serializationAdapters: options.serializationAdapters,
+    defaultSsr: options.defaultSsr
+  };
+};
+
+// node_modules/@tanstack/router-core/dist/esm/searchMiddleware.js
+function retainSearchParams(keys) {
+  return ({ search, next }) => {
+    const result = next(search);
+    if (keys === true) return {
+      ...search,
+      ...result
+    };
+    const copy = { ...result };
+    keys.forEach((key) => {
+      if (!(key in copy)) copy[key] = search[key];
+    });
+    return copy;
+  };
+}
+function stripSearchParams(input) {
+  return ({ search, next }) => {
+    if (input === true) return {};
+    const result = { ...next(search) };
+    if (Array.isArray(input)) input.forEach((key) => {
+      delete result[key];
+    });
+    else Object.entries(input).forEach(([key, value]) => {
+      if (deepEqual(result[key], value)) delete result[key];
+    });
+    return result;
+  };
+}
+
+// node_modules/@tanstack/router-core/dist/esm/hash-scroll.js
+function handleHashScroll(router) {
+  if (typeof document !== "undefined" && document.querySelector) {
+    const location = router.stores.location.get();
+    const hashScrollIntoViewOptions = location.state.__hashScrollIntoViewOptions ?? true;
+    if (hashScrollIntoViewOptions && location.hash !== "") {
+      const el = document.getElementById(location.hash);
+      if (el) el.scrollIntoView(hashScrollIntoViewOptions);
+    }
+  }
+}
+
+// node_modules/@tanstack/router-core/dist/esm/ssr/constants.js
+var GLOBAL_TSR = "$_TSR";
+
+// node_modules/@tanstack/router-core/dist/esm/ssr/serializer/transformer.js
+function createSerializationAdapter(opts) {
+  return opts;
+}
+function makeSsrSerovalPlugin(serializationAdapter, options) {
+  return createPlugin({
+    tag: "$TSR/t/" + serializationAdapter.key,
+    test: serializationAdapter.test,
+    parse: { stream(value, ctx, _data) {
+      return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
+    } },
+    serialize(node, ctx, _data) {
+      options.didRun = true;
+      return GLOBAL_TSR + '.t.get("' + serializationAdapter.key + '")(' + ctx.serialize(node.v) + ")";
+    },
+    deserialize: void 0
+  });
+}
+function makeSerovalPlugin(serializationAdapter) {
+  return createPlugin({
+    tag: "$TSR/t/" + serializationAdapter.key,
+    test: serializationAdapter.test,
+    parse: {
+      sync(value, ctx, _data) {
+        return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
+      },
+      async async(value, ctx, _data) {
+        return { v: await ctx.parse(serializationAdapter.toSerializable(value)) };
+      },
+      stream(value, ctx, _data) {
+        return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
+      }
+    },
+    serialize: void 0,
+    deserialize(node, ctx, _data) {
+      return serializationAdapter.fromSerializable(ctx.deserialize(node.v));
+    }
+  });
+}
+
+// node_modules/@tanstack/router-core/dist/esm/ssr/serializer/RawStream.js
+var RawStream = class {
+  constructor(stream, options) {
+    this.stream = stream;
+    this.hint = options?.hint ?? "binary";
+  }
+};
+var BufferCtor = globalThis.Buffer;
+var hasNodeBuffer = !!BufferCtor && typeof BufferCtor.from === "function";
+function uint8ArrayToBase64(bytes) {
+  if (bytes.length === 0) return "";
+  if (hasNodeBuffer) return BufferCtor.from(bytes).toString("base64");
+  const CHUNK_SIZE = 32768;
+  const chunks = [];
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+    chunks.push(String.fromCharCode.apply(null, chunk));
+  }
+  return btoa(chunks.join(""));
+}
+function base64ToUint8Array(base64) {
+  if (base64.length === 0) return new Uint8Array(0);
+  if (hasNodeBuffer) {
+    const buf = BufferCtor.from(base64, "base64");
+    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+var RAW_STREAM_FACTORY_BINARY = /* @__PURE__ */ Object.create(null);
+var RAW_STREAM_FACTORY_TEXT = /* @__PURE__ */ Object.create(null);
+var RAW_STREAM_FACTORY_CONSTRUCTOR_BINARY = (stream) => new ReadableStream({ start(controller) {
+  stream.on({
+    next(base64) {
+      try {
+        controller.enqueue(base64ToUint8Array(base64));
+      } catch {
+      }
+    },
+    throw(error) {
+      controller.error(error);
+    },
+    return() {
+      try {
+        controller.close();
+      } catch {
+      }
+    }
+  });
+} });
+var textEncoderForFactory = new TextEncoder();
+var RAW_STREAM_FACTORY_CONSTRUCTOR_TEXT = (stream) => {
+  return new ReadableStream({ start(controller) {
+    stream.on({
+      next(value) {
+        try {
+          if (typeof value === "string") controller.enqueue(textEncoderForFactory.encode(value));
+          else controller.enqueue(base64ToUint8Array(value.$b64));
+        } catch {
+        }
+      },
+      throw(error) {
+        controller.error(error);
+      },
+      return() {
+        try {
+          controller.close();
+        } catch {
+        }
+      }
+    });
+  } });
+};
+var FACTORY_BINARY = `(s=>new ReadableStream({start(c){s.on({next(b){try{const d=atob(b),a=new Uint8Array(d.length);for(let i=0;i<d.length;i++)a[i]=d.charCodeAt(i);c.enqueue(a)}catch(_){}},throw(e){c.error(e)},return(){try{c.close()}catch(_){}}})}}))`;
+var FACTORY_TEXT = `(s=>{const e=new TextEncoder();return new ReadableStream({start(c){s.on({next(v){try{if(typeof v==='string'){c.enqueue(e.encode(v))}else{const d=atob(v.$b64),a=new Uint8Array(d.length);for(let i=0;i<d.length;i++)a[i]=d.charCodeAt(i);c.enqueue(a)}}catch(_){}},throw(x){c.error(x)},return(){try{c.close()}catch(_){}}})}})})`;
+function toBinaryStream(readable) {
+  const stream = createStream();
+  const reader = readable.getReader();
+  (async () => {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          stream.return(void 0);
+          break;
+        }
+        stream.next(uint8ArrayToBase64(value));
+      }
+    } catch (error) {
+      stream.throw(error);
+    } finally {
+      reader.releaseLock();
+    }
+  })();
+  return stream;
+}
+function toTextStream(readable) {
+  const stream = createStream();
+  const reader = readable.getReader();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  (async () => {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          try {
+            const remaining = decoder.decode();
+            if (remaining.length > 0) stream.next(remaining);
+          } catch {
+          }
+          stream.return(void 0);
+          break;
+        }
+        try {
+          const text = decoder.decode(value, { stream: true });
+          if (text.length > 0) stream.next(text);
+        } catch {
+          stream.next({ $b64: uint8ArrayToBase64(value) });
+        }
+      }
+    } catch (error) {
+      stream.throw(error);
+    } finally {
+      reader.releaseLock();
+    }
+  })();
+  return stream;
+}
+var RawStreamSSRPlugin = createPlugin({
+  tag: "tss/RawStream",
+  extends: [createPlugin({
+    tag: "tss/RawStreamFactory",
+    test(value) {
+      return value === RAW_STREAM_FACTORY_BINARY;
+    },
+    parse: {
+      sync(_value, _ctx, _data) {
+        return {};
+      },
+      async async(_value, _ctx, _data) {
+        return {};
+      },
+      stream(_value, _ctx, _data) {
+        return {};
+      }
+    },
+    serialize(_node, _ctx, _data) {
+      return FACTORY_BINARY;
+    },
+    deserialize(_node, _ctx, _data) {
+      return RAW_STREAM_FACTORY_BINARY;
+    }
+  }), createPlugin({
+    tag: "tss/RawStreamFactoryText",
+    test(value) {
+      return value === RAW_STREAM_FACTORY_TEXT;
+    },
+    parse: {
+      sync(_value, _ctx, _data) {
+        return {};
+      },
+      async async(_value, _ctx, _data) {
+        return {};
+      },
+      stream(_value, _ctx, _data) {
+        return {};
+      }
+    },
+    serialize(_node, _ctx, _data) {
+      return FACTORY_TEXT;
+    },
+    deserialize(_node, _ctx, _data) {
+      return RAW_STREAM_FACTORY_TEXT;
+    }
+  })],
+  test(value) {
+    return value instanceof RawStream;
+  },
+  parse: {
+    sync(value, ctx, _data) {
+      const factory = value.hint === "text" ? RAW_STREAM_FACTORY_TEXT : RAW_STREAM_FACTORY_BINARY;
+      return {
+        hint: ctx.parse(value.hint),
+        factory: ctx.parse(factory),
+        stream: ctx.parse(createStream())
+      };
+    },
+    async async(value, ctx, _data) {
+      const factory = value.hint === "text" ? RAW_STREAM_FACTORY_TEXT : RAW_STREAM_FACTORY_BINARY;
+      const encodedStream = value.hint === "text" ? toTextStream(value.stream) : toBinaryStream(value.stream);
+      return {
+        hint: await ctx.parse(value.hint),
+        factory: await ctx.parse(factory),
+        stream: await ctx.parse(encodedStream)
+      };
+    },
+    stream(value, ctx, _data) {
+      const factory = value.hint === "text" ? RAW_STREAM_FACTORY_TEXT : RAW_STREAM_FACTORY_BINARY;
+      const encodedStream = value.hint === "text" ? toTextStream(value.stream) : toBinaryStream(value.stream);
+      return {
+        hint: ctx.parse(value.hint),
+        factory: ctx.parse(factory),
+        stream: ctx.parse(encodedStream)
+      };
+    }
+  },
+  serialize(node, ctx, _data) {
+    return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.stream) + ")";
+  },
+  deserialize(node, ctx, _data) {
+    const stream = ctx.deserialize(node.stream);
+    return ctx.deserialize(node.hint) === "text" ? RAW_STREAM_FACTORY_CONSTRUCTOR_TEXT(stream) : RAW_STREAM_FACTORY_CONSTRUCTOR_BINARY(stream);
+  }
+});
+function createRawStreamRPCPlugin(onRawStream) {
+  let nextStreamId = 1;
+  return createPlugin({
+    tag: "tss/RawStream",
+    test(value) {
+      return value instanceof RawStream;
+    },
+    parse: {
+      async async(value, ctx, _data) {
+        const streamId = nextStreamId++;
+        onRawStream(streamId, value.stream);
+        return { streamId: await ctx.parse(streamId) };
+      },
+      stream(value, ctx, _data) {
+        const streamId = nextStreamId++;
+        onRawStream(streamId, value.stream);
+        return { streamId: ctx.parse(streamId) };
+      }
+    },
+    serialize() {
+      throw new Error("RawStreamRPCPlugin.serialize should not be called. RPC uses JSON serialization, not JS code generation.");
+    },
+    deserialize() {
+      throw new Error("RawStreamRPCPlugin.deserialize should not be called. Use createRawStreamDeserializePlugin on client.");
+    }
+  });
+}
+function createRawStreamDeserializePlugin(getOrCreateStream) {
+  return createPlugin({
+    tag: "tss/RawStream",
+    test: () => false,
+    parse: {},
+    serialize() {
+      throw new Error("RawStreamDeserializePlugin.serialize should not be called. Client only deserializes.");
+    },
+    deserialize(node, ctx, _data) {
+      return getOrCreateStream(typeof ctx?.deserialize === "function" ? ctx.deserialize(node.streamId) : node.streamId);
+    }
+  });
+}
+
+// node_modules/@tanstack/router-core/dist/esm/ssr/serializer/ShallowErrorPlugin.js
+var ShallowErrorPlugin = createPlugin({
+  tag: "$TSR/Error",
+  test(value) {
+    return value instanceof Error;
+  },
+  parse: {
+    sync(value, ctx) {
+      return { message: ctx.parse(value.message) };
+    },
+    async async(value, ctx) {
+      return { message: await ctx.parse(value.message) };
+    },
+    stream(value, ctx) {
+      return { message: ctx.parse(value.message) };
+    }
+  },
+  serialize(node, ctx) {
+    return "new Error(" + ctx.serialize(node.message) + ")";
+  },
+  deserialize(node, ctx) {
+    return new Error(ctx.deserialize(node.message));
+  }
+});
+
+// node_modules/seroval-plugins/dist/esm/development/web.mjs
+var PROMISE_TO_ABORT_SIGNAL = (promise) => {
+  const controller = new AbortController();
+  const abort = controller.abort.bind(controller);
+  promise.then(abort, abort);
+  return controller;
+};
+function resolveAbortSignalResult(resolve) {
+  resolve(this.reason);
+}
+function resolveAbortSignal(resolve) {
+  this.addEventListener("abort", resolveAbortSignalResult.bind(this, resolve), {
+    once: true
+  });
+}
+function abortSignalToPromise(signal) {
+  return new Promise(resolveAbortSignal.bind(signal));
+}
+var ABORT_CONTROLLER = {};
+var AbortControllerFactoryPlugin = createPlugin({
+  tag: "seroval-plugins/web/AbortControllerFactoryPlugin",
+  test(value) {
+    return value === ABORT_CONTROLLER;
+  },
+  parse: {
+    sync() {
+      return ABORT_CONTROLLER;
+    },
+    async async() {
+      return await Promise.resolve(ABORT_CONTROLLER);
+    },
+    stream() {
+      return ABORT_CONTROLLER;
+    }
+  },
+  serialize() {
+    return PROMISE_TO_ABORT_SIGNAL.toString();
+  },
+  deserialize() {
+    return PROMISE_TO_ABORT_SIGNAL;
+  }
+});
+var AbortSignalPlugin = createPlugin({
+  tag: "seroval-plugins/web/AbortSignal",
+  extends: [AbortControllerFactoryPlugin],
+  test(value) {
+    if (typeof AbortSignal === "undefined") {
+      return false;
+    }
+    return value instanceof AbortSignal;
+  },
+  parse: {
+    sync(value, ctx) {
+      if (value.aborted) {
+        return {
+          reason: ctx.parse(value.reason)
+        };
+      }
+      return {};
+    },
+    async async(value, ctx) {
+      if (value.aborted) {
+        return {
+          reason: await ctx.parse(value.reason)
+        };
+      }
+      const result = await abortSignalToPromise(value);
+      return {
+        reason: await ctx.parse(result)
+      };
+    },
+    stream(value, ctx) {
+      if (value.aborted) {
+        return {
+          reason: ctx.parse(value.reason)
+        };
+      }
+      const promise = abortSignalToPromise(value);
+      return {
+        factory: ctx.parse(ABORT_CONTROLLER),
+        controller: ctx.parse(promise)
+      };
+    }
+  },
+  serialize(node, ctx) {
+    if (node.reason) {
+      return "AbortSignal.abort(" + ctx.serialize(node.reason) + ")";
+    }
+    if (node.controller && node.factory) {
+      return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.controller) + ").signal";
+    }
+    return "(new AbortController).signal";
+  },
+  deserialize(node, ctx) {
+    if (node.reason) {
+      return AbortSignal.abort(ctx.deserialize(node.reason));
+    }
+    if (node.controller) {
+      return PROMISE_TO_ABORT_SIGNAL(ctx.deserialize(node.controller)).signal;
+    }
+    const controller = new AbortController();
+    return controller.signal;
+  }
+});
+var BlobPlugin = createPlugin({
+  tag: "seroval-plugins/web/Blob",
+  test(value) {
+    if (typeof Blob === "undefined") {
+      return false;
+    }
+    return value instanceof Blob;
+  },
+  parse: {
+    async async(value, ctx) {
+      return {
+        type: await ctx.parse(value.type),
+        buffer: await ctx.parse(await value.arrayBuffer())
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new Blob([" + ctx.serialize(node.buffer) + "],{type:" + ctx.serialize(node.type) + "})";
+  },
+  deserialize(node, ctx) {
+    return new Blob([ctx.deserialize(node.buffer)], {
+      type: ctx.deserialize(node.type)
+    });
+  }
+});
+function createCustomEventOptions(current) {
+  return {
+    detail: current.detail,
+    bubbles: current.bubbles,
+    cancelable: current.cancelable,
+    composed: current.composed
+  };
+}
+var CustomEventPlugin = createPlugin({
+  tag: "seroval-plugins/web/CustomEvent",
+  test(value) {
+    if (typeof CustomEvent === "undefined") {
+      return false;
+    }
+    return value instanceof CustomEvent;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        type: ctx.parse(value.type),
+        options: ctx.parse(createCustomEventOptions(value))
+      };
+    },
+    async async(value, ctx) {
+      return {
+        type: await ctx.parse(value.type),
+        options: await ctx.parse(createCustomEventOptions(value))
+      };
+    },
+    stream(value, ctx) {
+      return {
+        type: ctx.parse(value.type),
+        options: ctx.parse(createCustomEventOptions(value))
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new CustomEvent(" + ctx.serialize(node.type) + "," + ctx.serialize(node.options) + ")";
+  },
+  deserialize(node, ctx) {
+    return new CustomEvent(
+      ctx.deserialize(node.type),
+      ctx.deserialize(node.options)
+    );
+  }
+});
+var DOMExceptionPlugin = createPlugin({
+  tag: "seroval-plugins/web/DOMException",
+  test(value) {
+    if (typeof DOMException === "undefined") {
+      return false;
+    }
+    return value instanceof DOMException;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        name: ctx.parse(value.name),
+        message: ctx.parse(value.message)
+      };
+    },
+    async async(value, ctx) {
+      return {
+        name: await ctx.parse(value.name),
+        message: await ctx.parse(value.message)
+      };
+    },
+    stream(value, ctx) {
+      return {
+        name: ctx.parse(value.name),
+        message: ctx.parse(value.message)
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new DOMException(" + ctx.serialize(node.message) + "," + ctx.serialize(node.name) + ")";
+  },
+  deserialize(node, ctx) {
+    return new DOMException(
+      ctx.deserialize(node.message),
+      ctx.deserialize(node.name)
+    );
+  }
+});
+function createEventOptions(current) {
+  return {
+    bubbles: current.bubbles,
+    cancelable: current.cancelable,
+    composed: current.composed
+  };
+}
+var EventPlugin = createPlugin({
+  tag: "seroval-plugins/web/Event",
+  test(value) {
+    if (typeof Event === "undefined") {
+      return false;
+    }
+    return value instanceof Event;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        type: ctx.parse(value.type),
+        options: ctx.parse(createEventOptions(value))
+      };
+    },
+    async async(value, ctx) {
+      return {
+        type: await ctx.parse(value.type),
+        options: await ctx.parse(createEventOptions(value))
+      };
+    },
+    stream(value, ctx) {
+      return {
+        type: ctx.parse(value.type),
+        options: ctx.parse(createEventOptions(value))
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new Event(" + ctx.serialize(node.type) + "," + ctx.serialize(node.options) + ")";
+  },
+  deserialize(node, ctx) {
+    return new Event(
+      ctx.deserialize(node.type),
+      ctx.deserialize(node.options)
+    );
+  }
+});
+var FilePlugin = createPlugin({
+  tag: "seroval-plugins/web/File",
+  test(value) {
+    if (typeof File === "undefined") {
+      return false;
+    }
+    return value instanceof File;
+  },
+  parse: {
+    async async(value, ctx) {
+      return {
+        name: await ctx.parse(value.name),
+        options: await ctx.parse({
+          type: value.type,
+          lastModified: value.lastModified
+        }),
+        buffer: await ctx.parse(await value.arrayBuffer())
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new File([" + ctx.serialize(node.buffer) + "]," + ctx.serialize(node.name) + "," + ctx.serialize(node.options) + ")";
+  },
+  deserialize(node, ctx) {
+    return new File(
+      [ctx.deserialize(node.buffer)],
+      ctx.deserialize(node.name),
+      ctx.deserialize(node.options)
+    );
+  }
+});
+var file_default = FilePlugin;
+function convertFormData(instance) {
+  const items = [];
+  instance.forEach((value, key) => {
+    items.push([key, value]);
+  });
+  return items;
+}
+var FORM_DATA_FACTORY = {};
+var FORM_DATA_FACTORY_CONSTRUCTOR = (e, f = new FormData(), i = 0, s = e.length, t) => {
+  for (; i < s; i++) {
+    t = e[i];
+    f.append(t[0], t[1]);
+  }
+  return f;
+};
+var FormDataFactoryPlugin = createPlugin({
+  tag: "seroval-plugins/web/FormDataFactory",
+  test(value) {
+    return value === FORM_DATA_FACTORY;
+  },
+  parse: {
+    sync() {
+      return FORM_DATA_FACTORY;
+    },
+    async async() {
+      return await Promise.resolve(FORM_DATA_FACTORY);
+    },
+    stream() {
+      return FORM_DATA_FACTORY;
+    }
+  },
+  serialize() {
+    return FORM_DATA_FACTORY_CONSTRUCTOR.toString();
+  },
+  deserialize() {
+    return FORM_DATA_FACTORY;
+  }
+});
+var FormDataPlugin = createPlugin({
+  tag: "seroval-plugins/web/FormData",
+  extends: [file_default, FormDataFactoryPlugin],
+  test(value) {
+    if (typeof FormData === "undefined") {
+      return false;
+    }
+    return value instanceof FormData;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        factory: ctx.parse(FORM_DATA_FACTORY),
+        entries: ctx.parse(convertFormData(value))
+      };
+    },
+    async async(value, ctx) {
+      return {
+        factory: await ctx.parse(FORM_DATA_FACTORY),
+        entries: await ctx.parse(convertFormData(value))
+      };
+    },
+    stream(value, ctx) {
+      return {
+        factory: ctx.parse(FORM_DATA_FACTORY),
+        entries: ctx.parse(convertFormData(value))
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.entries) + ")";
+  },
+  deserialize(node, ctx) {
+    return FORM_DATA_FACTORY_CONSTRUCTOR(
+      ctx.deserialize(node.entries)
+    );
+  }
+});
+function convertHeaders(instance) {
+  const items = [];
+  instance.forEach((value, key) => {
+    items.push([key, value]);
+  });
+  return items;
+}
+var HeadersPlugin = createPlugin({
+  tag: "seroval-plugins/web/Headers",
+  test(value) {
+    if (typeof Headers === "undefined") {
+      return false;
+    }
+    return value instanceof Headers;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        value: ctx.parse(convertHeaders(value))
+      };
+    },
+    async async(value, ctx) {
+      return {
+        value: await ctx.parse(convertHeaders(value))
+      };
+    },
+    stream(value, ctx) {
+      return {
+        value: ctx.parse(convertHeaders(value))
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new Headers(" + ctx.serialize(node.value) + ")";
+  },
+  deserialize(node, ctx) {
+    return new Headers(ctx.deserialize(node.value));
+  }
+});
+var headers_default = HeadersPlugin;
+var ImageDataPlugin = createPlugin({
+  tag: "seroval-plugins/web/ImageData",
+  test(value) {
+    if (typeof ImageData === "undefined") {
+      return false;
+    }
+    return value instanceof ImageData;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        data: ctx.parse(value.data),
+        width: ctx.parse(value.width),
+        height: ctx.parse(value.height),
+        options: ctx.parse({
+          colorSpace: value.colorSpace
+        })
+      };
+    },
+    async async(value, ctx) {
+      return {
+        data: await ctx.parse(value.data),
+        width: await ctx.parse(value.width),
+        height: await ctx.parse(value.height),
+        options: await ctx.parse({
+          colorSpace: value.colorSpace
+        })
+      };
+    },
+    stream(value, ctx) {
+      return {
+        data: ctx.parse(value.data),
+        width: ctx.parse(value.width),
+        height: ctx.parse(value.height),
+        options: ctx.parse({
+          colorSpace: value.colorSpace
+        })
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new ImageData(" + ctx.serialize(node.data) + "," + ctx.serialize(node.width) + "," + ctx.serialize(node.height) + "," + ctx.serialize(node.options) + ")";
+  },
+  deserialize(node, ctx) {
+    return new ImageData(
+      ctx.deserialize(node.data),
+      ctx.deserialize(node.width),
+      ctx.deserialize(node.height),
+      ctx.deserialize(node.options)
+    );
+  }
+});
+var READABLE_STREAM_FACTORY = {};
+var READABLE_STREAM_FACTORY_CONSTRUCTOR = (stream) => new ReadableStream({
+  start: (controller) => {
+    stream.on({
+      next: (value) => {
+        try {
+          controller.enqueue(value);
+        } catch (_error) {
+        }
+      },
+      throw: (value) => {
+        controller.error(value);
+      },
+      return: () => {
+        try {
+          controller.close();
+        } catch (_error) {
+        }
+      }
+    });
+  }
+});
+var ReadableStreamFactoryPlugin = createPlugin({
+  tag: "seroval-plugins/web/ReadableStreamFactory",
+  test(value) {
+    return value === READABLE_STREAM_FACTORY;
+  },
+  parse: {
+    sync() {
+      return READABLE_STREAM_FACTORY;
+    },
+    async async() {
+      return await Promise.resolve(READABLE_STREAM_FACTORY);
+    },
+    stream() {
+      return READABLE_STREAM_FACTORY;
+    }
+  },
+  serialize() {
+    return READABLE_STREAM_FACTORY_CONSTRUCTOR.toString();
+  },
+  deserialize() {
+    return READABLE_STREAM_FACTORY;
+  }
+});
+function toStream(value) {
+  const stream = createStream();
+  const reader = value.getReader();
+  async function push() {
+    try {
+      const result = await reader.read();
+      if (result.done) {
+        stream.return(result.value);
+      } else {
+        stream.next(result.value);
+        await push();
+      }
+    } catch (error) {
+      stream.throw(error);
+    }
+  }
+  push().catch(() => {
+  });
+  return stream;
+}
+var ReadableStreamPlugin = createPlugin({
+  tag: "seroval/plugins/web/ReadableStream",
+  extends: [ReadableStreamFactoryPlugin],
+  test(value) {
+    if (typeof ReadableStream === "undefined") {
+      return false;
+    }
+    return value instanceof ReadableStream;
+  },
+  parse: {
+    sync(_value, ctx) {
+      return {
+        factory: ctx.parse(READABLE_STREAM_FACTORY),
+        stream: ctx.parse(createStream())
+      };
+    },
+    async async(value, ctx) {
+      return {
+        factory: await ctx.parse(READABLE_STREAM_FACTORY),
+        stream: await ctx.parse(toStream(value))
+      };
+    },
+    stream(value, ctx) {
+      return {
+        factory: ctx.parse(READABLE_STREAM_FACTORY),
+        stream: ctx.parse(toStream(value))
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.stream) + ")";
+  },
+  deserialize(node, ctx) {
+    const stream = ctx.deserialize(node.stream);
+    return READABLE_STREAM_FACTORY_CONSTRUCTOR(stream);
+  }
+});
+var readable_stream_default = ReadableStreamPlugin;
+function createRequestOptions(current, body) {
+  return {
+    body,
+    cache: current.cache,
+    credentials: current.credentials,
+    headers: current.headers,
+    integrity: current.integrity,
+    keepalive: current.keepalive,
+    method: current.method,
+    mode: current.mode,
+    redirect: current.redirect,
+    referrer: current.referrer,
+    referrerPolicy: current.referrerPolicy
+  };
+}
+var RequestPlugin = createPlugin({
+  tag: "seroval-plugins/web/Request",
+  extends: [readable_stream_default, headers_default],
+  test(value) {
+    if (typeof Request === "undefined") {
+      return false;
+    }
+    return value instanceof Request;
+  },
+  parse: {
+    async async(value, ctx) {
+      return {
+        url: await ctx.parse(value.url),
+        options: await ctx.parse(
+          createRequestOptions(
+            value,
+            value.body && !value.bodyUsed ? await value.clone().arrayBuffer() : null
+          )
+        )
+      };
+    },
+    stream(value, ctx) {
+      return {
+        url: ctx.parse(value.url),
+        options: ctx.parse(
+          createRequestOptions(
+            value,
+            value.body && !value.bodyUsed ? value.clone().body : null
+          )
+        )
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new Request(" + ctx.serialize(node.url) + "," + ctx.serialize(node.options) + ")";
+  },
+  deserialize(node, ctx) {
+    return new Request(
+      ctx.deserialize(node.url),
+      ctx.deserialize(node.options)
+    );
+  }
+});
+function createResponseOptions(current) {
+  return {
+    headers: current.headers,
+    status: current.status,
+    statusText: current.statusText
+  };
+}
+var ResponsePlugin = createPlugin({
+  tag: "seroval-plugins/web/Response",
+  extends: [readable_stream_default, headers_default],
+  test(value) {
+    if (typeof Response === "undefined") {
+      return false;
+    }
+    return value instanceof Response;
+  },
+  parse: {
+    async async(value, ctx) {
+      return {
+        body: await ctx.parse(
+          value.body && !value.bodyUsed ? await value.clone().arrayBuffer() : null
+        ),
+        options: await ctx.parse(createResponseOptions(value))
+      };
+    },
+    stream(value, ctx) {
+      return {
+        body: ctx.parse(
+          value.body && !value.bodyUsed ? value.clone().body : null
+        ),
+        options: ctx.parse(createResponseOptions(value))
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new Response(" + ctx.serialize(node.body) + "," + ctx.serialize(node.options) + ")";
+  },
+  deserialize(node, ctx) {
+    return new Response(
+      ctx.deserialize(node.body),
+      ctx.deserialize(node.options)
+    );
+  }
+});
+var URLPlugin = createPlugin({
+  tag: "seroval-plugins/web/URL",
+  test(value) {
+    if (typeof URL === "undefined") {
+      return false;
+    }
+    return value instanceof URL;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        value: ctx.parse(value.href)
+      };
+    },
+    async async(value, ctx) {
+      return {
+        value: await ctx.parse(value.href)
+      };
+    },
+    stream(value, ctx) {
+      return {
+        value: ctx.parse(value.href)
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new URL(" + ctx.serialize(node.value) + ")";
+  },
+  deserialize(node, ctx) {
+    return new URL(ctx.deserialize(node.value));
+  }
+});
+var URLSearchParamsPlugin = createPlugin({
+  tag: "seroval-plugins/web/URLSearchParams",
+  test(value) {
+    if (typeof URLSearchParams === "undefined") {
+      return false;
+    }
+    return value instanceof URLSearchParams;
+  },
+  parse: {
+    sync(value, ctx) {
+      return {
+        value: ctx.parse(value.toString())
+      };
+    },
+    async async(value, ctx) {
+      return {
+        value: await ctx.parse(value.toString())
+      };
+    },
+    stream(value, ctx) {
+      return {
+        value: ctx.parse(value.toString())
+      };
+    }
+  },
+  serialize(node, ctx) {
+    return "new URLSearchParams(" + ctx.serialize(node.value) + ")";
+  },
+  deserialize(node, ctx) {
+    return new URLSearchParams(ctx.deserialize(node.value));
+  }
+});
+
+// node_modules/@tanstack/router-core/dist/esm/ssr/serializer/seroval-plugins.js
+var defaultSerovalPlugins = [
+  ShallowErrorPlugin,
+  RawStreamSSRPlugin,
+  readable_stream_default
+];
+export {
+  BaseRootRoute,
+  BaseRoute,
+  BaseRouteApi,
+  DEFAULT_PROTOCOL_ALLOWLIST,
+  PathParamError,
+  RawStream,
+  RouterCore,
+  SearchParamError,
+  TSR_DEFERRED_PROMISE,
+  buildDevStylesUrl,
+  cleanPath,
+  composeRewrites,
+  createControlledPromise,
+  createNonReactiveMutableStore,
+  createNonReactiveReadonlyStore,
+  createRawStreamDeserializePlugin,
+  createRawStreamRPCPlugin,
+  createRouterConfig,
+  createSerializationAdapter,
+  decode,
+  deepEqual,
+  defaultGetScrollRestorationKey,
+  defaultParseSearch,
+  defaultSerializeError,
+  defaultSerovalPlugins,
+  defaultStringifySearch,
+  defer,
+  encode,
+  escapeHtml,
+  exactPathTest,
+  executeRewriteInput,
+  functionalUpdate,
+  getAssetCrossOrigin,
+  getElementScrollRestorationEntry,
+  getInitialRouterState,
+  getLocationChangeInfo,
+  getMatchedRoutes,
+  handleHashScroll,
+  interpolatePath,
+  invariant,
+  isDangerousProtocol,
+  isMatch,
+  isModuleNotFoundError,
+  isNotFound,
+  isPlainArray,
+  isPlainObject,
+  isRedirect,
+  isResolvedRedirect,
+  joinPaths,
+  lazyFn,
+  makeSerovalPlugin,
+  makeSsrSerovalPlugin,
+  notFound,
+  parseRedirect,
+  parseSearchWith,
+  preloadWarning,
+  redirect,
+  removeTrailingSlash,
+  replaceEqualDeep,
+  resolveManifestAssetLink,
+  resolvePath,
+  retainSearchParams,
+  rootRouteId,
+  scrollRestorationCache,
+  setupScrollRestoration,
+  storageKey,
+  stringifySearchWith,
+  stripSearchParams,
+  trailingSlashOptions,
+  trimPath,
+  trimPathLeft,
+  trimPathRight2 as trimPathRight
+};
+//# sourceMappingURL=@tanstack_router-core.js.map

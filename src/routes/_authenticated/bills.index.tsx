@@ -42,7 +42,7 @@ const PAGE_SIZE = 25;
 function BillsPage() {
   const qc = useQueryClient();
   const { hasAnyRole } = useAuth();
-  const canBill = hasAnyRole(["admin", "manager"]);
+  const canBill = hasAnyRole(["admin", "manager", "finance"]);
   const canRemind = hasAnyRole(["admin"]);
   const canDelete = hasAnyRole(["admin"]);
   const sendReminders = useServerFn(sendOverdueReminders);

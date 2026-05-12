@@ -22,6 +22,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { CONTACT_LINE } from "@/lib/contact";
 import { sendPaymentNotification } from "@/lib/sms.functions";
+import { getUserFacingErrorMessage } from "@/lib/utils";
 import logoUrl from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/bills/$billId")({
@@ -292,7 +293,7 @@ function BillDetail() {
         window.location.reload();
       }, 200);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const applyAdvance = useMutation({
@@ -325,7 +326,7 @@ function BillDetail() {
       qc.invalidateQueries({ queryKey: ["recent-payments"] });
       qc.invalidateQueries({ queryKey: ["advance-balance"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   return (
