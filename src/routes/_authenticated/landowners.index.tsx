@@ -35,6 +35,7 @@ const PAGE_SIZE = 25;
 function LandownersPage() {
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
+  const navigate = Route.useNavigate();
   const { hasAnyRole } = useAuth();
   const canDelete = hasAnyRole(["admin"]);
   const [page, setPage] = useState(1);
@@ -84,10 +85,16 @@ function LandownersPage() {
         notes: form.notes || null,
         avatar_url: form.avatar_url || null,
       };
-      const { error } = await supabase.from("landowners").insert(payload);
+      const { data, error } = await supabase
+        .from("landowners")
+        .insert(payload)
+        .select("id")
+        .single();
       if (error) throw error;
+      if (!data?.id) throw new Error("Failed to create landowner");
+      return data as { id: string };
     },
-    onSuccess: () => {
+    onSuccess: (row) => {
       toast.success("Landowner created");
       setOpen(false);
       setForm({
@@ -100,6 +107,10 @@ function LandownersPage() {
         avatar_url: "",
       });
       qc.invalidateQueries({ queryKey: ["landowners"] });
+      navigate({
+        to: "/lands",
+        search: { register: true, ownerId: row.id },
+      });
     },
     onError: (e: Error) => toast.error(e.message),
   });

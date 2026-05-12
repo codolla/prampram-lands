@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,13 @@ import { Progress } from "@/components/ui/progress";
 import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/lands/")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const registerRaw = search.register;
+    const register =
+      registerRaw === true || registerRaw === "true" || registerRaw === "1" || registerRaw === 1;
+    const ownerId = typeof search.ownerId === "string" ? search.ownerId : undefined;
+    return register && ownerId ? { register: true, ownerId } : {};
+  },
   component: LandsPage,
 });
 
@@ -47,11 +54,13 @@ const ACRES_PER_HECTARE = 2.471053814671653;
 function LandsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const routeSearch = Route.useSearch();
   const { user, hasAnyRole } = useAuth();
   const canDelete = hasAnyRole(["admin"]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<Status>("all");
   const [page, setPage] = useState(1);
+  const openedFromOwnerRef = useRef(false);
 
   useEffect(() => {
     setPage(1);
@@ -148,6 +157,14 @@ function LandsPage() {
     fileName: string;
     stage: "idle" | "saving" | "uploading" | "done";
   }>({ current: 0, total: 0, fileName: "", stage: "idle" });
+
+  useEffect(() => {
+    if (openedFromOwnerRef.current) return;
+    if (!routeSearch.register || !routeSearch.ownerId) return;
+    openedFromOwnerRef.current = true;
+    setOpen(true);
+    setForm((cur) => ({ ...cur, current_owner_id: routeSearch.ownerId as string }));
+  }, [routeSearch.ownerId, routeSearch.register]);
 
   const addImages = (files: FileList | null) => {
     if (!files) return;

@@ -43,6 +43,8 @@ function BillDetail() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const notifyPayment = useServerFn(sendPaymentNotification);
+  const [supportsPaymentKinds, setSupportsPaymentKinds] = useState<boolean>(true);
+  const [supportsAdvanceBalanceView, setSupportsAdvanceBalanceView] = useState<boolean>(true);
 
   const bill = useQuery({
     queryKey: ["bill", billId],
@@ -62,14 +64,30 @@ function BillDetail() {
   const payments = useQuery<BillPaymentRow[]>({
     queryKey: ["bill-payments", billId],
     queryFn: async () => {
-      const selectClause: string = "id, amount, paid_at, method, reference, receipt_number, kind";
-      const { data, error } = await supabase
+      const withKind: string = "id, amount, paid_at, method, reference, receipt_number, kind";
+      const base: string = "id, amount, paid_at, method, reference, receipt_number";
+      const r1 = await supabase
         .from("payments")
-        .select(selectClause)
+        .select(withKind)
         .eq("bill_id", billId)
         .order("paid_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as BillPaymentRow[];
+      if (!r1.error) {
+        if (!supportsPaymentKinds) setSupportsPaymentKinds(true);
+        return (r1.data ?? []) as unknown as BillPaymentRow[];
+      }
+      const msg = r1.error.message || "";
+      if (!/column .*kind/i.test(msg)) throw r1.error;
+      if (supportsPaymentKinds) setSupportsPaymentKinds(false);
+      const r2 = await supabase
+        .from("payments")
+        .select(base)
+        .eq("bill_id", billId)
+        .order("paid_at", { ascending: false });
+      if (r2.error) throw r2.error;
+      return (r2.data ?? []).map((p) => ({
+        ...(p as unknown as Record<string, unknown>),
+        kind: null,
+      })) as unknown as BillPaymentRow[];
     },
   });
 
@@ -100,7 +118,15 @@ function BillDetail() {
         .select("balance")
         .filter("landowner_id", "eq", ownerId as string)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        const msg = error.message || "";
+        if (/landowner_advance_balances/i.test(msg) || /does not exist/i.test(msg)) {
+          if (supportsAdvanceBalanceView) setSupportsAdvanceBalanceView(false);
+          return 0;
+        }
+        throw error;
+      }
+      if (!supportsAdvanceBalanceView) setSupportsAdvanceBalanceView(true);
       return Number((data as unknown as { balance?: number | null } | null)?.balance ?? 0);
     },
   });
@@ -166,18 +192,70 @@ function BillDetail() {
 
       if (rows.length === 0) throw new Error("Nothing to record");
 
-      const selectInsertedClause: string = "id, kind";
-      const { data: inserted, error } = await supabase
+      const selectInsertedClause: string = supportsPaymentKinds ? "id, kind" : "id";
+
+      let insertedRows: Array<{ id: string; kind?: string | null }> = [];
+      const r1 = await supabase
         .from("payments")
         .insert(rows as never)
-        .select(selectInsertedClause)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+        .select(selectInsertedClause);
 
-      const insertedRows =
-        (inserted as unknown as Array<{ id: string; kind: string | null }> | null) ?? [];
+      if (!r1.error) {
+        insertedRows =
+          (r1.data as unknown as Array<{ id: string; kind?: string | null }> | null) ?? [];
+      } else {
+        const msg = r1.error.message || "";
+        const missingKindCol = /column .*kind/i.test(msg);
+        const missingLandCol = /column .*land_id/i.test(msg);
+        const missingOwnerCol = /column .*landowner_id/i.test(msg);
+        const missingRecordedBy = /column .*recorded_by/i.test(msg);
+
+        if (!(missingKindCol || missingLandCol || missingOwnerCol || missingRecordedBy)) {
+          throw r1.error;
+        }
+
+        if (supportsPaymentKinds && missingKindCol) setSupportsPaymentKinds(false);
+
+        const legacyPayload: Record<string, unknown> = {
+          bill_id: billId,
+          amount: appliedToBill,
+          paid_at: form.paid_at,
+          method: form.method,
+          reference: form.reference || null,
+          recorded_by: user?.id,
+        };
+        const r2 = await supabase
+          .from("payments")
+          .insert(legacyPayload as never)
+          .select("id")
+          .single();
+        if (r2.error) {
+          const msg2 = r2.error.message || "";
+          if (/column .*recorded_by/i.test(msg2)) {
+            const r3 = await supabase
+              .from("payments")
+              .insert({
+                bill_id: billId,
+                amount: appliedToBill,
+                paid_at: form.paid_at,
+                method: form.method,
+                reference: form.reference || null,
+              } as never)
+              .select("id")
+              .single();
+            if (r3.error) throw r3.error;
+            insertedRows = r3.data ? [{ id: (r3.data as { id: string }).id, kind: null }] : [];
+          } else {
+            throw r2.error;
+          }
+        } else {
+          insertedRows = r2.data ? [{ id: (r2.data as { id: string }).id, kind: null }] : [];
+        }
+      }
+
       const billPaymentId =
-        (insertedRows.find((r) => r.kind === "bill")?.id as string | undefined) ?? undefined;
+        (insertedRows.find((r) => r.kind === "bill")?.id as string | undefined) ??
+        (insertedRows.length === 1 ? insertedRows[0]?.id : undefined);
       if (billPaymentId) {
         try {
           const r = await notifyPayment({ data: { paymentId: billPaymentId } });
@@ -210,6 +288,9 @@ function BillDetail() {
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["recent-payments"] });
       qc.invalidateQueries({ queryKey: ["advance-balance"] });
+      setTimeout(() => {
+        window.location.reload();
+      }, 200);
     },
     onError: (e: Error) => toast.error(e.message),
   });
