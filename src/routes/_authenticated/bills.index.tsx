@@ -60,9 +60,12 @@ function BillsPage() {
       const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("bills")
-        .select("id, billing_year, amount, due_date, status, lands(land_code, plot_number)", {
-          count: "exact",
-        })
+        .select(
+          "id, billing_year, amount, due_date, status, lands(land_code, plot_number, landowners(full_name))",
+          {
+            count: "exact",
+          },
+        )
         .order("issued_at", { ascending: false });
       if (status !== "all") q = q.eq("status", status);
       const { data, count, error } = await q.range(from, to);
@@ -76,7 +79,7 @@ function BillsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lands")
-        .select("id, land_code, annual_rent_amount")
+        .select("id, land_code, annual_rent_amount, landowners(full_name)")
         .order("land_code");
       if (error) throw error;
       return data;
@@ -282,7 +285,7 @@ function BillsPage() {
                     searchPlaceholder="Search lands…"
                     options={(lands.data ?? []).map((l) => ({
                       value: l.id,
-                      label: l.land_code,
+                      label: `${l.land_code} — ${(l.landowners as unknown as { full_name: string | null } | null)?.full_name ?? "No owner"}`,
                     }))}
                   />
                 </div>
@@ -344,7 +347,7 @@ function BillsPage() {
         </CardHeader>
         <CardContent>
           {bills.isLoading ? (
-            <TableSkeleton columns={6} rows={6} />
+            <TableSkeleton columns={7} rows={6} />
           ) : (bills.data?.rows ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No bills.</p>
           ) : (
@@ -354,6 +357,7 @@ function BillsPage() {
                   const land = b.lands as unknown as {
                     land_code: string;
                     plot_number: string | null;
+                    landowners: { full_name: string | null } | null;
                   } | null;
                   return (
                     <div key={b.id} className="rounded-md border border-border bg-background p-3">
@@ -368,6 +372,9 @@ function BillsPage() {
                           </Link>
                           <div className="mt-1 text-xs text-muted-foreground">
                             Year {b.billing_year} · Due {formatDate(b.due_date)}
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Owner {land?.landowners?.full_name ?? "—"}
                           </div>
                           <div className="mt-2">
                             <BillStatusBadge status={b.status} />
@@ -401,6 +408,7 @@ function BillsPage() {
                   <thead>
                     <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                       <th className="pb-2">Land</th>
+                      <th className="pb-2">Owner</th>
                       <th className="pb-2">Year</th>
                       <th className="pb-2">Due</th>
                       <th className="pb-2">Status</th>
@@ -413,6 +421,7 @@ function BillsPage() {
                       const land = b.lands as unknown as {
                         land_code: string;
                         plot_number: string | null;
+                        landowners: { full_name: string | null } | null;
                       } | null;
                       return (
                         <tr key={b.id} className="border-b last:border-0">
@@ -425,6 +434,7 @@ function BillsPage() {
                               {land?.land_code ?? "—"}
                             </Link>
                           </td>
+                          <td className="py-2">{land?.landowners?.full_name ?? "—"}</td>
                           <td className="py-2">{b.billing_year}</td>
                           <td className="py-2">{formatDate(b.due_date)}</td>
                           <td className="py-2">
