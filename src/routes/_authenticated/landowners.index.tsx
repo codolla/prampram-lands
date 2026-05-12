@@ -110,6 +110,16 @@ function LandownersPage() {
         .single();
       if (error) throw error;
       if (!data?.id) throw new Error("Failed to create landowner");
+
+      if (payload.phone) {
+        const { error: phoneErr } = await supabase
+          .from("landowner_phones" as never)
+          .upsert([{ landowner_id: data.id, phone: payload.phone, is_primary: true }] as never, {
+            onConflict: "landowner_id,phone",
+          });
+        if (phoneErr) throw phoneErr;
+      }
+
       return data as { id: string };
     },
     onSuccess: (row) => {

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, ArrowLeft, Landmark } from "lucide-react";
+import { Save, ArrowLeft, Landmark, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LandStatusBadge } from "@/components/StatusBadge";
 import { AvatarUpload } from "@/components/AvatarUpload";
@@ -41,6 +41,20 @@ function LandownerDetail() {
         .single();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const phones = useQuery({
+    queryKey: ["landowner-phones", ownerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("landowner_phones" as never)
+        .select("id, phone, is_primary")
+        .eq("landowner_id", ownerId)
+        .order("is_primary", { ascending: false })
+        .order("phone");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; phone: string; is_primary: boolean }>;
     },
   });
 
@@ -78,6 +92,7 @@ function LandownerDetail() {
     notes: "",
     avatar_url: "" as string | null | "",
   });
+  const [extraPhones, setExtraPhones] = useState<string[]>([]);
 
   const [deposit, setDeposit] = useState({
     land_id: "",
@@ -110,15 +125,37 @@ function LandownerDetail() {
     }
   }, [owner.data]);
 
+  useEffect(() => {
+    if (!phones.data) return;
+    const primary = phones.data.find((p) => p.is_primary)?.phone ?? "";
+    setForm((f) => ({
+      ...f,
+      phone: f.phone.trim() ? f.phone : primary ? normalisePhone(primary) : f.phone,
+    }));
+    setExtraPhones(phones.data.filter((p) => !p.is_primary).map((p) => p.phone));
+  }, [phones.data]);
+
   const save = useMutation({
     mutationFn: async () => {
-      if (form.phone.trim() && !looksLikePhone(form.phone.trim()))
-        throw new Error("Enter a valid phone number");
+      const primaryRaw = form.phone.trim();
+      if (primaryRaw && !looksLikePhone(primaryRaw)) throw new Error("Enter a valid phone number");
+      const primary = primaryRaw ? normalisePhone(primaryRaw) : null;
+
+      const extras = extraPhones
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((p) => {
+          if (!looksLikePhone(p)) throw new Error(`Invalid extra phone: ${p}`);
+          return normalisePhone(p);
+        })
+        .filter((p) => p !== primary);
+      const uniqueExtras = Array.from(new Set(extras));
+
       const { error } = await supabase
         .from("landowners")
         .update({
           full_name: form.full_name,
-          phone: form.phone.trim() ? normalisePhone(form.phone.trim()) : null,
+          phone: primary,
           email: form.email || null,
           address: form.address || null,
           national_id: form.national_id || null,
@@ -127,11 +164,68 @@ function LandownerDetail() {
         })
         .eq("id", ownerId);
       if (error) throw error;
+
+      const desiredPhones = new Set<string>(uniqueExtras);
+      if (primary) desiredPhones.add(primary);
+
+      if (desiredPhones.size === 0) {
+        const { error: delAllErr } = await supabase
+          .from("landowner_phones" as never)
+          .delete()
+          .eq("landowner_id", ownerId);
+        if (delAllErr) throw delAllErr;
+        return;
+      }
+
+      const { data: existing, error: existingErr } = await supabase
+        .from("landowner_phones" as never)
+        .select("phone")
+        .eq("landowner_id", ownerId);
+      if (existingErr) throw existingErr;
+
+      const existingPhones = new Set(
+        ((existing ?? []) as Array<{ phone: string }>).map((r) => r.phone),
+      );
+      const toDelete = Array.from(existingPhones).filter((p) => !desiredPhones.has(p));
+      if (toDelete.length > 0) {
+        const { error: delErr } = await supabase
+          .from("landowner_phones" as never)
+          .delete()
+          .eq("landowner_id", ownerId)
+          .in("phone", toDelete);
+        if (delErr) throw delErr;
+      }
+
+      const upsertRows = Array.from(desiredPhones).map((phone) => ({
+        landowner_id: ownerId,
+        phone,
+        is_primary: false,
+      }));
+      const { error: upsertErr } = await supabase
+        .from("landowner_phones" as never)
+        .upsert(upsertRows as never, { onConflict: "landowner_id,phone" });
+      if (upsertErr) throw upsertErr;
+
+      const { error: resetPrimaryErr } = await supabase
+        .from("landowner_phones" as never)
+        .update({ is_primary: false } as never)
+        .eq("landowner_id", ownerId);
+      if (resetPrimaryErr) throw resetPrimaryErr;
+
+      if (primary) {
+        const { error: setPrimaryErr } = await supabase
+          .from("landowner_phones" as never)
+          .update({ is_primary: true } as never)
+          .eq("landowner_id", ownerId)
+          .eq("phone", primary);
+        if (setPrimaryErr) throw setPrimaryErr;
+      }
     },
     onSuccess: () => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["landowner", ownerId] });
       qc.invalidateQueries({ queryKey: ["landowners"] });
+      qc.invalidateQueries({ queryKey: ["landowner-phones", ownerId] });
     },
     onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
@@ -215,6 +309,59 @@ function LandownerDetail() {
                 value={form.email}
                 onChange={(v) => setForm({ ...form, email: v })}
               />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label>Additional phone numbers</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setExtraPhones((p) => [...p, ""])}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add phone
+                </Button>
+              </div>
+              {extraPhones.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No additional phone numbers.</p>
+              ) : (
+                <div className="grid gap-2">
+                  {extraPhones.map((p, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={p}
+                        onChange={(e) =>
+                          setExtraPhones((list) =>
+                            list.map((v, i) => (i === idx ? e.target.value : v)),
+                          )
+                        }
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const phone = extraPhones[idx] ?? "";
+                          setForm((f) => ({ ...f, phone }));
+                          setExtraPhones((list) => list.filter((_, i) => i !== idx));
+                        }}
+                      >
+                        Make primary
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setExtraPhones((list) => list.filter((_, i) => i !== idx))}
+                        aria-label="Remove phone"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <Field
               label="Address"
