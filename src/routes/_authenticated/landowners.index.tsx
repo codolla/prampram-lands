@@ -26,6 +26,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
 import { useAuth } from "@/lib/auth";
 import { getUserFacingErrorMessage } from "@/lib/utils";
+import { looksLikePhone, normalisePhone } from "@/lib/phone-auth";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/landowners/")({
   component: LandownersPage,
@@ -40,19 +49,21 @@ function LandownersPage() {
   const { hasAnyRole } = useAuth();
   const canDelete = hasAnyRole(["admin"]);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [importOpen, setImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, pageSize]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["landowners", search, page],
+    queryKey: ["landowners", search, page, pageSize],
     queryFn: async () => {
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
       let q = supabase
         .from("landowners")
         .select("id, full_name, phone, email, address, national_id, avatar_url, created_at", {
@@ -80,9 +91,11 @@ function LandownersPage() {
   const create = useMutation({
     mutationFn: async () => {
       if (!form.full_name.trim()) throw new Error("Full name is required");
+      if (form.phone.trim() && !looksLikePhone(form.phone.trim()))
+        throw new Error("Enter a valid phone number");
       const payload = {
         full_name: form.full_name.trim(),
-        phone: form.phone || null,
+        phone: form.phone.trim() ? normalisePhone(form.phone.trim()) : null,
         email: form.email || null,
         address: form.address || null,
         national_id: form.national_id || null,
@@ -130,6 +143,25 @@ function LandownersPage() {
     },
     onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
+
+  const removeSelected = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const { error } = await supabase.from("landowners").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Deleted selected landowners");
+      setSelectedIds(new Set());
+      qc.invalidateQueries({ queryKey: ["landowners"] });
+    },
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
+  });
+
+  const rows = data?.rows ?? [];
+  const pageIds = rows.map((r) => r.id);
+  const pageSelectedCount = pageIds.reduce((n, id) => n + (selectedIds.has(id) ? 1 : 0), 0);
+  const allOnPageSelected = pageIds.length > 0 && pageSelectedCount === pageIds.length;
 
   return (
     <AppShell
@@ -307,26 +339,74 @@ function LandownersPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">All landowners</CardTitle>
-          <div className="relative mt-2 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by name…"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 / page</SelectItem>
+                <SelectItem value="25">25 / page</SelectItem>
+                <SelectItem value="50">50 / page</SelectItem>
+                <SelectItem value="100">100 / page</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <TableSkeleton columns={6} rows={6} />
+            <TableSkeleton columns={canDelete ? 7 : 6} rows={6} />
           ) : (data?.rows ?? []).length === 0 ? (
             <EmptyState />
           ) : (
             <div className="overflow-x-auto">
+              {canDelete && selectedIds.size > 0 && (
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2 text-sm">
+                  <div className="text-muted-foreground">Selected {selectedIds.size} item(s)</div>
+                  <ConfirmDelete
+                    onConfirm={() => removeSelected.mutateAsync(Array.from(selectedIds))}
+                    pending={removeSelected.isPending}
+                    title="Delete selected landowners?"
+                    description={
+                      <>
+                        This permanently removes the selected landowner records and cannot be
+                        undone.
+                        <DeleteImpactWarning kind="landowner" />
+                      </>
+                    }
+                    confirmLabel="Delete selected"
+                  />
+                </div>
+              )}
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                    {canDelete && (
+                      <th className="pb-2 pr-2">
+                        <Checkbox
+                          checked={allOnPageSelected}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(selectedIds);
+                            if (checked) {
+                              for (const id of pageIds) next.add(id);
+                            } else {
+                              for (const id of pageIds) next.delete(id);
+                            }
+                            setSelectedIds(next);
+                          }}
+                          aria-label="Select all on page"
+                        />
+                      </th>
+                    )}
                     <th className="pb-2">Name</th>
                     <th className="pb-2">Phone</th>
                     <th className="pb-2">Email</th>
@@ -338,6 +418,20 @@ function LandownersPage() {
                 <tbody>
                   {(data?.rows ?? []).map((o) => (
                     <tr key={o.id} className="border-b last:border-0">
+                      {canDelete && (
+                        <td className="py-2 pr-2">
+                          <Checkbox
+                            checked={selectedIds.has(o.id)}
+                            onCheckedChange={(checked) => {
+                              const next = new Set(selectedIds);
+                              if (checked) next.add(o.id);
+                              else next.delete(o.id);
+                              setSelectedIds(next);
+                            }}
+                            aria-label={`Select ${o.full_name}`}
+                          />
+                        </td>
+                      )}
                       <td className="py-2 font-medium">
                         <Link
                           to="/landowners/$ownerId"
@@ -353,7 +447,13 @@ function LandownersPage() {
                           {o.full_name}
                         </Link>
                       </td>
-                      <td className="py-2">{o.phone || "—"}</td>
+                      <td className="py-2">
+                        {o.phone
+                          ? looksLikePhone(o.phone)
+                            ? normalisePhone(o.phone)
+                            : o.phone
+                          : "—"}
+                      </td>
                       <td className="py-2">{o.email || "—"}</td>
                       <td className="py-2">{o.national_id || "—"}</td>
                       <td className="py-2 text-muted-foreground">{formatDate(o.created_at)}</td>
@@ -386,7 +486,7 @@ function LandownersPage() {
           )}
           {(() => {
             const total = data?.count ?? 0;
-            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
             if (totalPages <= 1) return null;
             return (
               <div className="mt-4 flex items-center justify-between gap-3">
@@ -531,6 +631,13 @@ function normalizeOptAny(v: unknown): string | null {
   return s ? s : null;
 }
 
+function normalizePhoneOptAny(v: unknown): string | null {
+  const s = String(v ?? "").trim();
+  if (!s) return null;
+  if (!looksLikePhone(s)) throw new Error(`Invalid phone number: ${s}`);
+  return normalisePhone(s);
+}
+
 function ensureHeadersPresent(keys: string[]) {
   if (!keys.includes("full_name")) throw new Error("File must include full_name header");
 }
@@ -561,7 +668,7 @@ async function parseLandownersImportFile(file: File): Promise<LandownerImportRow
       if (!fullName) continue;
       normalizedRows.push({
         full_name: fullName,
-        phone: normalizeOptAny(mapped.phone),
+        phone: normalizePhoneOptAny(mapped.phone),
         email: normalizeOptAny(mapped.email),
         address: normalizeOptAny(mapped.address),
         national_id: normalizeOptAny(mapped.national_id),
@@ -603,7 +710,7 @@ function parseLandownersCsv(text: string): LandownerImportRow[] {
     if (!fullName) continue;
     out.push({
       full_name: fullName,
-      phone: normalizeOpt(r[mapIndex.phone]),
+      phone: normalizePhoneOpt(r[mapIndex.phone]),
       email: normalizeOpt(r[mapIndex.email]),
       address: normalizeOpt(r[mapIndex.address]),
       national_id: normalizeOpt(r[mapIndex.national_id]),
@@ -618,8 +725,17 @@ function normalizeOpt(v: string | undefined): string | null {
   return s ? s : null;
 }
 
+function normalizePhoneOpt(v: string | undefined): string | null {
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  if (!looksLikePhone(s)) throw new Error(`Invalid phone number: ${s}`);
+  return normalisePhone(s);
+}
+
 function phoneKey(phone: string | null): string {
-  return (phone ?? "").replace(/\s+/g, "").toLowerCase();
+  const v = (phone ?? "").trim();
+  if (!v) return "";
+  return normalisePhone(v).replace(/[^\d]/g, "");
 }
 
 function emailKey(email: string | null): string {
@@ -642,6 +758,16 @@ function dedupeKey(r: LandownerImportRow): string {
   if (e) return `email:${e}`;
   if (n) return `national_id:${n}`;
   return `name:${nameKey(r.full_name)}`;
+}
+
+function phoneLookupCandidates(raw: string): string[] {
+  const v = raw.trim();
+  if (!v) return [];
+  const norm = normalisePhone(v);
+  const digits = norm.replace(/[^\d]/g, "");
+  const local = digits.startsWith("233") ? `0${digits.slice(3)}` : "";
+  const noPlus = norm.startsWith("+") ? norm.slice(1) : norm;
+  return Array.from(new Set([v, norm, noPlus, digits, local].filter(Boolean)));
 }
 
 function dedupeLandownerRows(rows: LandownerImportRow[]): LandownerImportRow[] {
@@ -671,7 +797,8 @@ async function findExistingLandowners(rows: LandownerImportRow[]): Promise<{
     nationalIds: new Set<string>(),
   };
 
-  for (const batch of chunk(phones, 150)) {
+  const phoneLookups = Array.from(new Set(phones.flatMap((p) => phoneLookupCandidates(p))));
+  for (const batch of chunk(phoneLookups, 150)) {
     const { data, error } = await supabase.from("landowners").select("phone").in("phone", batch);
     if (error) throw error;
     for (const o of data ?? []) existing.phones.add(phoneKey(o.phone ?? null));

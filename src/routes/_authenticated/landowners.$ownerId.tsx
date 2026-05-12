@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/format";
+import { looksLikePhone, normalisePhone } from "@/lib/phone-auth";
+import { getUserFacingErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/landowners/$ownerId")({
   component: LandownerDetail,
@@ -95,7 +97,10 @@ function LandownerDetail() {
     if (owner.data) {
       setForm({
         full_name: owner.data.full_name ?? "",
-        phone: owner.data.phone ?? "",
+        phone:
+          owner.data.phone && looksLikePhone(owner.data.phone)
+            ? normalisePhone(owner.data.phone)
+            : (owner.data.phone ?? ""),
         email: owner.data.email ?? "",
         address: owner.data.address ?? "",
         national_id: owner.data.national_id ?? "",
@@ -107,11 +112,13 @@ function LandownerDetail() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (form.phone.trim() && !looksLikePhone(form.phone.trim()))
+        throw new Error("Enter a valid phone number");
       const { error } = await supabase
         .from("landowners")
         .update({
           full_name: form.full_name,
-          phone: form.phone || null,
+          phone: form.phone.trim() ? normalisePhone(form.phone.trim()) : null,
           email: form.email || null,
           address: form.address || null,
           national_id: form.national_id || null,
@@ -126,7 +133,7 @@ function LandownerDetail() {
       qc.invalidateQueries({ queryKey: ["landowner", ownerId] });
       qc.invalidateQueries({ queryKey: ["landowners"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const addAdvance = useMutation({
