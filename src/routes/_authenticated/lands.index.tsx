@@ -136,7 +136,6 @@ function LandsPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    plot_number: "",
     family: "",
     size_value: "",
     size_unit: "acres" as "acres" | "hectares",
@@ -199,7 +198,6 @@ function LandsPage() {
     setImages([]);
     setPreviews([]);
     setForm({
-      plot_number: "",
       family: "",
       size_value: "",
       size_unit: "acres",
@@ -271,7 +269,6 @@ function LandsPage() {
       if (computedAnnualRent == null) throw new Error("Annual rent could not be calculated");
       setUploadProgress({ current: 0, total: images.length, fileName: "", stage: "saving" });
       const payload = {
-        plot_number: form.plot_number || null,
         family: form.family || null,
         size_value: form.size_value ? Number(form.size_value) : null,
         size_unit: form.size_unit,
@@ -407,11 +404,10 @@ function LandsPage() {
                     <Label>Land code</Label>
                     <Input value="Auto-generated" readOnly disabled />
                   </div>
-                  <FieldInput
-                    label="Plot number"
-                    value={form.plot_number}
-                    onChange={(v) => setForm({ ...form, plot_number: v })}
-                  />
+                  <div className="space-y-1">
+                    <Label>Plot number</Label>
+                    <Input value="Auto-generated" readOnly disabled />
+                  </div>
                 </div>
                 <FieldInput
                   label="Grantor/Family"
