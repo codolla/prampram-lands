@@ -1,8 +1,5 @@
 "use client";
 import {
-  require_shim
-} from "./chunk-HHGWYVLT.js";
-import {
   createSlot
 } from "./chunk-CXPFXTOM.js";
 import {
@@ -18,6 +15,9 @@ import {
 import {
   require_react_dom
 } from "./chunk-FF6GPTLF.js";
+import {
+  require_shim
+} from "./chunk-HHGWYVLT.js";
 import {
   require_react
 } from "./chunk-IYNEFVZG.js";

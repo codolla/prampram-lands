@@ -230,16 +230,6 @@ function invariant() {
   throw new Error("Invariant failed");
 }
 
-// node_modules/@tanstack/router-core/dist/esm/not-found.js
-function notFound(options = {}) {
-  options.isNotFound = true;
-  if (options.throw) throw options;
-  return options;
-}
-function isNotFound(obj) {
-  return obj?.isNotFound === true;
-}
-
 export {
   isServer,
   last,
@@ -260,8 +250,6 @@ export {
   encodePathLikeUrl,
   buildDevStylesUrl,
   arraysEqual,
-  invariant,
-  notFound,
-  isNotFound
+  invariant
 };
-//# sourceMappingURL=chunk-SOMTTQOM.js.map
+//# sourceMappingURL=chunk-CLINTJPG.js.map

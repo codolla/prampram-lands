@@ -146,15 +146,34 @@ function LandownersPage() {
               <DialogHeader>
                 <DialogTitle>Bulk import landowners</DialogTitle>
                 <DialogDescription>
-                  Upload a CSV with headers: full_name, phone, email, address, national_id, notes
+                  Upload a CSV or Excel file with headers: full_name, phone, email, address,
+                  national_id, notes
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadCsvTemplate("landowners-import-template.csv")}
+                  >
+                    Download CSV example
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void downloadExcelTemplate("landowners-import-template.xlsx")}
+                  >
+                    Download Excel example
+                  </Button>
+                </div>
                 <div className="space-y-1">
-                  <Label>CSV file</Label>
+                  <Label>File</Label>
                   <Input
                     type="file"
-                    accept=".csv,text/csv"
+                    accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                     onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
                   />
                 </div>
@@ -175,9 +194,8 @@ function LandownersPage() {
                     if (!importFile) return;
                     setImporting(true);
                     try {
-                      const text = await importFile.text();
-                      const parsed = parseLandownersCsv(text);
-                      if (parsed.length === 0) throw new Error("No rows found in CSV");
+                      const parsed = await parseLandownersImportFile(importFile);
+                      if (parsed.length === 0) throw new Error("No rows found in file");
 
                       const normalized = dedupeLandownerRows(parsed);
                       const existing = await findExistingLandowners(normalized);
@@ -439,10 +457,125 @@ type LandownerImportRow = {
   notes: string | null;
 };
 
+function downloadBlob(filename: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toCsv(rows: (string | number | null | undefined)[][]): string {
+  return rows
+    .map((r) =>
+      r
+        .map((cell) => {
+          const s = String(cell ?? "");
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        })
+        .join(","),
+    )
+    .join("\n");
+}
+
+function downloadCsvTemplate(filename: string) {
+  const rows: (string | number)[][] = [
+    ["full_name", "phone", "email", "address", "national_id", "notes"],
+    ["John Doe", "0244000000", "john@example.com", "Tema", "GHA-12345", ""],
+  ];
+  const csv = toCsv(rows);
+  downloadBlob(filename, new Blob([csv], { type: "text/csv;charset=utf-8" }));
+}
+
+async function downloadExcelTemplate(filename: string) {
+  const XLSX = await import("xlsx");
+  const rows: (string | number)[][] = [
+    ["full_name", "phone", "email", "address", "national_id", "notes"],
+    ["John Doe", "0244000000", "john@example.com", "Tema", "GHA-12345", ""],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Landowners");
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  downloadBlob(
+    filename,
+    new Blob([out], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
+  );
+}
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+function normalizeHeaderKey(raw: unknown): string {
+  const s = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+  if (s === "fullname") return "full_name";
+  if (s === "name") return "full_name";
+  if (s === "nationalid") return "national_id";
+  if (s === "national_idnumber") return "national_id";
+  if (s === "phonenumber") return "phone";
+  return s;
+}
+
+function normalizeOptAny(v: unknown): string | null {
+  const s = String(v ?? "").trim();
+  return s ? s : null;
+}
+
+function ensureHeadersPresent(keys: string[]) {
+  if (!keys.includes("full_name")) throw new Error("File must include full_name header");
+}
+
+async function parseLandownersImportFile(file: File): Promise<LandownerImportRow[]> {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".csv") || file.type === "text/csv") {
+    const text = await file.text();
+    return parseLandownersCsv(text);
+  }
+  if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+    const XLSX = await import("xlsx");
+    const ab = await file.arrayBuffer();
+    const wb = XLSX.read(ab, { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    if (!sheetName) return [];
+    const sheet = wb.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+    if (rawRows.length === 0) return [];
+
+    const normalizedRows: LandownerImportRow[] = [];
+    for (const row of rawRows) {
+      const mapped: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(row)) {
+        mapped[normalizeHeaderKey(k)] = v;
+      }
+      const fullName = String(mapped.full_name ?? "").trim();
+      if (!fullName) continue;
+      normalizedRows.push({
+        full_name: fullName,
+        phone: normalizeOptAny(mapped.phone),
+        email: normalizeOptAny(mapped.email),
+        address: normalizeOptAny(mapped.address),
+        national_id: normalizeOptAny(mapped.national_id),
+        notes: normalizeOptAny(mapped.notes),
+      });
+    }
+
+    const keys = Object.keys(
+      Object.fromEntries(Object.keys(rawRows[0] ?? {}).map((k) => [normalizeHeaderKey(k), true])),
+    );
+    ensureHeadersPresent(keys);
+    return normalizedRows;
+  }
+  throw new Error("Unsupported file type. Upload CSV or Excel (.xlsx).");
 }
 
 function parseLandownersCsv(text: string): LandownerImportRow[] {
@@ -539,19 +672,13 @@ async function findExistingLandowners(rows: LandownerImportRow[]): Promise<{
   };
 
   for (const batch of chunk(phones, 150)) {
-    const { data, error } = await supabase
-      .from("landowners")
-      .select("phone")
-      .in("phone", batch);
+    const { data, error } = await supabase.from("landowners").select("phone").in("phone", batch);
     if (error) throw error;
     for (const o of data ?? []) existing.phones.add(phoneKey(o.phone ?? null));
   }
 
   for (const batch of chunk(emails, 150)) {
-    const { data, error } = await supabase
-      .from("landowners")
-      .select("email")
-      .in("email", batch);
+    const { data, error } = await supabase.from("landowners").select("email").in("email", batch);
     if (error) throw error;
     for (const o of data ?? []) existing.emails.add(emailKey(o.email ?? null));
   }
