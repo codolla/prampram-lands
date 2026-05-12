@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Landmark, Plus, Search, Upload, User } from "lucide-react";
+import { Landmark, Plus, Search, Trash2, Upload, User } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 import { AvatarUpload } from "@/components/AvatarUpload";
@@ -47,7 +47,8 @@ function LandownersPage() {
   const qc = useQueryClient();
   const navigate = Route.useNavigate();
   const { hasAnyRole } = useAuth();
-  const canDelete = hasAnyRole(["admin"]);
+  const canRowDelete = hasAnyRole(["admin", "developer"]);
+  const canBulkDelete = hasAnyRole(["developer"]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [importOpen, setImportOpen] = useState(false);
@@ -158,6 +159,19 @@ function LandownersPage() {
     onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
+  const removeNoPhone = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("landowners").delete().or("phone.is.null,phone.eq.");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Deleted landowners without phone numbers");
+      setSelectedIds(new Set());
+      qc.invalidateQueries({ queryKey: ["landowners"] });
+    },
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
+  });
+
   const rows = data?.rows ?? [];
   const pageIds = rows.map((r) => r.id);
   const pageSelectedCount = pageIds.reduce((n, id) => n + (selectedIds.has(id) ? 1 : 0), 0);
@@ -229,7 +243,18 @@ function LandownersPage() {
                       const parsed = await parseLandownersImportFile(importFile);
                       if (parsed.length === 0) throw new Error("No rows found in file");
 
-                      const normalized = dedupeLandownerRows(parsed);
+                      let skippedNoPhone = 0;
+                      const withPhone = parsed.filter((r) => {
+                        if (!r.phone) {
+                          skippedNoPhone += 1;
+                          return false;
+                        }
+                        return true;
+                      });
+
+                      const normalized = dedupeLandownerRows(withPhone);
+                      const skippedDuplicates = withPhone.length - normalized.length;
+
                       const existing = await findExistingLandowners(normalized);
                       const toInsert = normalized.filter((r) => {
                         const p = phoneKey(r.phone);
@@ -240,7 +265,7 @@ function LandownersPage() {
                         if (n && existing.nationalIds.has(n)) return false;
                         return true;
                       });
-                      const skipped = normalized.length - toInsert.length;
+                      const skippedExisting = normalized.length - toInsert.length;
 
                       let created = 0;
                       for (const batch of chunk(toInsert, 200)) {
@@ -249,7 +274,9 @@ function LandownersPage() {
                         created += batch.length;
                       }
 
-                      toast.success(`Imported ${created} landowner(s) · skipped ${skipped}`);
+                      toast.success(
+                        `Imported ${created} landowner(s) · skipped ${skippedDuplicates + skippedExisting + skippedNoPhone}`,
+                      );
                       setImportOpen(false);
                       setImportFile(null);
                       qc.invalidateQueries({ queryKey: ["landowners"] });
@@ -265,6 +292,25 @@ function LandownersPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          {canBulkDelete && (
+            <ConfirmDelete
+              onConfirm={() => removeNoPhone.mutateAsync()}
+              pending={removeNoPhone.isPending}
+              title="Delete all landowners without phone numbers?"
+              description={
+                <>
+                  This permanently deletes all landowners where phone is empty or missing.
+                  <DeleteImpactWarning kind="landowner" />
+                </>
+              }
+              confirmLabel="Delete no-phone"
+              trigger={
+                <Button size="sm" variant="outline">
+                  <Trash2 className="mr-1 h-4 w-4" /> Delete no-phone
+                </Button>
+              }
+            />
+          )}
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -364,12 +410,12 @@ function LandownersPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <TableSkeleton columns={canDelete ? 7 : 6} rows={6} />
+            <TableSkeleton columns={canBulkDelete ? 7 : 6} rows={6} />
           ) : (data?.rows ?? []).length === 0 ? (
             <EmptyState />
           ) : (
             <div className="overflow-x-auto">
-              {canDelete && selectedIds.size > 0 && (
+              {canBulkDelete && selectedIds.size > 0 && (
                 <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2 text-sm">
                   <div className="text-muted-foreground">Selected {selectedIds.size} item(s)</div>
                   <ConfirmDelete
@@ -390,7 +436,7 @@ function LandownersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                    {canDelete && (
+                    {canBulkDelete && (
                       <th className="pb-2 pr-2">
                         <Checkbox
                           checked={allOnPageSelected}
@@ -418,7 +464,7 @@ function LandownersPage() {
                 <tbody>
                   {(data?.rows ?? []).map((o) => (
                     <tr key={o.id} className="border-b last:border-0">
-                      {canDelete && (
+                      {canBulkDelete && (
                         <td className="py-2 pr-2">
                           <Checkbox
                             checked={selectedIds.has(o.id)}
@@ -464,7 +510,7 @@ function LandownersPage() {
                             Register
                           </Link>
                         </Button>
-                        {canDelete && (
+                        {canRowDelete && (
                           <ConfirmDelete
                             onConfirm={() => remove.mutateAsync(o.id)}
                             pending={remove.isPending}
