@@ -52,6 +52,8 @@ type WalkinLogsQuery = {
   select: (columns: string, options?: { count?: "exact" }) => WalkinLogsQuery;
   order: (column: string, options: { ascending: boolean }) => WalkinLogsQuery;
   eq: (column: string, value: string) => WalkinLogsQuery;
+  gte: (column: string, value: string) => WalkinLogsQuery;
+  lt: (column: string, value: string) => WalkinLogsQuery;
   range: (
     from: number,
     to: number,
@@ -86,6 +88,61 @@ type WalkinLogsUpdateQuery = {
   eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>;
 };
 
+function formatTimeBeforeDate(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return "—";
+  const t = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+  return `${t} · ${formatDate(d)}`;
+}
+
+type DateFilter = "today" | "week" | "month" | "year" | "custom";
+
+function yyyyMmDdUtc(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function createdAtRange(filter: DateFilter, customDate: string): { from: string; to: string } {
+  const now = new Date();
+  if (filter === "today") {
+    const day = yyyyMmDdUtc(now);
+    const start = new Date(`${day}T00:00:00.000Z`);
+    return {
+      from: start.toISOString(),
+      to: new Date(start.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+  if (filter === "custom") {
+    const day = (customDate || yyyyMmDdUtc(now)).slice(0, 10);
+    const start = new Date(`${day}T00:00:00.000Z`);
+    return {
+      from: start.toISOString(),
+      to: new Date(start.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+  if (filter === "week") {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const day = d.getUTCDay();
+    const deltaToMonday = (day + 6) % 7;
+    const start = new Date(d.getTime() - deltaToMonday * 24 * 60 * 60 * 1000);
+    return { from: start.toISOString(), to: now.toISOString() };
+  }
+  if (filter === "month") {
+    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+    return { from: start.toISOString(), to: now.toISOString() };
+  }
+  const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0));
+  return { from: start.toISOString(), to: now.toISOString() };
+}
+
 function FrontDeskPage() {
   const qc = useQueryClient();
   const { user, hasAnyRole } = useAuth();
@@ -93,6 +150,8 @@ function FrontDeskPage() {
 
   const [kind, setKind] = useState<WalkinKind>("enquiry");
   const [filter, setFilter] = useState<"all" | WalkinKind>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [customDate, setCustomDate] = useState(() => yyyyMmDdUtc(new Date()));
   const [page, setPage] = useState(1);
   const [form, setForm] = useState({
     visitor_name: "",
@@ -103,7 +162,7 @@ function FrontDeskPage() {
   });
 
   const logs = useQuery({
-    queryKey: ["walkin-logs", filter, page],
+    queryKey: ["walkin-logs", filter, dateFilter, customDate, page],
     enabled: canUse,
     queryFn: async () => {
       const client = supabase as unknown as SupabaseWalkin;
@@ -118,6 +177,8 @@ function FrontDeskPage() {
           },
         );
       if (filter !== "all") q = q.eq("kind", filter);
+      const r = createdAtRange(dateFilter, customDate);
+      q = q.gte("created_at", r.from).lt("created_at", r.to);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -128,7 +189,7 @@ function FrontDeskPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [filter]);
+  }, [filter, dateFilter, customDate]);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -311,20 +372,49 @@ function FrontDeskPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Recent entries</CardTitle>
-            <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="enquiry">Enquiry</SelectItem>
-                <SelectItem value="complaint">Complaint</SelectItem>
-                <SelectItem value="payment">Payment</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <div className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                {total} entries
+              </div>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="year">Year</SelectItem>
+                  <SelectItem value="custom">Custom date</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="enquiry">Enquiry</SelectItem>
+                  <SelectItem value="complaint">Complaint</SelectItem>
+                  <SelectItem value="payment">Payment</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
+            {dateFilter === "custom" && (
+              <div className="mb-3 flex items-end gap-2">
+                <div className="grid gap-1">
+                  <Label>Custom date</Label>
+                  <Input
+                    type="date"
+                    value={customDate}
+                    onChange={(e) => setCustomDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
             {logs.isLoading ? (
               <TableSkeleton columns={5} rows={8} />
             ) : pageRows.length === 0 ? (
@@ -358,7 +448,9 @@ function FrontDeskPage() {
                             {r.detail}
                           </div>
                         </td>
-                        <td className="py-2 text-muted-foreground">{formatDate(r.created_at)}</td>
+                        <td className="py-2 text-muted-foreground">
+                          {formatTimeBeforeDate(r.created_at)}
+                        </td>
                         <td className="py-2 text-right">
                           <Button size="sm" variant="outline" onClick={() => openEdit(r)}>
                             Edit
