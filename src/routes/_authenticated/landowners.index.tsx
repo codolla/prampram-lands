@@ -431,11 +431,11 @@ function LandownersPage() {
         </div>
       }
     >
-      <div className="mb-4 grid gap-3 md:grid-cols-3">
+      <div className="mb-4 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
         <button
           type="button"
           onClick={() => setFilterMode("unlinked")}
-          className="cursor-pointer text-left"
+          className="min-w-56 cursor-pointer text-left md:min-w-0"
         >
           <Card
             className={`transition ${
@@ -455,7 +455,7 @@ function LandownersPage() {
         <button
           type="button"
           onClick={() => setFilterMode("linked")}
-          className="cursor-pointer text-left"
+          className="min-w-56 cursor-pointer text-left md:min-w-0"
         >
           <Card
             className={`transition ${
@@ -475,7 +475,7 @@ function LandownersPage() {
         <button
           type="button"
           onClick={() => setFilterMode("all")}
-          className="cursor-pointer text-left"
+          className="min-w-56 cursor-pointer text-left md:min-w-0"
         >
           <Card
             className={`transition ${
@@ -532,9 +532,9 @@ function LandownersPage() {
           ) : rows.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="overflow-x-auto">
+            <>
               {canBulkDelete && selectedIds.size > 0 && (
-                <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2 text-sm">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2 text-sm">
                   <div className="text-muted-foreground">Selected {selectedIds.size} item(s)</div>
                   <ConfirmDelete
                     onConfirm={() => removeSelected.mutateAsync(Array.from(selectedIds))}
@@ -551,102 +551,189 @@ function LandownersPage() {
                   />
                 </div>
               )}
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                    {canBulkDelete && (
-                      <th className="pb-2 pr-2">
-                        <Checkbox
-                          checked={allOnPageSelected}
-                          onCheckedChange={(checked) => {
-                            const next = new Set(selectedIds);
-                            if (checked) {
-                              for (const id of pageIds) next.add(id);
-                            } else {
-                              for (const id of pageIds) next.delete(id);
-                            }
-                            setSelectedIds(next);
-                          }}
-                          aria-label="Select all on page"
-                        />
-                      </th>
-                    )}
-                    <th className="pb-2">Name</th>
-                    <th className="pb-2">Phone</th>
-                    <th className="pb-2">Email</th>
-                    <th className="pb-2">National ID</th>
-                    <th className="pb-2">Added</th>
-                    <th className="pb-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((o) => (
-                    <tr key={o.id} className="border-b last:border-0">
-                      {canBulkDelete && (
-                        <td className="py-2 pr-2">
-                          <Checkbox
-                            checked={selectedIds.has(o.id)}
-                            onCheckedChange={(checked) => {
-                              const next = new Set(selectedIds);
-                              if (checked) next.add(o.id);
-                              else next.delete(o.id);
-                              setSelectedIds(next);
-                            }}
-                            aria-label={`Select ${o.full_name}`}
-                          />
-                        </td>
-                      )}
-                      <td className="py-2 font-medium">
+
+              <div className="grid gap-2 md:hidden">
+                {rows.map((o) => (
+                  <div key={o.id} className="rounded-md border border-border bg-background p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <Link
                           to="/landowners/$ownerId"
                           params={{ ownerId: o.id }}
-                          className="flex items-center gap-2 text-primary hover:underline"
+                          className="flex min-w-0 items-center gap-2 text-primary hover:underline"
                         >
-                          <Avatar className="h-7 w-7">
+                          <Avatar className="h-8 w-8">
                             {o.avatar_url ? (
                               <AvatarImage src={o.avatar_url} alt={o.full_name} />
                             ) : null}
                             <AvatarFallback>{o.full_name.slice(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          {o.full_name}
+                          <span className="truncate font-medium">{o.full_name}</span>
                         </Link>
-                      </td>
-                      <td className="py-2">
-                        {o.phone
-                          ? looksLikePhone(o.phone)
-                            ? normalisePhone(o.phone)
-                            : o.phone
-                          : "—"}
-                      </td>
-                      <td className="py-2">{o.email || "—"}</td>
-                      <td className="py-2">{o.national_id || "—"}</td>
-                      <td className="py-2 text-muted-foreground">{formatDate(o.created_at)}</td>
-                      <td className="py-2 text-right">
-                        <Button asChild size="sm" variant="outline" className="mr-2">
-                          <Link to="/lands" search={{ register: true, ownerId: o.id }}>
-                            <Landmark className="mr-1 h-4 w-4" />
-                            Register
-                          </Link>
-                        </Button>
-                        {canRowDelete && (
-                          <ConfirmDelete
-                            onConfirm={() => remove.mutateAsync(o.id)}
-                            pending={remove.isPending}
-                            title={`Delete ${o.full_name}?`}
-                            description={
-                              <>
-                                This permanently removes the landowner record and cannot be undone.
-                                <DeleteImpactWarning kind="landowner" />
-                              </>
-                            }
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span className="rounded-full border border-border bg-muted/30 px-2 py-0.5">
+                            {o.has_land ? "Registered" : "Unlinked"}
+                          </span>
+                          <span>{formatDate(o.created_at)}</span>
+                        </div>
+                        <div className="mt-2 space-y-1 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">Phone</span>
+                            <span className="font-medium">
+                              {o.phone
+                                ? looksLikePhone(o.phone)
+                                  ? normalisePhone(o.phone)
+                                  : o.phone
+                                : "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">Email</span>
+                            <span className="truncate font-medium">{o.email || "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {canBulkDelete ? (
+                        <Checkbox
+                          checked={selectedIds.has(o.id)}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(selectedIds);
+                            if (checked) next.add(o.id);
+                            else next.delete(o.id);
+                            setSelectedIds(next);
+                          }}
+                          aria-label={`Select ${o.full_name}`}
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/lands" search={{ register: true, ownerId: o.id }}>
+                          <Landmark className="mr-1 h-4 w-4" />
+                          Register
+                        </Link>
+                      </Button>
+                      {canRowDelete && (
+                        <ConfirmDelete
+                          onConfirm={() => remove.mutateAsync(o.id)}
+                          pending={remove.isPending}
+                          title={`Delete ${o.full_name}?`}
+                          description={
+                            <>
+                              This permanently removes the landowner record and cannot be undone.
+                              <DeleteImpactWarning kind="landowner" />
+                            </>
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                      {canBulkDelete && (
+                        <th className="pb-2 pr-2">
+                          <Checkbox
+                            checked={allOnPageSelected}
+                            onCheckedChange={(checked) => {
+                              const next = new Set(selectedIds);
+                              if (checked) {
+                                for (const id of pageIds) next.add(id);
+                              } else {
+                                for (const id of pageIds) next.delete(id);
+                              }
+                              setSelectedIds(next);
+                            }}
+                            aria-label="Select all on page"
                           />
-                        )}
-                      </td>
+                        </th>
+                      )}
+                      <th className="pb-2">Name</th>
+                      <th className="pb-2">Phone</th>
+                      <th className="pb-2">Email</th>
+                      <th className="pb-2">National ID</th>
+                      <th className="pb-2">Added</th>
+                      <th className="pb-2"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {rows.map((o) => (
+                      <tr key={o.id} className="border-b last:border-0">
+                        {canBulkDelete && (
+                          <td className="py-2 pr-2">
+                            <Checkbox
+                              checked={selectedIds.has(o.id)}
+                              onCheckedChange={(checked) => {
+                                const next = new Set(selectedIds);
+                                if (checked) next.add(o.id);
+                                else next.delete(o.id);
+                                setSelectedIds(next);
+                              }}
+                              aria-label={`Select ${o.full_name}`}
+                            />
+                          </td>
+                        )}
+                        <td className="py-2 font-medium">
+                          <Link
+                            to="/landowners/$ownerId"
+                            params={{ ownerId: o.id }}
+                            className="flex items-center gap-2 text-primary hover:underline"
+                          >
+                            <Avatar className="h-7 w-7">
+                              {o.avatar_url ? (
+                                <AvatarImage src={o.avatar_url} alt={o.full_name} />
+                              ) : null}
+                              <AvatarFallback>
+                                {o.full_name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {o.full_name}
+                          </Link>
+                        </td>
+                        <td className="py-2">
+                          {o.phone
+                            ? looksLikePhone(o.phone)
+                              ? normalisePhone(o.phone)
+                              : o.phone
+                            : "—"}
+                        </td>
+                        <td className="py-2">{o.email || "—"}</td>
+                        <td className="py-2">{o.national_id || "—"}</td>
+                        <td className="py-2 text-muted-foreground">{formatDate(o.created_at)}</td>
+                        <td className="py-2 text-right">
+                          <Button asChild size="sm" variant="outline" className="mr-2">
+                            <Link to="/lands" search={{ register: true, ownerId: o.id }}>
+                              <Landmark className="mr-1 h-4 w-4" />
+                              Register
+                            </Link>
+                          </Button>
+                          {canRowDelete && (
+                            <ConfirmDelete
+                              onConfirm={() => remove.mutateAsync(o.id)}
+                              pending={remove.isPending}
+                              title={`Delete ${o.full_name}?`}
+                              description={
+                                <>
+                                  This permanently removes the landowner record and cannot be
+                                  undone.
+                                  <DeleteImpactWarning kind="landowner" />
+                                </>
+                              }
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           {(() => {
             const total = landowners.data?.count ?? 0;

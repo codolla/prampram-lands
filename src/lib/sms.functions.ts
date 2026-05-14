@@ -347,8 +347,8 @@ export const sendPaymentNotification = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (roleErr) throw new Error(roleErr.message);
     const roles = new Set((roleRows ?? []).map((r) => r.role));
-    if (!roles.has("admin") && !roles.has("finance")) {
-      throw new Error("Only admins and finance can send payment notifications.");
+    if (!roles.has("admin") && !roles.has("developer") && !roles.has("finance")) {
+      throw new Error("Only admins, developers and finance can send payment notifications.");
     }
 
     if (!data.paymentId) throw new Error("paymentId is required");

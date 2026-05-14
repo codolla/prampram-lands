@@ -71,7 +71,7 @@ const empty: StaffForm = {
 
 function PayrollStaffPage() {
   const { hasAnyRole } = useAuth();
-  const canManage = hasAnyRole(["admin", "finance"]);
+  const canManage = hasAnyRole(["admin", "developer", "finance"]);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<StaffForm>(empty);

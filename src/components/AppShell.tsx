@@ -21,6 +21,7 @@ import {
   Map as MapIcon,
   Receipt,
   CreditCard,
+  Landmark,
   LogOut,
   ShieldCheck,
   BarChart3,
@@ -33,6 +34,7 @@ import {
   MapPinned,
   Wallet,
   ScrollText,
+  Menu,
 } from "lucide-react";
 import { useAuth, roleLabel } from "@/lib/auth";
 import logoUrl from "@/assets/logo.png";
@@ -298,7 +300,8 @@ export function AppShell({
               </div>
             </div>
           </header>
-          <main className="flex-1 px-4 py-4 md:px-8 md:py-8">{children}</main>
+          <main className="flex-1 px-4 py-4 pb-24 md:px-8 md:py-8 md:pb-8">{children}</main>
+          <MobileBottomNav />
         </div>
       </div>
     </SidebarProvider>
@@ -306,3 +309,80 @@ export function AppShell({
 }
 
 export { Button };
+
+function MobileBottomNav() {
+  const location = useLocation();
+  const { roles } = useAuth();
+  const { toggleSidebar } = useSidebar();
+
+  const isDeveloper = roles.includes("developer");
+  const canSeePayments = isDeveloper || roles.includes("admin") || roles.includes("manager");
+
+  const items = [
+    {
+      to: "/dashboard",
+      label: "Home",
+      icon: LayoutDashboard,
+      show: true,
+    },
+    {
+      to: "/landowners",
+      label: "Owners",
+      icon: Users,
+      show: isDeveloper || roles.some((r) => ["admin", "manager", "staff", "finance"].includes(r)),
+    },
+    {
+      to: "/lands",
+      label: "Lands",
+      icon: Landmark,
+      show: isDeveloper || roles.some((r) => ["admin", "manager", "staff", "finance"].includes(r)),
+    },
+    {
+      to: "/bills",
+      label: "Bills",
+      icon: Receipt,
+      show: isDeveloper || roles.some((r) => ["admin", "manager", "staff", "finance"].includes(r)),
+    },
+    {
+      to: "/payments",
+      label: "Pay",
+      icon: CreditCard,
+      show: canSeePayments,
+    },
+  ].filter((i) => i.show);
+
+  const isActive = (path: string) =>
+    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  const slots = items.slice(0, 4);
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-md md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-5 px-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-2">
+        {slots.map((it) => {
+          const active = isActive(it.to);
+          return (
+            <Link
+              key={it.to}
+              to={it.to}
+              className={`flex flex-col items-center justify-center gap-1 rounded-md px-2 py-2 text-[11px] ${
+                active ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <it.icon className="h-5 w-5" />
+              <span className="leading-none">{it.label}</span>
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="flex flex-col items-center justify-center gap-1 rounded-md px-2 py-2 text-[11px] text-muted-foreground"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="leading-none">More</span>
+        </button>
+      </div>
+    </div>
+  );
+}

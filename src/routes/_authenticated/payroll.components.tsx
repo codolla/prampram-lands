@@ -48,7 +48,7 @@ const empty: Form = {
 
 function ComponentsPage() {
   const { hasAnyRole } = useAuth();
-  const canManage = hasAnyRole(["admin", "finance"]);
+  const canManage = hasAnyRole(["admin", "developer", "finance"]);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(empty);

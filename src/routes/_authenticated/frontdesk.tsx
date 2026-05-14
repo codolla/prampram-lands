@@ -72,7 +72,7 @@ type SupabaseWalkin = {
 function FrontDeskPage() {
   const qc = useQueryClient();
   const { user, hasAnyRole } = useAuth();
-  const canUse = hasAnyRole(["admin", "manager", "frontdesk"]);
+  const canUse = hasAnyRole(["admin", "developer", "manager", "frontdesk"]);
 
   const [kind, setKind] = useState<WalkinKind>("enquiry");
   const [filter, setFilter] = useState<"all" | WalkinKind>("all");

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const auth = useAuth();
-  const canSeeRevenue = auth.hasAnyRole(["admin", "manager"]);
+  const canSeeRevenue = auth.hasAnyRole(["admin", "developer", "manager"]);
 
   const stats = useQuery({
     queryKey: ["dashboard-stats", canSeeRevenue],

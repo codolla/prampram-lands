@@ -58,7 +58,9 @@ function ReceiptPage() {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const { hasAnyRole } = useAuth();
-  const defaultFormat: PrintFormat = hasAnyRole(["admin", "manager"]) ? "a4" : "thermal";
+  const defaultFormat: PrintFormat = hasAnyRole(["admin", "developer", "manager"])
+    ? "a4"
+    : "thermal";
   const [printFormat, setPrintFormat] = useState<PrintFormat>(defaultFormat);
   const [printing, setPrinting] = useState(false);
   const { data, isLoading } = useQuery<PaymentReceiptRow>({

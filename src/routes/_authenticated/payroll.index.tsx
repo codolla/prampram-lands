@@ -50,7 +50,7 @@ type PayslipRow = {
 
 function PayrollIndex() {
   const { hasAnyRole, hasRole, user } = useAuth();
-  const canManage = hasAnyRole(["admin", "finance"]);
+  const canManage = hasAnyRole(["admin", "developer", "finance"]);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const now = new Date();

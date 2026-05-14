@@ -20,7 +20,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 function RunPage() {
   const { runId } = Route.useParams();
   const { hasAnyRole } = useAuth();
-  const canManage = hasAnyRole(["admin", "finance"]);
+  const canManage = hasAnyRole(["admin", "developer", "finance"]);
   const qc = useQueryClient();
 
   const { data: run } = useQuery({

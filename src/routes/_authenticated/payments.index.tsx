@@ -33,8 +33,8 @@ type PaymentRow = {
 function PaymentsPage() {
   const qc = useQueryClient();
   const { hasAnyRole } = useAuth();
-  const canSeePayments = hasAnyRole(["admin", "manager"]);
-  const canDelete = hasAnyRole(["admin"]);
+  const canSeePayments = hasAnyRole(["admin", "developer", "manager"]);
+  const canDelete = hasAnyRole(["admin", "developer"]);
   const [page, setPage] = useState(1);
   const payments = useQuery<{ rows: PaymentRow[]; count: number }>({
     queryKey: ["payments-all", page],

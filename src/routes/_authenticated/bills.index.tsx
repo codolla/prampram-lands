@@ -32,6 +32,7 @@ import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOverdueReminders } from "@/lib/sms.functions";
 import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
+import { getUserFacingErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bills/")({
   component: BillsPage,
@@ -42,9 +43,9 @@ const PAGE_SIZE = 25;
 function BillsPage() {
   const qc = useQueryClient();
   const { hasAnyRole } = useAuth();
-  const canBill = hasAnyRole(["admin", "manager", "finance"]);
-  const canRemind = hasAnyRole(["admin"]);
-  const canDelete = hasAnyRole(["admin"]);
+  const canBill = hasAnyRole(["admin", "developer", "manager", "finance"]);
+  const canRemind = hasAnyRole(["admin", "developer"]);
+  const canDelete = hasAnyRole(["admin", "developer"]);
   const sendReminders = useServerFn(sendOverdueReminders);
   const [status, setStatus] = useState<"all" | "pending" | "partial" | "paid" | "overdue">("all");
   const [family, setFamily] = useState<string>("all");
@@ -245,7 +246,7 @@ function BillsPage() {
       qc.invalidateQueries({ queryKey: ["bills"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   return (
@@ -386,7 +387,7 @@ function BillsPage() {
           <CardTitle className="text-base">Bills</CardTitle>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -398,7 +399,7 @@ function BillsPage() {
               </SelectContent>
             </Select>
             <Select value={family} onValueChange={(v) => setFamily(v)}>
-              <SelectTrigger className="w-56">
+              <SelectTrigger className="w-full sm:w-56">
                 <SelectValue placeholder="All families" />
               </SelectTrigger>
               <SelectContent>
@@ -414,7 +415,7 @@ function BillsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <div className="rounded-md border border-border bg-muted/20 p-3">
               <p className="text-xs text-muted-foreground">Billed</p>
               <p className="mt-1 text-lg font-semibold tabular-nums">

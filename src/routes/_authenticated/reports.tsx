@@ -64,7 +64,7 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
 
 function ReportsPage() {
   const { hasAnyRole } = useAuth();
-  const canSeeReports = hasAnyRole(["admin", "manager"]);
+  const canSeeReports = hasAnyRole(["admin", "developer", "manager"]);
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState<string>(String(currentYear));
 

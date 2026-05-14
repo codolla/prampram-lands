@@ -59,7 +59,7 @@ function LandsPage() {
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
   const { user, hasAnyRole } = useAuth();
-  const canDelete = hasAnyRole(["admin"]);
+  const canDelete = hasAnyRole(["admin", "developer"]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<Status>("all");
   const [family, setFamily] = useState<string>("all");
@@ -717,7 +717,7 @@ function LandsPage() {
               />
             </div>
             <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -728,7 +728,7 @@ function LandsPage() {
               </SelectContent>
             </Select>
             <Select value={family} onValueChange={(v) => setFamily(v)}>
-              <SelectTrigger className="w-56">
+              <SelectTrigger className="w-full sm:w-56">
                 <SelectValue placeholder="All families" />
               </SelectTrigger>
               <SelectContent>
@@ -744,7 +744,7 @@ function LandsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <div className="rounded-md border border-border bg-muted/20 p-3">
               <p className="text-xs text-muted-foreground">Lands</p>
               <p className="mt-1 text-lg font-semibold tabular-nums">
