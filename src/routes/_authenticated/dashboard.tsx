@@ -127,7 +127,7 @@ function DashboardPage() {
         {cards.map((c) => (
           <Card
             key={c.label}
-            className={`relative overflow-hidden border-border/70 bg-gradient-to-br ${c.bg} shadow-editorial`}
+            className={`relative overflow-hidden border-border/70 bg-linear-to-br ${c.bg} shadow-editorial`}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">

@@ -793,7 +793,7 @@ function LandDetail() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link to="/landowners">
+            <Link to="/landowners" search={{ q: "", mode: "unlinked", page: 1, pageSize: 25 }}>
               <Users className="mr-1 h-4 w-4" />
               Landowners
             </Link>
@@ -812,7 +812,8 @@ function LandDetail() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">
-            Plot {land.data?.plot_number ?? "—"} · {land.data?.location_description ?? "—"}
+            Plot {land.data?.plot_number ?? "—"}
+            {land.data?.location_description ? ` · ${land.data.location_description}` : ""}
           </p>
           <div className="mt-1">{land.data && <LandStatusBadge status={land.data.status} />}</div>
         </div>

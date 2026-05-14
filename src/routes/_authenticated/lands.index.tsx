@@ -422,7 +422,7 @@ function LandsPage() {
       actions={
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link to="/landowners">
+            <Link to="/landowners" search={{ q: "", mode: "unlinked", page: 1, pageSize: 25 }}>
               <Users className="mr-1 h-4 w-4" />
               Landowners
             </Link>

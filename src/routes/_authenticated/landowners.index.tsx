@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,19 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/landowners/")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const q = typeof search.q === "string" ? search.q : "";
+    const modeRaw = typeof search.mode === "string" ? search.mode : "";
+    const mode =
+      modeRaw === "linked" || modeRaw === "unlinked" || modeRaw === "all" ? modeRaw : "unlinked";
+    const pageRaw = typeof search.page === "string" ? Number(search.page) : search.page;
+    const page = Number.isFinite(pageRaw) && Number(pageRaw) > 0 ? Math.floor(Number(pageRaw)) : 1;
+    const pageSizeRaw =
+      typeof search.pageSize === "string" ? Number(search.pageSize) : search.pageSize;
+    const size = Number.isFinite(pageSizeRaw) ? Math.floor(Number(pageSizeRaw)) : PAGE_SIZE;
+    const pageSize = size === 10 || size === 25 || size === 50 || size === 100 ? size : PAGE_SIZE;
+    return { q, mode, page, pageSize };
+  },
   component: LandownersPage,
 });
 
@@ -56,23 +69,25 @@ type LandownerListRow = {
 };
 
 function LandownersPage() {
-  const [search, setSearch] = useState("");
-  const [filterMode, setFilterMode] = useState<"unlinked" | "linked" | "all">("unlinked");
   const qc = useQueryClient();
   const navigate = Route.useNavigate();
+  const routeSearch = Route.useSearch() as unknown as {
+    q: string;
+    mode: "unlinked" | "linked" | "all";
+    page: number;
+    pageSize: number;
+  };
+  const search = routeSearch.q ?? "";
+  const filterMode = routeSearch.mode ?? "unlinked";
+  const page = routeSearch.page ?? 1;
+  const pageSize = routeSearch.pageSize ?? PAGE_SIZE;
   const { hasAnyRole } = useAuth();
   const canRowDelete = hasAnyRole(["admin", "developer"]);
   const canBulkDelete = hasAnyRole(["developer"]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [importOpen, setImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, pageSize, filterMode]);
 
   const stats = useQuery({
     queryKey: ["landowners-stats", search],
@@ -434,7 +449,15 @@ function LandownersPage() {
       <div className="mb-4 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
         <button
           type="button"
-          onClick={() => setFilterMode("unlinked")}
+          onClick={() =>
+            navigate({
+              search: (prev) => ({
+                ...(prev as Record<string, unknown>),
+                mode: "unlinked",
+                page: 1,
+              }),
+            })
+          }
           className="min-w-56 cursor-pointer text-left md:min-w-0"
         >
           <Card
@@ -454,7 +477,15 @@ function LandownersPage() {
         </button>
         <button
           type="button"
-          onClick={() => setFilterMode("linked")}
+          onClick={() =>
+            navigate({
+              search: (prev) => ({
+                ...(prev as Record<string, unknown>),
+                mode: "linked",
+                page: 1,
+              }),
+            })
+          }
           className="min-w-56 cursor-pointer text-left md:min-w-0"
         >
           <Card
@@ -474,7 +505,15 @@ function LandownersPage() {
         </button>
         <button
           type="button"
-          onClick={() => setFilterMode("all")}
+          onClick={() =>
+            navigate({
+              search: (prev) => ({
+                ...(prev as Record<string, unknown>),
+                mode: "all",
+                page: 1,
+              }),
+            })
+          }
           className="min-w-56 cursor-pointer text-left md:min-w-0"
         >
           <Card
@@ -510,10 +549,29 @@ function LandownersPage() {
                 placeholder="Search name, phone, or email…"
                 className="pl-9"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  navigate({
+                    search: (prev) => ({
+                      ...(prev as Record<string, unknown>),
+                      q: e.target.value,
+                      page: 1,
+                    }),
+                  })
+                }
               />
             </div>
-            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) =>
+                navigate({
+                  search: (prev) => ({
+                    ...(prev as Record<string, unknown>),
+                    pageSize: Number(v),
+                    page: 1,
+                  }),
+                })
+              }
+            >
               <SelectTrigger className="w-35">
                 <SelectValue />
               </SelectTrigger>
@@ -612,7 +670,7 @@ function LandownersPage() {
                       <Button asChild size="sm" variant="outline">
                         <Link to="/lands" search={{ register: true, ownerId: o.id }}>
                           <Landmark className="mr-1 h-4 w-4" />
-                          Register
+                          {o.has_land ? "Add land" : "Register land"}
                         </Link>
                       </Button>
                       {canRowDelete && (
@@ -710,7 +768,7 @@ function LandownersPage() {
                           <Button asChild size="sm" variant="outline" className="mr-2">
                             <Link to="/lands" search={{ register: true, ownerId: o.id }}>
                               <Landmark className="mr-1 h-4 w-4" />
-                              Register
+                              {o.has_land ? "Add land" : "Register land"}
                             </Link>
                           </Button>
                           {canRowDelete && (
@@ -749,7 +807,14 @@ function LandownersPage() {
                     variant="outline"
                     size="sm"
                     disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() =>
+                      navigate({
+                        search: (prev) => ({
+                          ...(prev as Record<string, unknown>),
+                          page: Math.max(1, page - 1),
+                        }),
+                      })
+                    }
                   >
                     Previous
                   </Button>
@@ -757,7 +822,14 @@ function LandownersPage() {
                     variant="outline"
                     size="sm"
                     disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      navigate({
+                        search: (prev) => ({
+                          ...(prev as Record<string, unknown>),
+                          page: Math.min(totalPages, page + 1),
+                        }),
+                      })
+                    }
                   >
                     Next
                   </Button>

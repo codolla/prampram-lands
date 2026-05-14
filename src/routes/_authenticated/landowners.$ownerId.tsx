@@ -20,8 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { looksLikePhone, normalisePhone } from "@/lib/phone-auth";
 import { getUserFacingErrorMessage } from "@/lib/utils";
+import { ConfirmDelete, DeleteImpactWarning } from "@/components/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/landowners/$ownerId")({
   component: LandownerDetail,
@@ -29,7 +31,10 @@ export const Route = createFileRoute("/_authenticated/landowners/$ownerId")({
 
 function LandownerDetail() {
   const { ownerId } = Route.useParams();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
+  const { hasAnyRole } = useAuth();
+  const canDeleteLand = hasAnyRole(["admin", "developer"]);
 
   const owner = useQuery({
     queryKey: ["landowner", ownerId],
@@ -68,6 +73,20 @@ function LandownerDetail() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const removeLand = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("lands").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Land deleted");
+      qc.invalidateQueries({ queryKey: ["landowner-lands", ownerId] });
+      qc.invalidateQueries({ queryKey: ["lands"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
   const advance = useQuery({
@@ -265,15 +284,26 @@ function LandownerDetail() {
       title={owner.data?.full_name ?? "Landowner"}
       actions={
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/landowners">
-              <ArrowLeft className="mr-1 h-4 w-4" /> Back
-            </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                window.history.back();
+              } else {
+                navigate({
+                  to: "/landowners",
+                  search: { q: "", mode: "unlinked", page: 1, pageSize: 25 },
+                });
+              }
+            }}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Button>
           <Button asChild size="sm">
             <Link to="/lands" search={{ register: true, ownerId }}>
               <Landmark className="mr-1 h-4 w-4" />
-              Register land
+              {(lands.data ?? []).length > 0 ? "Add another land" : "Register land"}
             </Link>
           </Button>
         </div>
@@ -414,10 +444,26 @@ function LandownerDetail() {
                         {l.land_code}
                       </Link>
                       <p className="text-xs text-muted-foreground">
-                        {l.plot_number ?? "—"} · {l.location_description ?? "—"}
+                        {l.plot_number ?? "—"}
+                        {l.location_description ? ` · ${l.location_description}` : ""}
                       </p>
                     </div>
-                    <LandStatusBadge status={l.status} />
+                    <div className="flex items-center gap-2">
+                      <LandStatusBadge status={l.status} />
+                      {canDeleteLand ? (
+                        <ConfirmDelete
+                          onConfirm={() => removeLand.mutateAsync(l.id)}
+                          pending={removeLand.isPending}
+                          title={`Delete land ${l.land_code}?`}
+                          description={
+                            <>
+                              This permanently removes the land parcel and cannot be undone.
+                              <DeleteImpactWarning kind="land" />
+                            </>
+                          }
+                        />
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>
