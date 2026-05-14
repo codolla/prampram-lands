@@ -57,8 +57,8 @@ export function AddEmailBanner() {
           Add a recovery email to your account
         </p>
         <p className="text-xs text-muted-foreground">
-          So you can reset your password if you ever forget it. We'll only use it
-          for security notices.
+          So you can reset your password if you ever forget it. We'll only use it for security
+          notices.
         </p>
       </div>
       <div className="flex items-center gap-2">

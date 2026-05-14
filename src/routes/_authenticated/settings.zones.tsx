@@ -9,12 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ZoneMapEditor, type LngLatRing } from "@/components/ZoneMapEditor";
 import { SearchableSelect } from "@/components/SearchableSelect";
@@ -73,9 +68,7 @@ function ZonesPage() {
       setName(selected.name);
       setDescription(selected.description ?? "");
       setActive(selected.active);
-      setDraftRing(
-        (selected.ring ?? []).map(([lng, lat]) => ({ lng, lat })),
-      );
+      setDraftRing((selected.ring ?? []).map(([lng, lat]) => ({ lng, lat })));
     } else {
       setName("");
       setDescription("");
@@ -165,9 +158,7 @@ function ZonesPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{z.name}</p>
                         {z.description && (
-                          <p className="truncate text-xs text-muted-foreground">
-                            {z.description}
-                          </p>
+                          <p className="truncate text-xs text-muted-foreground">{z.description}</p>
                         )}
                       </div>
                       {!z.active && (
@@ -186,12 +177,10 @@ function ZonesPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                {selectedId ? "Edit zone" : "New zone"}
-              </CardTitle>
+              <CardTitle className="text-base">{selectedId ? "Edit zone" : "New zone"}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Draw a polygon on the map. Lands whose boundary (or GPS point)
-                falls inside this zone are auto-assigned to its staff.
+                Draw a polygon on the map. Lands whose boundary (or GPS point) falls inside this
+                zone are auto-assigned to its staff.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -243,7 +232,9 @@ function ZonesPage() {
                     variant="ghost"
                     className="ml-auto text-destructive"
                     onClick={() => {
-                      if (confirm("Delete this zone? Staff lose auto-coverage of lands inside it.")) {
+                      if (
+                        confirm("Delete this zone? Staff lose auto-coverage of lands inside it.")
+                      ) {
                         remove.mutate(selectedId);
                       }
                     }}
@@ -318,10 +309,7 @@ function ZoneStaffPanel({ zoneId }: { zoneId: string }) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("staff_zone_assignments")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("staff_zone_assignments").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -341,8 +329,8 @@ function ZoneStaffPanel({ zoneId }: { zoneId: string }) {
       <CardHeader>
         <CardTitle className="text-base">Assigned staff</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Two or more staff can manage the same zone. They'll all see lands and
-          landowners that fall inside it.
+          Two or more staff can manage the same zone. They'll all see lands and landowners that fall
+          inside it.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -353,10 +341,7 @@ function ZoneStaffPanel({ zoneId }: { zoneId: string }) {
         ) : (
           <ul className="divide-y rounded-md border">
             {assigned.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between px-3 py-2"
-              >
+              <li key={a.id} className="flex items-center justify-between px-3 py-2">
                 <span className="text-sm">{nameFor(a.user_id)}</span>
                 <Button
                   size="sm"

@@ -1,20 +1,10 @@
 "use client";
-import {
-  createSlot
-} from "./chunk-CXPFXTOM.js";
+import { createSlot } from "./chunk-CXPFXTOM.js";
 import "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-progress/dist/index.mjs
 var React3 = __toESM(require_react(), 1);
@@ -53,7 +43,7 @@ function createContextScope(scopeName, createContextScopeDeps = []) {
       const contexts = scope?.[scopeName] || scopeContexts;
       return React.useMemo(
         () => ({ [`__scope${scopeName}`]: { ...scope, [scopeName]: contexts } }),
-        [scope, contexts]
+        [scope, contexts],
       );
     };
   };
@@ -66,7 +56,7 @@ function composeContextScopes(...scopes) {
   const createScope = () => {
     const scopeHooks = scopes.map((createScope2) => ({
       useScope: createScope2(),
-      scopeName: createScope2.scopeName
+      scopeName: createScope2.scopeName,
     }));
     return function useComposedScopes(overrideScopes) {
       const nextScopes = scopeHooks.reduce((nextScopes2, { useScope, scopeName }) => {
@@ -102,7 +92,7 @@ var NODES = [
   "select",
   "span",
   "svg",
-  "ul"
+  "ul",
 ];
 var Primitive = NODES.reduce((primitive, node) => {
   const Slot = createSlot(`Primitive.${node}`);
@@ -124,62 +114,57 @@ var PROGRESS_NAME = "Progress";
 var DEFAULT_MAX = 100;
 var [createProgressContext, createProgressScope] = createContextScope(PROGRESS_NAME);
 var [ProgressProvider, useProgressContext] = createProgressContext(PROGRESS_NAME);
-var Progress = React3.forwardRef(
-  (props, forwardedRef) => {
-    const {
-      __scopeProgress,
-      value: valueProp = null,
-      max: maxProp,
-      getValueLabel = defaultGetValueLabel,
-      ...progressProps
-    } = props;
-    if ((maxProp || maxProp === 0) && !isValidMaxNumber(maxProp)) {
-      console.error(getInvalidMaxError(`${maxProp}`, "Progress"));
-    }
-    const max = isValidMaxNumber(maxProp) ? maxProp : DEFAULT_MAX;
-    if (valueProp !== null && !isValidValueNumber(valueProp, max)) {
-      console.error(getInvalidValueError(`${valueProp}`, "Progress"));
-    }
-    const value = isValidValueNumber(valueProp, max) ? valueProp : null;
-    const valueLabel = isNumber(value) ? getValueLabel(value, max) : void 0;
-    return (0, import_jsx_runtime3.jsx)(ProgressProvider, { scope: __scopeProgress, value, max, children: (0, import_jsx_runtime3.jsx)(
-      Primitive.div,
-      {
-        "aria-valuemax": max,
-        "aria-valuemin": 0,
-        "aria-valuenow": isNumber(value) ? value : void 0,
-        "aria-valuetext": valueLabel,
-        role: "progressbar",
-        "data-state": getProgressState(value, max),
-        "data-value": value ?? void 0,
-        "data-max": max,
-        ...progressProps,
-        ref: forwardedRef
-      }
-    ) });
+var Progress = React3.forwardRef((props, forwardedRef) => {
+  const {
+    __scopeProgress,
+    value: valueProp = null,
+    max: maxProp,
+    getValueLabel = defaultGetValueLabel,
+    ...progressProps
+  } = props;
+  if ((maxProp || maxProp === 0) && !isValidMaxNumber(maxProp)) {
+    console.error(getInvalidMaxError(`${maxProp}`, "Progress"));
   }
-);
+  const max = isValidMaxNumber(maxProp) ? maxProp : DEFAULT_MAX;
+  if (valueProp !== null && !isValidValueNumber(valueProp, max)) {
+    console.error(getInvalidValueError(`${valueProp}`, "Progress"));
+  }
+  const value = isValidValueNumber(valueProp, max) ? valueProp : null;
+  const valueLabel = isNumber(value) ? getValueLabel(value, max) : void 0;
+  return (0, import_jsx_runtime3.jsx)(ProgressProvider, {
+    scope: __scopeProgress,
+    value,
+    max,
+    children: (0, import_jsx_runtime3.jsx)(Primitive.div, {
+      "aria-valuemax": max,
+      "aria-valuemin": 0,
+      "aria-valuenow": isNumber(value) ? value : void 0,
+      "aria-valuetext": valueLabel,
+      role: "progressbar",
+      "data-state": getProgressState(value, max),
+      "data-value": value ?? void 0,
+      "data-max": max,
+      ...progressProps,
+      ref: forwardedRef,
+    }),
+  });
+});
 Progress.displayName = PROGRESS_NAME;
 var INDICATOR_NAME = "ProgressIndicator";
-var ProgressIndicator = React3.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeProgress, ...indicatorProps } = props;
-    const context = useProgressContext(INDICATOR_NAME, __scopeProgress);
-    return (0, import_jsx_runtime3.jsx)(
-      Primitive.div,
-      {
-        "data-state": getProgressState(context.value, context.max),
-        "data-value": context.value ?? void 0,
-        "data-max": context.max,
-        ...indicatorProps,
-        ref: forwardedRef
-      }
-    );
-  }
-);
+var ProgressIndicator = React3.forwardRef((props, forwardedRef) => {
+  const { __scopeProgress, ...indicatorProps } = props;
+  const context = useProgressContext(INDICATOR_NAME, __scopeProgress);
+  return (0, import_jsx_runtime3.jsx)(Primitive.div, {
+    "data-state": getProgressState(context.value, context.max),
+    "data-value": context.value ?? void 0,
+    "data-max": context.max,
+    ...indicatorProps,
+    ref: forwardedRef,
+  });
+});
 ProgressIndicator.displayName = INDICATOR_NAME;
 function defaultGetValueLabel(value, max) {
-  return `${Math.round(value / max * 100)}%`;
+  return `${Math.round((value / max) * 100)}%`;
 }
 function getProgressState(value, maxValue) {
   return value == null ? "indeterminate" : value === maxValue ? "complete" : "loading";
@@ -206,11 +191,5 @@ Defaulting to \`null\`.`;
 }
 var Root = Progress;
 var Indicator = ProgressIndicator;
-export {
-  Indicator,
-  Progress,
-  ProgressIndicator,
-  Root,
-  createProgressScope
-};
+export { Indicator, Progress, ProgressIndicator, Root, createProgressScope };
 //# sourceMappingURL=@radix-ui_react-progress.js.map

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer, Download } from "lucide-react";
@@ -60,7 +60,6 @@ function ReceiptPage() {
   const { hasAnyRole } = useAuth();
   const defaultFormat: PrintFormat = hasAnyRole(["admin", "manager"]) ? "a4" : "thermal";
   const [printFormat, setPrintFormat] = useState<PrintFormat>(defaultFormat);
-  const [thermalPageHeightMm, setThermalPageHeightMm] = useState<number>(200);
   const [printing, setPrinting] = useState(false);
   const { data, isLoading } = useQuery<PaymentReceiptRow>({
     queryKey: ["payment-receipt", paymentId],
@@ -78,48 +77,13 @@ function ReceiptPage() {
     },
   });
 
-  useEffect(() => {
-    if (printFormat !== "thermal") return;
-    const el = receiptRef.current;
-    if (!el) return;
-
-    const measure = () => {
-      const px = Math.max(el.scrollHeight, el.getBoundingClientRect().height);
-      const mm = (px * 25.4) / 96;
-      const padded = Math.ceil(mm + 10);
-      setThermalPageHeightMm(Math.min(Math.max(padded, 60), 600));
-    };
-
-    const raf = requestAnimationFrame(measure);
-    return () => cancelAnimationFrame(raf);
-  }, [printFormat, data?.id]);
-
   const handlePrint = () => {
     if (printing) return;
-    const el = receiptRef.current;
     setPrinting(true);
-
     try {
-      if (printFormat === "thermal" && el) {
-        const px = Math.max(el.scrollHeight, el.getBoundingClientRect().height);
-        const mm = (px * 25.4) / 96;
-        const padded = Math.ceil(mm + 10);
-        setThermalPageHeightMm(Math.min(Math.max(padded, 60), 600));
-
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            window.print();
-            setTimeout(() => setPrinting(false), 0);
-          });
-        });
-        return;
-      }
-
       window.print();
     } finally {
-      if (printFormat !== "thermal") {
-        setTimeout(() => setPrinting(false), 0);
-      }
+      setTimeout(() => setPrinting(false), 0);
     }
   };
 
@@ -192,7 +156,7 @@ function ReceiptPage() {
 `
       : `
 @media print {
-  @page { size: 80mm ${thermalPageHeightMm}mm; margin: 0; }
+  @page { size: auto; margin: 0; }
   html, body { height: auto !important; }
   body { margin: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   #receipt-page { min-height: auto !important; padding: 0 !important; background: #fff !important; }

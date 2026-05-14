@@ -1,15 +1,7 @@
-import {
-  Primitive
-} from "./chunk-MVQIMK6M.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { Primitive } from "./chunk-MVQIMK6M.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-visually-hidden/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -25,26 +17,18 @@ var VISUALLY_HIDDEN_STYLES = Object.freeze({
   overflow: "hidden",
   clip: "rect(0, 0, 0, 0)",
   whiteSpace: "nowrap",
-  wordWrap: "normal"
+  wordWrap: "normal",
 });
 var NAME = "VisuallyHidden";
-var VisuallyHidden = React.forwardRef(
-  (props, forwardedRef) => {
-    return (0, import_jsx_runtime.jsx)(
-      Primitive.span,
-      {
-        ...props,
-        ref: forwardedRef,
-        style: { ...VISUALLY_HIDDEN_STYLES, ...props.style }
-      }
-    );
-  }
-);
+var VisuallyHidden = React.forwardRef((props, forwardedRef) => {
+  return (0, import_jsx_runtime.jsx)(Primitive.span, {
+    ...props,
+    ref: forwardedRef,
+    style: { ...VISUALLY_HIDDEN_STYLES, ...props.style },
+  });
+});
 VisuallyHidden.displayName = NAME;
 var Root = VisuallyHidden;
 
-export {
-  VISUALLY_HIDDEN_STYLES,
-  Root
-};
+export { VISUALLY_HIDDEN_STYLES, Root };
 //# sourceMappingURL=chunk-J6XNXYLR.js.map

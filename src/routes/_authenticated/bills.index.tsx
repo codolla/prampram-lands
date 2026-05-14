@@ -47,27 +47,69 @@ function BillsPage() {
   const canDelete = hasAnyRole(["admin"]);
   const sendReminders = useServerFn(sendOverdueReminders);
   const [status, setStatus] = useState<"all" | "pending" | "partial" | "paid" | "overdue">("all");
+  const [family, setFamily] = useState<string>("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     setPage(1);
-  }, [status]);
+  }, [status, family]);
+
+  const families = useQuery<string[]>({
+    queryKey: ["land-families"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lands")
+        .select("family")
+        .not("family", "is", null);
+      if (error) throw error;
+      const out = Array.from(
+        new Set((data ?? []).map((r) => String((r as { family?: string | null }).family ?? ""))),
+      )
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+      return out;
+    },
+  });
+
+  const familyStats = useQuery({
+    queryKey: ["bills-family-stats", family, status],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "bills_family_stats" as never,
+        { family_text: family === "all" ? "" : family, status_filter: status } as never,
+      );
+      if (error) throw error;
+      const row = (data as unknown as Array<Record<string, unknown>> | null)?.[0] ?? {};
+      return {
+        billsCount: Number(row.bills_count ?? 0),
+        totalBilled: Number(row.total_billed ?? 0),
+        totalPaid: Number(row.total_paid ?? 0),
+        totalOutstanding: Number(row.total_outstanding ?? 0),
+        pendingCount: Number(row.pending_count ?? 0),
+        partialCount: Number(row.partial_count ?? 0),
+        paidCount: Number(row.paid_count ?? 0),
+        overdueCount: Number(row.overdue_count ?? 0),
+      };
+    },
+  });
 
   const bills = useQuery({
-    queryKey: ["bills", status, page],
+    queryKey: ["bills", status, family, page],
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("bills")
         .select(
-          "id, billing_year, amount, due_date, status, lands(land_code, plot_number, landowners(full_name))",
+          "id, billing_year, amount, due_date, status, lands!inner(land_code, plot_number, family, landowners(full_name))",
           {
             count: "exact",
           },
         )
         .order("issued_at", { ascending: false });
       if (status !== "all") q = q.eq("status", status);
+      if (family !== "all") q = q.eq("lands.family", family);
       const { data, count, error } = await q.range(from, to);
       if (error) throw error;
       return { rows: data ?? [], count: count ?? 0 };
@@ -178,7 +220,11 @@ function BillsPage() {
       return r;
     },
     onSuccess: (r) => {
-      toast.success(`Reminders: ${r.sent} sent, ${r.failed} failed, ${r.skipped} skipped`);
+      const emailSent = Number((r as { emailSent?: unknown }).emailSent ?? 0);
+      const emailFailed = Number((r as { emailFailed?: unknown }).emailFailed ?? 0);
+      toast.success(
+        `Reminders: ${r.sent} SMS sent, ${r.failed} SMS failed, ${emailSent} email sent, ${emailFailed} email failed, ${r.skipped} skipped`,
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -209,7 +255,7 @@ function BillsPage() {
               disabled={remind.isPending}
             >
               <BellRing className="mr-1 h-4 w-4" />
-              {remind.isPending ? "Sending…" : "SMS overdue"}
+              {remind.isPending ? "Sending…" : "Remind overdue"}
             </Button>
           )}
           {canBill && (
@@ -331,21 +377,65 @@ function BillsPage() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">All bills</CardTitle>
-          <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="mt-2 w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="partial">Partial</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
-            </SelectContent>
-          </Select>
+          <CardTitle className="text-base">Bills</CardTitle>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={family} onValueChange={(v) => setFamily(v)}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="All families" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All families</SelectItem>
+                {(families.data ?? []).map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Billed</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading ? "—" : formatCurrency(familyStats.data?.totalBilled ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Paid</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading ? "—" : formatCurrency(familyStats.data?.totalPaid ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Outstanding</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading
+                  ? "—"
+                  : formatCurrency(familyStats.data?.totalOutstanding ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Bills</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading ? "—" : (familyStats.data?.billsCount ?? 0)}
+              </p>
+            </div>
+          </div>
+
           {bills.isLoading ? (
             <TableSkeleton columns={7} rows={6} />
           ) : (bills.data?.rows ?? []).length === 0 ? (

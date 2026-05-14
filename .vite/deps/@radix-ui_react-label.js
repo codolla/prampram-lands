@@ -1,20 +1,10 @@
 "use client";
-import {
-  createSlot
-} from "./chunk-CXPFXTOM.js";
+import { createSlot } from "./chunk-CXPFXTOM.js";
 import "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-label/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -40,7 +30,7 @@ var NODES = [
   "select",
   "span",
   "svg",
-  "ul"
+  "ul",
 ];
 var Primitive = NODES.reduce((primitive, node) => {
   const Slot = createSlot(`Primitive.${node}`);
@@ -60,24 +50,18 @@ var Primitive = NODES.reduce((primitive, node) => {
 var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var NAME = "Label";
 var Label = React2.forwardRef((props, forwardedRef) => {
-  return (0, import_jsx_runtime2.jsx)(
-    Primitive.label,
-    {
-      ...props,
-      ref: forwardedRef,
-      onMouseDown: (event) => {
-        const target = event.target;
-        if (target.closest("button, input, select, textarea")) return;
-        props.onMouseDown?.(event);
-        if (!event.defaultPrevented && event.detail > 1) event.preventDefault();
-      }
-    }
-  );
+  return (0, import_jsx_runtime2.jsx)(Primitive.label, {
+    ...props,
+    ref: forwardedRef,
+    onMouseDown: (event) => {
+      const target = event.target;
+      if (target.closest("button, input, select, textarea")) return;
+      props.onMouseDown?.(event);
+      if (!event.defaultPrevented && event.detail > 1) event.preventDefault();
+    },
+  });
 });
 Label.displayName = NAME;
 var Root = Label;
-export {
-  Label,
-  Root
-};
+export { Label, Root };
 //# sourceMappingURL=@radix-ui_react-label.js.map

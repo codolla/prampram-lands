@@ -1,31 +1,12 @@
-import {
-  useSize
-} from "./chunk-CRRA55JQ.js";
-import {
-  useCallbackRef
-} from "./chunk-T5Z3LJQL.js";
-import {
-  Primitive,
-  createContextScope
-} from "./chunk-MVQIMK6M.js";
-import {
-  useLayoutEffect2
-} from "./chunk-OJ36KNVJ.js";
-import {
-  useComposedRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { useSize } from "./chunk-CRRA55JQ.js";
+import { useCallbackRef } from "./chunk-T5Z3LJQL.js";
+import { Primitive, createContextScope } from "./chunk-MVQIMK6M.js";
+import { useLayoutEffect2 } from "./chunk-OJ36KNVJ.js";
+import { useComposedRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-popper/dist/index.mjs
 var React3 = __toESM(require_react(), 1);
@@ -33,20 +14,23 @@ var React3 = __toESM(require_react(), 1);
 // node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
 var sides = ["top", "right", "bottom", "left"];
 var alignments = ["start", "end"];
-var placements = sides.reduce((acc, side) => acc.concat(side, side + "-" + alignments[0], side + "-" + alignments[1]), []);
+var placements = sides.reduce(
+  (acc, side) => acc.concat(side, side + "-" + alignments[0], side + "-" + alignments[1]),
+  [],
+);
 var min = Math.min;
 var max = Math.max;
 var round = Math.round;
 var floor = Math.floor;
 var createCoords = (v) => ({
   x: v,
-  y: v
+  y: v,
 });
 var oppositeSideMap = {
   left: "right",
   right: "left",
   bottom: "top",
-  top: "bottom"
+  top: "bottom",
 };
 function clamp(start, value, end) {
   return max(start, min(value, end));
@@ -80,7 +64,14 @@ function getAlignmentSides(placement, rects, rtl) {
   const alignment = getAlignment(placement);
   const alignmentAxis = getAlignmentAxis(placement);
   const length = getAxisLength(alignmentAxis);
-  let mainAlignmentSide = alignmentAxis === "x" ? alignment === (rtl ? "end" : "start") ? "right" : "left" : alignment === "start" ? "bottom" : "top";
+  let mainAlignmentSide =
+    alignmentAxis === "x"
+      ? alignment === (rtl ? "end" : "start")
+        ? "right"
+        : "left"
+      : alignment === "start"
+        ? "bottom"
+        : "top";
   if (rects.reference[length] > rects.floating[length]) {
     mainAlignmentSide = getOppositePlacement(mainAlignmentSide);
   }
@@ -88,10 +79,16 @@ function getAlignmentSides(placement, rects, rtl) {
 }
 function getExpandedPlacements(placement) {
   const oppositePlacement = getOppositePlacement(placement);
-  return [getOppositeAlignmentPlacement(placement), oppositePlacement, getOppositeAlignmentPlacement(oppositePlacement)];
+  return [
+    getOppositeAlignmentPlacement(placement),
+    oppositePlacement,
+    getOppositeAlignmentPlacement(oppositePlacement),
+  ];
 }
 function getOppositeAlignmentPlacement(placement) {
-  return placement.includes("start") ? placement.replace("start", "end") : placement.replace("end", "start");
+  return placement.includes("start")
+    ? placement.replace("start", "end")
+    : placement.replace("end", "start");
 }
 var lrPlacement = ["left", "right"];
 var rlPlacement = ["right", "left"];
@@ -131,24 +128,21 @@ function expandPaddingObject(padding) {
     right: 0,
     bottom: 0,
     left: 0,
-    ...padding
+    ...padding,
   };
 }
 function getPaddingObject(padding) {
-  return typeof padding !== "number" ? expandPaddingObject(padding) : {
-    top: padding,
-    right: padding,
-    bottom: padding,
-    left: padding
-  };
+  return typeof padding !== "number"
+    ? expandPaddingObject(padding)
+    : {
+        top: padding,
+        right: padding,
+        bottom: padding,
+        left: padding,
+      };
 }
 function rectToClientRect(rect) {
-  const {
-    x,
-    y,
-    width,
-    height
-  } = rect;
+  const { x, y, width, height } = rect;
   return {
     width,
     height,
@@ -157,16 +151,13 @@ function rectToClientRect(rect) {
     right: x + width,
     bottom: y + height,
     x,
-    y
+    y,
   };
 }
 
 // node_modules/@floating-ui/core/dist/floating-ui.core.mjs
 function computeCoordsFromPlacement(_ref, placement, rtl) {
-  let {
-    reference,
-    floating
-  } = _ref;
+  let { reference, floating } = _ref;
   const sideAxis = getSideAxis(placement);
   const alignmentAxis = getAlignmentAxis(placement);
   const alignLength = getAxisLength(alignmentAxis);
@@ -180,31 +171,31 @@ function computeCoordsFromPlacement(_ref, placement, rtl) {
     case "top":
       coords = {
         x: commonX,
-        y: reference.y - floating.height
+        y: reference.y - floating.height,
       };
       break;
     case "bottom":
       coords = {
         x: commonX,
-        y: reference.y + reference.height
+        y: reference.y + reference.height,
       };
       break;
     case "right":
       coords = {
         x: reference.x + reference.width,
-        y: commonY
+        y: commonY,
       };
       break;
     case "left":
       coords = {
         x: reference.x - floating.width,
-        y: commonY
+        y: commonY,
       };
       break;
     default:
       coords = {
         x: reference.x,
-        y: reference.y
+        y: reference.y,
       };
   }
   switch (getAlignment(placement)) {
@@ -222,55 +213,76 @@ async function detectOverflow(state, options) {
   if (options === void 0) {
     options = {};
   }
-  const {
-    x,
-    y,
-    platform: platform2,
-    rects,
-    elements,
-    strategy
-  } = state;
+  const { x, y, platform: platform2, rects, elements, strategy } = state;
   const {
     boundary = "clippingAncestors",
     rootBoundary = "viewport",
     elementContext = "floating",
     altBoundary = false,
-    padding = 0
+    padding = 0,
   } = evaluate(options, state);
   const paddingObject = getPaddingObject(padding);
   const altContext = elementContext === "floating" ? "reference" : "floating";
   const element = elements[altBoundary ? altContext : elementContext];
-  const clippingClientRect = rectToClientRect(await platform2.getClippingRect({
-    element: ((_await$platform$isEle = await (platform2.isElement == null ? void 0 : platform2.isElement(element))) != null ? _await$platform$isEle : true) ? element : element.contextElement || await (platform2.getDocumentElement == null ? void 0 : platform2.getDocumentElement(elements.floating)),
-    boundary,
-    rootBoundary,
-    strategy
-  }));
-  const rect = elementContext === "floating" ? {
-    x,
-    y,
-    width: rects.floating.width,
-    height: rects.floating.height
-  } : rects.reference;
-  const offsetParent = await (platform2.getOffsetParent == null ? void 0 : platform2.getOffsetParent(elements.floating));
-  const offsetScale = await (platform2.isElement == null ? void 0 : platform2.isElement(offsetParent)) ? await (platform2.getScale == null ? void 0 : platform2.getScale(offsetParent)) || {
-    x: 1,
-    y: 1
-  } : {
-    x: 1,
-    y: 1
-  };
-  const elementClientRect = rectToClientRect(platform2.convertOffsetParentRelativeRectToViewportRelativeRect ? await platform2.convertOffsetParentRelativeRectToViewportRelativeRect({
-    elements,
-    rect,
-    offsetParent,
-    strategy
-  }) : rect);
+  const clippingClientRect = rectToClientRect(
+    await platform2.getClippingRect({
+      element: (
+        (_await$platform$isEle = await (platform2.isElement == null
+          ? void 0
+          : platform2.isElement(element))) != null
+          ? _await$platform$isEle
+          : true
+      )
+        ? element
+        : element.contextElement ||
+          (await (platform2.getDocumentElement == null
+            ? void 0
+            : platform2.getDocumentElement(elements.floating))),
+      boundary,
+      rootBoundary,
+      strategy,
+    }),
+  );
+  const rect =
+    elementContext === "floating"
+      ? {
+          x,
+          y,
+          width: rects.floating.width,
+          height: rects.floating.height,
+        }
+      : rects.reference;
+  const offsetParent = await (platform2.getOffsetParent == null
+    ? void 0
+    : platform2.getOffsetParent(elements.floating));
+  const offsetScale = (await (platform2.isElement == null
+    ? void 0
+    : platform2.isElement(offsetParent)))
+    ? (await (platform2.getScale == null ? void 0 : platform2.getScale(offsetParent))) || {
+        x: 1,
+        y: 1,
+      }
+    : {
+        x: 1,
+        y: 1,
+      };
+  const elementClientRect = rectToClientRect(
+    platform2.convertOffsetParentRelativeRectToViewportRelativeRect
+      ? await platform2.convertOffsetParentRelativeRectToViewportRelativeRect({
+          elements,
+          rect,
+          offsetParent,
+          strategy,
+        })
+      : rect,
+  );
   return {
     top: (clippingClientRect.top - elementClientRect.top + paddingObject.top) / offsetScale.y,
-    bottom: (elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom) / offsetScale.y,
+    bottom:
+      (elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom) / offsetScale.y,
     left: (clippingClientRect.left - elementClientRect.left + paddingObject.left) / offsetScale.x,
-    right: (elementClientRect.right - clippingClientRect.right + paddingObject.right) / offsetScale.x
+    right:
+      (elementClientRect.right - clippingClientRect.right + paddingObject.right) / offsetScale.x,
   };
 }
 var MAX_RESET_COUNT = 50;
@@ -279,22 +291,21 @@ var computePosition = async (reference, floating, config) => {
     placement = "bottom",
     strategy = "absolute",
     middleware = [],
-    platform: platform2
+    platform: platform2,
   } = config;
-  const platformWithDetectOverflow = platform2.detectOverflow ? platform2 : {
-    ...platform2,
-    detectOverflow
-  };
+  const platformWithDetectOverflow = platform2.detectOverflow
+    ? platform2
+    : {
+        ...platform2,
+        detectOverflow,
+      };
   const rtl = await (platform2.isRTL == null ? void 0 : platform2.isRTL(floating));
   let rects = await platform2.getElementRects({
     reference,
     floating,
-    strategy
+    strategy,
   });
-  let {
-    x,
-    y
-  } = computeCoordsFromPlacement(rects, placement, rtl);
+  let { x, y } = computeCoordsFromPlacement(rects, placement, rtl);
   let statefulPlacement = placement;
   let resetCount = 0;
   const middlewareData = {};
@@ -303,15 +314,12 @@ var computePosition = async (reference, floating, config) => {
     if (!currentMiddleware) {
       continue;
     }
-    const {
-      name,
-      fn
-    } = currentMiddleware;
+    const { name, fn } = currentMiddleware;
     const {
       x: nextX,
       y: nextY,
       data,
-      reset
+      reset,
     } = await fn({
       x,
       y,
@@ -323,14 +331,14 @@ var computePosition = async (reference, floating, config) => {
       platform: platformWithDetectOverflow,
       elements: {
         reference,
-        floating
-      }
+        floating,
+      },
     });
     x = nextX != null ? nextX : x;
     y = nextY != null ? nextY : y;
     middlewareData[name] = {
       ...middlewareData[name],
-      ...data
+      ...data,
     };
     if (reset && resetCount < MAX_RESET_COUNT) {
       resetCount++;
@@ -339,16 +347,16 @@ var computePosition = async (reference, floating, config) => {
           statefulPlacement = reset.placement;
         }
         if (reset.rects) {
-          rects = reset.rects === true ? await platform2.getElementRects({
-            reference,
-            floating,
-            strategy
-          }) : reset.rects;
+          rects =
+            reset.rects === true
+              ? await platform2.getElementRects({
+                  reference,
+                  floating,
+                  strategy,
+                })
+              : reset.rects;
         }
-        ({
-          x,
-          y
-        } = computeCoordsFromPlacement(rects, statefulPlacement, rtl));
+        ({ x, y } = computeCoordsFromPlacement(rects, statefulPlacement, rtl));
       }
       i = -1;
     }
@@ -358,33 +366,22 @@ var computePosition = async (reference, floating, config) => {
     y,
     placement: statefulPlacement,
     strategy,
-    middlewareData
+    middlewareData,
   };
 };
 var arrow = (options) => ({
   name: "arrow",
   options,
   async fn(state) {
-    const {
-      x,
-      y,
-      placement,
-      rects,
-      platform: platform2,
-      elements,
-      middlewareData
-    } = state;
-    const {
-      element,
-      padding = 0
-    } = evaluate(options, state) || {};
+    const { x, y, placement, rects, platform: platform2, elements, middlewareData } = state;
+    const { element, padding = 0 } = evaluate(options, state) || {};
     if (element == null) {
       return {};
     }
     const paddingObject = getPaddingObject(padding);
     const coords = {
       x,
-      y
+      y,
     };
     const axis = getAlignmentAxis(placement);
     const length = getAxisLength(axis);
@@ -393,11 +390,17 @@ var arrow = (options) => ({
     const minProp = isYAxis ? "top" : "left";
     const maxProp = isYAxis ? "bottom" : "right";
     const clientProp = isYAxis ? "clientHeight" : "clientWidth";
-    const endDiff = rects.reference[length] + rects.reference[axis] - coords[axis] - rects.floating[length];
+    const endDiff =
+      rects.reference[length] + rects.reference[axis] - coords[axis] - rects.floating[length];
     const startDiff = coords[axis] - rects.reference[axis];
-    const arrowOffsetParent = await (platform2.getOffsetParent == null ? void 0 : platform2.getOffsetParent(element));
+    const arrowOffsetParent = await (platform2.getOffsetParent == null
+      ? void 0
+      : platform2.getOffsetParent(element));
     let clientSize = arrowOffsetParent ? arrowOffsetParent[clientProp] : 0;
-    if (!clientSize || !await (platform2.isElement == null ? void 0 : platform2.isElement(arrowOffsetParent))) {
+    if (
+      !clientSize ||
+      !(await (platform2.isElement == null ? void 0 : platform2.isElement(arrowOffsetParent)))
+    ) {
       clientSize = elements.floating[clientProp] || rects.floating[length];
     }
     const centerToReference = endDiff / 2 - startDiff / 2;
@@ -408,22 +411,29 @@ var arrow = (options) => ({
     const max2 = clientSize - arrowDimensions[length] - maxPadding;
     const center = clientSize / 2 - arrowDimensions[length] / 2 + centerToReference;
     const offset4 = clamp(min$1, center, max2);
-    const shouldAddOffset = !middlewareData.arrow && getAlignment(placement) != null && center !== offset4 && rects.reference[length] / 2 - (center < min$1 ? minPadding : maxPadding) - arrowDimensions[length] / 2 < 0;
-    const alignmentOffset = shouldAddOffset ? center < min$1 ? center - min$1 : center - max2 : 0;
+    const shouldAddOffset =
+      !middlewareData.arrow &&
+      getAlignment(placement) != null &&
+      center !== offset4 &&
+      rects.reference[length] / 2 -
+        (center < min$1 ? minPadding : maxPadding) -
+        arrowDimensions[length] / 2 <
+        0;
+    const alignmentOffset = shouldAddOffset ? (center < min$1 ? center - min$1 : center - max2) : 0;
     return {
       [axis]: coords[axis] + alignmentOffset,
       data: {
         [axis]: offset4,
         centerOffset: center - offset4 - alignmentOffset,
-        ...shouldAddOffset && {
-          alignmentOffset
-        }
+        ...(shouldAddOffset && {
+          alignmentOffset,
+        }),
       },
-      reset: shouldAddOffset
+      reset: shouldAddOffset,
     };
-  }
+  },
 });
-var flip = function(options) {
+var flip = function (options) {
   if (options === void 0) {
     options = {};
   }
@@ -438,7 +448,7 @@ var flip = function(options) {
         rects,
         initialPlacement,
         platform: platform2,
-        elements
+        elements,
       } = state;
       const {
         mainAxis: checkMainAxis = true,
@@ -449,22 +459,39 @@ var flip = function(options) {
         flipAlignment = true,
         ...detectOverflowOptions
       } = evaluate(options, state);
-      if ((_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+      if (
+        (_middlewareData$arrow = middlewareData.arrow) != null &&
+        _middlewareData$arrow.alignmentOffset
+      ) {
         return {};
       }
       const side = getSide(placement);
       const initialSideAxis = getSideAxis(initialPlacement);
       const isBasePlacement = getSide(initialPlacement) === initialPlacement;
       const rtl = await (platform2.isRTL == null ? void 0 : platform2.isRTL(elements.floating));
-      const fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipAlignment ? [getOppositePlacement(initialPlacement)] : getExpandedPlacements(initialPlacement));
+      const fallbackPlacements =
+        specifiedFallbackPlacements ||
+        (isBasePlacement || !flipAlignment
+          ? [getOppositePlacement(initialPlacement)]
+          : getExpandedPlacements(initialPlacement));
       const hasFallbackAxisSideDirection = fallbackAxisSideDirection !== "none";
       if (!specifiedFallbackPlacements && hasFallbackAxisSideDirection) {
-        fallbackPlacements.push(...getOppositeAxisPlacements(initialPlacement, flipAlignment, fallbackAxisSideDirection, rtl));
+        fallbackPlacements.push(
+          ...getOppositeAxisPlacements(
+            initialPlacement,
+            flipAlignment,
+            fallbackAxisSideDirection,
+            rtl,
+          ),
+        );
       }
       const placements2 = [initialPlacement, ...fallbackPlacements];
       const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
       const overflows = [];
-      let overflowsData = ((_middlewareData$flip = middlewareData.flip) == null ? void 0 : _middlewareData$flip.overflows) || [];
+      let overflowsData =
+        ((_middlewareData$flip = middlewareData.flip) == null
+          ? void 0
+          : _middlewareData$flip.overflows) || [];
       if (checkMainAxis) {
         overflows.push(overflow[side]);
       }
@@ -472,44 +499,73 @@ var flip = function(options) {
         const sides2 = getAlignmentSides(placement, rects, rtl);
         overflows.push(overflow[sides2[0]], overflow[sides2[1]]);
       }
-      overflowsData = [...overflowsData, {
-        placement,
-        overflows
-      }];
+      overflowsData = [
+        ...overflowsData,
+        {
+          placement,
+          overflows,
+        },
+      ];
       if (!overflows.every((side2) => side2 <= 0)) {
         var _middlewareData$flip2, _overflowsData$filter;
-        const nextIndex = (((_middlewareData$flip2 = middlewareData.flip) == null ? void 0 : _middlewareData$flip2.index) || 0) + 1;
+        const nextIndex =
+          (((_middlewareData$flip2 = middlewareData.flip) == null
+            ? void 0
+            : _middlewareData$flip2.index) || 0) + 1;
         const nextPlacement = placements2[nextIndex];
         if (nextPlacement) {
-          const ignoreCrossAxisOverflow = checkCrossAxis === "alignment" ? initialSideAxis !== getSideAxis(nextPlacement) : false;
-          if (!ignoreCrossAxisOverflow || // We leave the current main axis only if every placement on that axis
-          // overflows the main axis.
-          overflowsData.every((d) => getSideAxis(d.placement) === initialSideAxis ? d.overflows[0] > 0 : true)) {
+          const ignoreCrossAxisOverflow =
+            checkCrossAxis === "alignment" ? initialSideAxis !== getSideAxis(nextPlacement) : false;
+          if (
+            !ignoreCrossAxisOverflow || // We leave the current main axis only if every placement on that axis
+            // overflows the main axis.
+            overflowsData.every((d) =>
+              getSideAxis(d.placement) === initialSideAxis ? d.overflows[0] > 0 : true,
+            )
+          ) {
             return {
               data: {
                 index: nextIndex,
-                overflows: overflowsData
+                overflows: overflowsData,
               },
               reset: {
-                placement: nextPlacement
-              }
+                placement: nextPlacement,
+              },
             };
           }
         }
-        let resetPlacement = (_overflowsData$filter = overflowsData.filter((d) => d.overflows[0] <= 0).sort((a, b) => a.overflows[1] - b.overflows[1])[0]) == null ? void 0 : _overflowsData$filter.placement;
+        let resetPlacement =
+          (_overflowsData$filter = overflowsData
+            .filter((d) => d.overflows[0] <= 0)
+            .sort((a, b) => a.overflows[1] - b.overflows[1])[0]) == null
+            ? void 0
+            : _overflowsData$filter.placement;
         if (!resetPlacement) {
           switch (fallbackStrategy) {
             case "bestFit": {
               var _overflowsData$filter2;
-              const placement2 = (_overflowsData$filter2 = overflowsData.filter((d) => {
-                if (hasFallbackAxisSideDirection) {
-                  const currentSideAxis = getSideAxis(d.placement);
-                  return currentSideAxis === initialSideAxis || // Create a bias to the `y` side axis due to horizontal
-                  // reading directions favoring greater width.
-                  currentSideAxis === "y";
-                }
-                return true;
-              }).map((d) => [d.placement, d.overflows.filter((overflow2) => overflow2 > 0).reduce((acc, overflow2) => acc + overflow2, 0)]).sort((a, b) => a[1] - b[1])[0]) == null ? void 0 : _overflowsData$filter2[0];
+              const placement2 =
+                (_overflowsData$filter2 = overflowsData
+                  .filter((d) => {
+                    if (hasFallbackAxisSideDirection) {
+                      const currentSideAxis = getSideAxis(d.placement);
+                      return (
+                        currentSideAxis === initialSideAxis || // Create a bias to the `y` side axis due to horizontal
+                        // reading directions favoring greater width.
+                        currentSideAxis === "y"
+                      );
+                    }
+                    return true;
+                  })
+                  .map((d) => [
+                    d.placement,
+                    d.overflows
+                      .filter((overflow2) => overflow2 > 0)
+                      .reduce((acc, overflow2) => acc + overflow2, 0),
+                  ])
+                  .sort((a, b) => a[1] - b[1])[0]) == null
+                  ? void 0
+                  : _overflowsData$filter2[0];
               if (placement2) {
                 resetPlacement = placement2;
               }
@@ -523,13 +579,13 @@ var flip = function(options) {
         if (placement !== resetPlacement) {
           return {
             reset: {
-              placement: resetPlacement
-            }
+              placement: resetPlacement,
+            },
           };
         }
       }
       return {};
-    }
+    },
   };
 };
 function getSideOffsets(overflow, rect) {
@@ -537,13 +593,13 @@ function getSideOffsets(overflow, rect) {
     top: overflow.top - rect.height,
     right: overflow.right - rect.width,
     bottom: overflow.bottom - rect.height,
-    left: overflow.left - rect.width
+    left: overflow.left - rect.width,
   };
 }
 function isAnySideFullyClipped(overflow) {
   return sides.some((side) => overflow[side] >= 0);
 }
-var hide = function(options) {
+var hide = function (options) {
   if (options === void 0) {
     options = {};
   }
@@ -551,55 +607,45 @@ var hide = function(options) {
     name: "hide",
     options,
     async fn(state) {
-      const {
-        rects,
-        platform: platform2
-      } = state;
-      const {
-        strategy = "referenceHidden",
-        ...detectOverflowOptions
-      } = evaluate(options, state);
+      const { rects, platform: platform2 } = state;
+      const { strategy = "referenceHidden", ...detectOverflowOptions } = evaluate(options, state);
       switch (strategy) {
         case "referenceHidden": {
           const overflow = await platform2.detectOverflow(state, {
             ...detectOverflowOptions,
-            elementContext: "reference"
+            elementContext: "reference",
           });
           const offsets = getSideOffsets(overflow, rects.reference);
           return {
             data: {
               referenceHiddenOffsets: offsets,
-              referenceHidden: isAnySideFullyClipped(offsets)
-            }
+              referenceHidden: isAnySideFullyClipped(offsets),
+            },
           };
         }
         case "escaped": {
           const overflow = await platform2.detectOverflow(state, {
             ...detectOverflowOptions,
-            altBoundary: true
+            altBoundary: true,
           });
           const offsets = getSideOffsets(overflow, rects.floating);
           return {
             data: {
               escapedOffsets: offsets,
-              escaped: isAnySideFullyClipped(offsets)
-            }
+              escaped: isAnySideFullyClipped(offsets),
+            },
           };
         }
         default: {
           return {};
         }
       }
-    }
+    },
   };
 };
 var originSides = /* @__PURE__ */ new Set(["left", "top"]);
 async function convertValueToCoords(state, options) {
-  const {
-    placement,
-    platform: platform2,
-    elements
-  } = state;
+  const { placement, platform: platform2, elements } = state;
   const rtl = await (platform2.isRTL == null ? void 0 : platform2.isRTL(elements.floating));
   const side = getSide(placement);
   const alignment = getAlignment(placement);
@@ -607,31 +653,32 @@ async function convertValueToCoords(state, options) {
   const mainAxisMulti = originSides.has(side) ? -1 : 1;
   const crossAxisMulti = rtl && isVertical ? -1 : 1;
   const rawValue = evaluate(options, state);
-  let {
-    mainAxis,
-    crossAxis,
-    alignmentAxis
-  } = typeof rawValue === "number" ? {
-    mainAxis: rawValue,
-    crossAxis: 0,
-    alignmentAxis: null
-  } : {
-    mainAxis: rawValue.mainAxis || 0,
-    crossAxis: rawValue.crossAxis || 0,
-    alignmentAxis: rawValue.alignmentAxis
-  };
+  let { mainAxis, crossAxis, alignmentAxis } =
+    typeof rawValue === "number"
+      ? {
+          mainAxis: rawValue,
+          crossAxis: 0,
+          alignmentAxis: null,
+        }
+      : {
+          mainAxis: rawValue.mainAxis || 0,
+          crossAxis: rawValue.crossAxis || 0,
+          alignmentAxis: rawValue.alignmentAxis,
+        };
   if (alignment && typeof alignmentAxis === "number") {
     crossAxis = alignment === "end" ? alignmentAxis * -1 : alignmentAxis;
   }
-  return isVertical ? {
-    x: crossAxis * crossAxisMulti,
-    y: mainAxis * mainAxisMulti
-  } : {
-    x: mainAxis * mainAxisMulti,
-    y: crossAxis * crossAxisMulti
-  };
+  return isVertical
+    ? {
+        x: crossAxis * crossAxisMulti,
+        y: mainAxis * mainAxisMulti,
+      }
+    : {
+        x: mainAxis * mainAxisMulti,
+        y: crossAxis * crossAxisMulti,
+      };
 }
-var offset = function(options) {
+var offset = function (options) {
   if (options === void 0) {
     options = 0;
   }
@@ -640,14 +687,16 @@ var offset = function(options) {
     options,
     async fn(state) {
       var _middlewareData$offse, _middlewareData$arrow;
-      const {
-        x,
-        y,
-        placement,
-        middlewareData
-      } = state;
+      const { x, y, placement, middlewareData } = state;
       const diffCoords = await convertValueToCoords(state, options);
-      if (placement === ((_middlewareData$offse = middlewareData.offset) == null ? void 0 : _middlewareData$offse.placement) && (_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+      if (
+        placement ===
+          ((_middlewareData$offse = middlewareData.offset) == null
+            ? void 0
+            : _middlewareData$offse.placement) &&
+        (_middlewareData$arrow = middlewareData.arrow) != null &&
+        _middlewareData$arrow.alignmentOffset
+      ) {
         return {};
       }
       return {
@@ -655,13 +704,13 @@ var offset = function(options) {
         y: y + diffCoords.y,
         data: {
           ...diffCoords,
-          placement
-        }
+          placement,
+        },
       };
-    }
+    },
   };
 };
-var shift = function(options) {
+var shift = function (options) {
   if (options === void 0) {
     options = {};
   }
@@ -669,32 +718,24 @@ var shift = function(options) {
     name: "shift",
     options,
     async fn(state) {
-      const {
-        x,
-        y,
-        placement,
-        platform: platform2
-      } = state;
+      const { x, y, placement, platform: platform2 } = state;
       const {
         mainAxis: checkMainAxis = true,
         crossAxis: checkCrossAxis = false,
         limiter = {
           fn: (_ref) => {
-            let {
-              x: x2,
-              y: y2
-            } = _ref;
+            let { x: x2, y: y2 } = _ref;
             return {
               x: x2,
-              y: y2
+              y: y2,
             };
-          }
+          },
         },
         ...detectOverflowOptions
       } = evaluate(options, state);
       const coords = {
         x,
-        y
+        y,
       };
       const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
       const crossAxis = getSideAxis(getSide(placement));
@@ -718,7 +759,7 @@ var shift = function(options) {
       const limitedCoords = limiter.fn({
         ...state,
         [mainAxis]: mainAxisCoord,
-        [crossAxis]: crossAxisCoord
+        [crossAxis]: crossAxisCoord,
       });
       return {
         ...limitedCoords,
@@ -727,49 +768,46 @@ var shift = function(options) {
           y: limitedCoords.y - y,
           enabled: {
             [mainAxis]: checkMainAxis,
-            [crossAxis]: checkCrossAxis
-          }
-        }
+            [crossAxis]: checkCrossAxis,
+          },
+        },
       };
-    }
+    },
   };
 };
-var limitShift = function(options) {
+var limitShift = function (options) {
   if (options === void 0) {
     options = {};
   }
   return {
     options,
     fn(state) {
-      const {
-        x,
-        y,
-        placement,
-        rects,
-        middlewareData
-      } = state;
+      const { x, y, placement, rects, middlewareData } = state;
       const {
         offset: offset4 = 0,
         mainAxis: checkMainAxis = true,
-        crossAxis: checkCrossAxis = true
+        crossAxis: checkCrossAxis = true,
       } = evaluate(options, state);
       const coords = {
         x,
-        y
+        y,
       };
       const crossAxis = getSideAxis(placement);
       const mainAxis = getOppositeAxis(crossAxis);
       let mainAxisCoord = coords[mainAxis];
       let crossAxisCoord = coords[crossAxis];
       const rawOffset = evaluate(offset4, state);
-      const computedOffset = typeof rawOffset === "number" ? {
-        mainAxis: rawOffset,
-        crossAxis: 0
-      } : {
-        mainAxis: 0,
-        crossAxis: 0,
-        ...rawOffset
-      };
+      const computedOffset =
+        typeof rawOffset === "number"
+          ? {
+              mainAxis: rawOffset,
+              crossAxis: 0,
+            }
+          : {
+              mainAxis: 0,
+              crossAxis: 0,
+              ...rawOffset,
+            };
       if (checkMainAxis) {
         const len = mainAxis === "y" ? "height" : "width";
         const limitMin = rects.reference[mainAxis] - rects.floating[len] + computedOffset.mainAxis;
@@ -784,8 +822,24 @@ var limitShift = function(options) {
         var _middlewareData$offse, _middlewareData$offse2;
         const len = mainAxis === "y" ? "width" : "height";
         const isOriginSide = originSides.has(getSide(placement));
-        const limitMin = rects.reference[crossAxis] - rects.floating[len] + (isOriginSide ? ((_middlewareData$offse = middlewareData.offset) == null ? void 0 : _middlewareData$offse[crossAxis]) || 0 : 0) + (isOriginSide ? 0 : computedOffset.crossAxis);
-        const limitMax = rects.reference[crossAxis] + rects.reference[len] + (isOriginSide ? 0 : ((_middlewareData$offse2 = middlewareData.offset) == null ? void 0 : _middlewareData$offse2[crossAxis]) || 0) - (isOriginSide ? computedOffset.crossAxis : 0);
+        const limitMin =
+          rects.reference[crossAxis] -
+          rects.floating[len] +
+          (isOriginSide
+            ? ((_middlewareData$offse = middlewareData.offset) == null
+                ? void 0
+                : _middlewareData$offse[crossAxis]) || 0
+            : 0) +
+          (isOriginSide ? 0 : computedOffset.crossAxis);
+        const limitMax =
+          rects.reference[crossAxis] +
+          rects.reference[len] +
+          (isOriginSide
+            ? 0
+            : ((_middlewareData$offse2 = middlewareData.offset) == null
+                ? void 0
+                : _middlewareData$offse2[crossAxis]) || 0) -
+          (isOriginSide ? computedOffset.crossAxis : 0);
         if (crossAxisCoord < limitMin) {
           crossAxisCoord = limitMin;
         } else if (crossAxisCoord > limitMax) {
@@ -794,12 +848,12 @@ var limitShift = function(options) {
       }
       return {
         [mainAxis]: mainAxisCoord,
-        [crossAxis]: crossAxisCoord
+        [crossAxis]: crossAxisCoord,
       };
-    }
+    },
   };
 };
-var size = function(options) {
+var size = function (options) {
   if (options === void 0) {
     options = {};
   }
@@ -808,30 +862,24 @@ var size = function(options) {
     options,
     async fn(state) {
       var _state$middlewareData, _state$middlewareData2;
-      const {
-        placement,
-        rects,
-        platform: platform2,
-        elements
-      } = state;
-      const {
-        apply = () => {
-        },
-        ...detectOverflowOptions
-      } = evaluate(options, state);
+      const { placement, rects, platform: platform2, elements } = state;
+      const { apply = () => {}, ...detectOverflowOptions } = evaluate(options, state);
       const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
       const side = getSide(placement);
       const alignment = getAlignment(placement);
       const isYAxis = getSideAxis(placement) === "y";
-      const {
-        width,
-        height
-      } = rects.floating;
+      const { width, height } = rects.floating;
       let heightSide;
       let widthSide;
       if (side === "top" || side === "bottom") {
         heightSide = side;
-        widthSide = alignment === (await (platform2.isRTL == null ? void 0 : platform2.isRTL(elements.floating)) ? "start" : "end") ? "left" : "right";
+        widthSide =
+          alignment ===
+          ((await (platform2.isRTL == null ? void 0 : platform2.isRTL(elements.floating)))
+            ? "start"
+            : "end")
+            ? "left"
+            : "right";
       } else {
         widthSide = side;
         heightSide = alignment === "end" ? "top" : "bottom";
@@ -843,10 +891,16 @@ var size = function(options) {
       const noShift = !state.middlewareData.shift;
       let availableHeight = overflowAvailableHeight;
       let availableWidth = overflowAvailableWidth;
-      if ((_state$middlewareData = state.middlewareData.shift) != null && _state$middlewareData.enabled.x) {
+      if (
+        (_state$middlewareData = state.middlewareData.shift) != null &&
+        _state$middlewareData.enabled.x
+      ) {
         availableWidth = maximumClippingWidth;
       }
-      if ((_state$middlewareData2 = state.middlewareData.shift) != null && _state$middlewareData2.enabled.y) {
+      if (
+        (_state$middlewareData2 = state.middlewareData.shift) != null &&
+        _state$middlewareData2.enabled.y
+      ) {
         availableHeight = maximumClippingHeight;
       }
       if (noShift && !alignment) {
@@ -855,26 +909,30 @@ var size = function(options) {
         const yMin = max(overflow.top, 0);
         const yMax = max(overflow.bottom, 0);
         if (isYAxis) {
-          availableWidth = width - 2 * (xMin !== 0 || xMax !== 0 ? xMin + xMax : max(overflow.left, overflow.right));
+          availableWidth =
+            width -
+            2 * (xMin !== 0 || xMax !== 0 ? xMin + xMax : max(overflow.left, overflow.right));
         } else {
-          availableHeight = height - 2 * (yMin !== 0 || yMax !== 0 ? yMin + yMax : max(overflow.top, overflow.bottom));
+          availableHeight =
+            height -
+            2 * (yMin !== 0 || yMax !== 0 ? yMin + yMax : max(overflow.top, overflow.bottom));
         }
       }
       await apply({
         ...state,
         availableWidth,
-        availableHeight
+        availableHeight,
       });
       const nextDimensions = await platform2.getDimensions(elements.floating);
       if (width !== nextDimensions.width || height !== nextDimensions.height) {
         return {
           reset: {
-            rects: true
-          }
+            rects: true,
+          },
         };
       }
       return {};
-    }
+    },
   };
 };
 
@@ -890,11 +948,17 @@ function getNodeName(node) {
 }
 function getWindow(node) {
   var _node$ownerDocument;
-  return (node == null || (_node$ownerDocument = node.ownerDocument) == null ? void 0 : _node$ownerDocument.defaultView) || window;
+  return (
+    (node == null || (_node$ownerDocument = node.ownerDocument) == null
+      ? void 0
+      : _node$ownerDocument.defaultView) || window
+  );
 }
 function getDocumentElement(node) {
   var _ref;
-  return (_ref = (isNode(node) ? node.ownerDocument : node.document) || window.document) == null ? void 0 : _ref.documentElement;
+  return (_ref = (isNode(node) ? node.ownerDocument : node.document) || window.document) == null
+    ? void 0
+    : _ref.documentElement;
 }
 function isNode(value) {
   if (!hasWindow()) {
@@ -921,13 +985,12 @@ function isShadowRoot(value) {
   return value instanceof ShadowRoot || value instanceof getWindow(value).ShadowRoot;
 }
 function isOverflowElement(element) {
-  const {
-    overflow,
-    overflowX,
-    overflowY,
-    display
-  } = getComputedStyle2(element);
-  return /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) && display !== "inline" && display !== "contents";
+  const { overflow, overflowX, overflowY, display } = getComputedStyle2(element);
+  return (
+    /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) &&
+    display !== "inline" &&
+    display !== "contents"
+  );
 }
 function isTableElement(element) {
   return /^(table|td|th)$/.test(getNodeName(element));
@@ -937,8 +1000,7 @@ function isTopLayer(element) {
     if (element.matches(":popover-open")) {
       return true;
     }
-  } catch (_e) {
-  }
+  } catch (_e) {}
   try {
     return element.matches(":modal");
   } catch (_e) {
@@ -951,7 +1013,16 @@ var isNotNone = (value) => !!value && value !== "none";
 var isWebKitValue;
 function isContainingBlock(elementOrCss) {
   const css = isElement(elementOrCss) ? getComputedStyle2(elementOrCss) : elementOrCss;
-  return isNotNone(css.transform) || isNotNone(css.translate) || isNotNone(css.scale) || isNotNone(css.rotate) || isNotNone(css.perspective) || !isWebKit() && (isNotNone(css.backdropFilter) || isNotNone(css.filter)) || willChangeRe.test(css.willChange || "") || containRe.test(css.contain || "");
+  return (
+    isNotNone(css.transform) ||
+    isNotNone(css.translate) ||
+    isNotNone(css.scale) ||
+    isNotNone(css.rotate) ||
+    isNotNone(css.perspective) ||
+    (!isWebKit() && (isNotNone(css.backdropFilter) || isNotNone(css.filter))) ||
+    willChangeRe.test(css.willChange || "") ||
+    containRe.test(css.contain || "")
+  );
 }
 function getContainingBlock(element) {
   let currentNode = getParentNode(element);
@@ -967,7 +1038,8 @@ function getContainingBlock(element) {
 }
 function isWebKit() {
   if (isWebKitValue == null) {
-    isWebKitValue = typeof CSS !== "undefined" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none");
+    isWebKitValue =
+      typeof CSS !== "undefined" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none");
   }
   return isWebKitValue;
 }
@@ -981,25 +1053,24 @@ function getNodeScroll(element) {
   if (isElement(element)) {
     return {
       scrollLeft: element.scrollLeft,
-      scrollTop: element.scrollTop
+      scrollTop: element.scrollTop,
     };
   }
   return {
     scrollLeft: element.scrollX,
-    scrollTop: element.scrollY
+    scrollTop: element.scrollY,
   };
 }
 function getParentNode(node) {
   if (getNodeName(node) === "html") {
     return node;
   }
-  const result = (
+  const result =
     // Step into the shadow DOM of the parent of a slotted node.
     node.assignedSlot || // DOM Element detected.
     node.parentNode || // ShadowRoot detected.
-    isShadowRoot(node) && node.host || // Fallback.
-    getDocumentElement(node)
-  );
+    (isShadowRoot(node) && node.host) || // Fallback.
+    getDocumentElement(node);
   return isShadowRoot(result) ? result.host : result;
 }
 function getNearestOverflowAncestor(node) {
@@ -1021,13 +1092,23 @@ function getOverflowAncestors(node, list, traverseIframes) {
     traverseIframes = true;
   }
   const scrollableAncestor = getNearestOverflowAncestor(node);
-  const isBody = scrollableAncestor === ((_node$ownerDocument2 = node.ownerDocument) == null ? void 0 : _node$ownerDocument2.body);
+  const isBody =
+    scrollableAncestor ===
+    ((_node$ownerDocument2 = node.ownerDocument) == null ? void 0 : _node$ownerDocument2.body);
   const win = getWindow(scrollableAncestor);
   if (isBody) {
     const frameElement = getFrameElement(win);
-    return list.concat(win, win.visualViewport || [], isOverflowElement(scrollableAncestor) ? scrollableAncestor : [], frameElement && traverseIframes ? getOverflowAncestors(frameElement) : []);
+    return list.concat(
+      win,
+      win.visualViewport || [],
+      isOverflowElement(scrollableAncestor) ? scrollableAncestor : [],
+      frameElement && traverseIframes ? getOverflowAncestors(frameElement) : [],
+    );
   } else {
-    return list.concat(scrollableAncestor, getOverflowAncestors(scrollableAncestor, [], traverseIframes));
+    return list.concat(
+      scrollableAncestor,
+      getOverflowAncestors(scrollableAncestor, [], traverseIframes),
+    );
   }
 }
 function getFrameElement(win) {
@@ -1050,7 +1131,7 @@ function getCssDimensions(element) {
   return {
     width,
     height,
-    $: shouldFallback
+    $: shouldFallback,
   };
 }
 function unwrapElement(element) {
@@ -1062,11 +1143,7 @@ function getScale(element) {
     return createCoords(1);
   }
   const rect = domElement.getBoundingClientRect();
-  const {
-    width,
-    height,
-    $
-  } = getCssDimensions(domElement);
+  const { width, height, $ } = getCssDimensions(domElement);
   let x = ($ ? round(rect.width) : rect.width) / width;
   let y = ($ ? round(rect.height) : rect.height) / height;
   if (!x || !Number.isFinite(x)) {
@@ -1077,7 +1154,7 @@ function getScale(element) {
   }
   return {
     x,
-    y
+    y,
   };
 }
 var noOffsets = createCoords(0);
@@ -1088,14 +1165,14 @@ function getVisualOffsets(element) {
   }
   return {
     x: win.visualViewport.offsetLeft,
-    y: win.visualViewport.offsetTop
+    y: win.visualViewport.offsetTop,
   };
 }
 function shouldAddVisualOffsets(element, isFixed, floatingOffsetParent) {
   if (isFixed === void 0) {
     isFixed = false;
   }
-  if (!floatingOffsetParent || isFixed && floatingOffsetParent !== getWindow(element)) {
+  if (!floatingOffsetParent || (isFixed && floatingOffsetParent !== getWindow(element))) {
     return false;
   }
   return isFixed;
@@ -1119,22 +1196,27 @@ function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetPar
       scale = getScale(element);
     }
   }
-  const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
+  const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent)
+    ? getVisualOffsets(domElement)
+    : createCoords(0);
   let x = (clientRect.left + visualOffsets.x) / scale.x;
   let y = (clientRect.top + visualOffsets.y) / scale.y;
   let width = clientRect.width / scale.x;
   let height = clientRect.height / scale.y;
   if (domElement) {
     const win = getWindow(domElement);
-    const offsetWin = offsetParent && isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
+    const offsetWin =
+      offsetParent && isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
     let currentWin = win;
     let currentIFrame = getFrameElement(currentWin);
     while (currentIFrame && offsetParent && offsetWin !== currentWin) {
       const iframeScale = getScale(currentIFrame);
       const iframeRect = currentIFrame.getBoundingClientRect();
       const css = getComputedStyle2(currentIFrame);
-      const left = iframeRect.left + (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) * iframeScale.x;
-      const top = iframeRect.top + (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
+      const left =
+        iframeRect.left + (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) * iframeScale.x;
+      const top =
+        iframeRect.top + (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
       x *= iframeScale.x;
       y *= iframeScale.y;
       width *= iframeScale.x;
@@ -1149,7 +1231,7 @@ function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetPar
     width,
     height,
     x,
-    y
+    y,
   });
 }
 function getWindowScrollBarX(element, rect) {
@@ -1165,30 +1247,25 @@ function getHTMLOffset(documentElement, scroll) {
   const y = htmlRect.top + scroll.scrollTop;
   return {
     x,
-    y
+    y,
   };
 }
 function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
-  let {
-    elements,
-    rect,
-    offsetParent,
-    strategy
-  } = _ref;
+  let { elements, rect, offsetParent, strategy } = _ref;
   const isFixed = strategy === "fixed";
   const documentElement = getDocumentElement(offsetParent);
   const topLayer = elements ? isTopLayer(elements.floating) : false;
-  if (offsetParent === documentElement || topLayer && isFixed) {
+  if (offsetParent === documentElement || (topLayer && isFixed)) {
     return rect;
   }
   let scroll = {
     scrollLeft: 0,
-    scrollTop: 0
+    scrollTop: 0,
   };
   let scale = createCoords(1);
   const offsets = createCoords(0);
   const isOffsetParentAnElement = isHTMLElement(offsetParent);
-  if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
+  if (isOffsetParentAnElement || (!isOffsetParentAnElement && !isFixed)) {
     if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
       scroll = getNodeScroll(offsetParent);
     }
@@ -1199,12 +1276,15 @@ function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
       offsets.y = offsetRect.y + offsetParent.clientTop;
     }
   }
-  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  const htmlOffset =
+    documentElement && !isOffsetParentAnElement && !isFixed
+      ? getHTMLOffset(documentElement, scroll)
+      : createCoords(0);
   return {
     width: rect.width * scale.x,
     height: rect.height * scale.y,
     x: rect.x * scale.x - scroll.scrollLeft * scale.x + offsets.x + htmlOffset.x,
-    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
+    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y,
   };
 }
 function getClientRects(element) {
@@ -1225,7 +1305,7 @@ function getDocumentRect(element) {
     width,
     height,
     x,
-    y
+    y,
   };
 }
 var SCROLLBAR_MAX = 25;
@@ -1241,7 +1321,7 @@ function getViewportRect(element, strategy) {
     width = visualViewport.width;
     height = visualViewport.height;
     const visualViewportBased = isWebKit();
-    if (!visualViewportBased || visualViewportBased && strategy === "fixed") {
+    if (!visualViewportBased || (visualViewportBased && strategy === "fixed")) {
       x = visualViewport.offsetLeft;
       y = visualViewport.offsetTop;
     }
@@ -1251,8 +1331,13 @@ function getViewportRect(element, strategy) {
     const doc = html.ownerDocument;
     const body = doc.body;
     const bodyStyles = getComputedStyle(body);
-    const bodyMarginInline = doc.compatMode === "CSS1Compat" ? parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight) || 0 : 0;
-    const clippingStableScrollbarWidth = Math.abs(html.clientWidth - body.clientWidth - bodyMarginInline);
+    const bodyMarginInline =
+      doc.compatMode === "CSS1Compat"
+        ? parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight) || 0
+        : 0;
+    const clippingStableScrollbarWidth = Math.abs(
+      html.clientWidth - body.clientWidth - bodyMarginInline,
+    );
     if (clippingStableScrollbarWidth <= SCROLLBAR_MAX) {
       width -= clippingStableScrollbarWidth;
     }
@@ -1263,7 +1348,7 @@ function getViewportRect(element, strategy) {
     width,
     height,
     x,
-    y
+    y,
   };
 }
 function getInnerBoundingClientRect(element, strategy) {
@@ -1279,7 +1364,7 @@ function getInnerBoundingClientRect(element, strategy) {
     width,
     height,
     x,
-    y
+    y,
   };
 }
 function getClientRectFromClippingAncestor(element, clippingAncestor, strategy) {
@@ -1296,7 +1381,7 @@ function getClientRectFromClippingAncestor(element, clippingAncestor, strategy) 
       x: clippingAncestor.x - visualOffsets.x,
       y: clippingAncestor.y - visualOffsets.y,
       width: clippingAncestor.width,
-      height: clippingAncestor.height
+      height: clippingAncestor.height,
     };
   }
   return rectToClientRect(rect);
@@ -1306,14 +1391,19 @@ function hasFixedPositionAncestor(element, stopNode) {
   if (parentNode === stopNode || !isElement(parentNode) || isLastTraversableNode(parentNode)) {
     return false;
   }
-  return getComputedStyle2(parentNode).position === "fixed" || hasFixedPositionAncestor(parentNode, stopNode);
+  return (
+    getComputedStyle2(parentNode).position === "fixed" ||
+    hasFixedPositionAncestor(parentNode, stopNode)
+  );
 }
 function getClippingElementAncestors(element, cache) {
   const cachedResult = cache.get(element);
   if (cachedResult) {
     return cachedResult;
   }
-  let result = getOverflowAncestors(element, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
+  let result = getOverflowAncestors(element, [], false).filter(
+    (el) => isElement(el) && getNodeName(el) !== "body",
+  );
   let currentContainingBlockComputedStyle = null;
   const elementIsFixed = getComputedStyle2(element).position === "fixed";
   let currentNode = elementIsFixed ? getParentNode(element) : element;
@@ -1323,7 +1413,16 @@ function getClippingElementAncestors(element, cache) {
     if (!currentNodeIsContaining && computedStyle.position === "fixed") {
       currentContainingBlockComputedStyle = null;
     }
-    const shouldDropCurrentNode = elementIsFixed ? !currentNodeIsContaining && !currentContainingBlockComputedStyle : !currentNodeIsContaining && computedStyle.position === "static" && !!currentContainingBlockComputedStyle && (currentContainingBlockComputedStyle.position === "absolute" || currentContainingBlockComputedStyle.position === "fixed") || isOverflowElement(currentNode) && !currentNodeIsContaining && hasFixedPositionAncestor(element, currentNode);
+    const shouldDropCurrentNode = elementIsFixed
+      ? !currentNodeIsContaining && !currentContainingBlockComputedStyle
+      : (!currentNodeIsContaining &&
+          computedStyle.position === "static" &&
+          !!currentContainingBlockComputedStyle &&
+          (currentContainingBlockComputedStyle.position === "absolute" ||
+            currentContainingBlockComputedStyle.position === "fixed")) ||
+        (isOverflowElement(currentNode) &&
+          !currentNodeIsContaining &&
+          hasFixedPositionAncestor(element, currentNode));
     if (shouldDropCurrentNode) {
       result = result.filter((ancestor) => ancestor !== currentNode);
     } else {
@@ -1335,13 +1434,13 @@ function getClippingElementAncestors(element, cache) {
   return result;
 }
 function getClippingRect(_ref) {
-  let {
-    element,
-    boundary,
-    rootBoundary,
-    strategy
-  } = _ref;
-  const elementClippingAncestors = boundary === "clippingAncestors" ? isTopLayer(element) ? [] : getClippingElementAncestors(element, this._c) : [].concat(boundary);
+  let { element, boundary, rootBoundary, strategy } = _ref;
+  const elementClippingAncestors =
+    boundary === "clippingAncestors"
+      ? isTopLayer(element)
+        ? []
+        : getClippingElementAncestors(element, this._c)
+      : [].concat(boundary);
   const clippingAncestors = [...elementClippingAncestors, rootBoundary];
   const firstRect = getClientRectFromClippingAncestor(element, clippingAncestors[0], strategy);
   let top = firstRect.top;
@@ -1359,17 +1458,14 @@ function getClippingRect(_ref) {
     width: right - left,
     height: bottom - top,
     x: left,
-    y: top
+    y: top,
   };
 }
 function getDimensions(element) {
-  const {
-    width,
-    height
-  } = getCssDimensions(element);
+  const { width, height } = getCssDimensions(element);
   return {
     width,
-    height
+    height,
   };
 }
 function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
@@ -1379,13 +1475,13 @@ function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
   const rect = getBoundingClientRect(element, true, isFixed, offsetParent);
   let scroll = {
     scrollLeft: 0,
-    scrollTop: 0
+    scrollTop: 0,
   };
   const offsets = createCoords(0);
   function setLeftRTLScrollbarOffset() {
     offsets.x = getWindowScrollBarX(documentElement);
   }
-  if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
+  if (isOffsetParentAnElement || (!isOffsetParentAnElement && !isFixed)) {
     if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
       scroll = getNodeScroll(offsetParent);
     }
@@ -1400,14 +1496,17 @@ function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
   if (isFixed && !isOffsetParentAnElement && documentElement) {
     setLeftRTLScrollbarOffset();
   }
-  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  const htmlOffset =
+    documentElement && !isOffsetParentAnElement && !isFixed
+      ? getHTMLOffset(documentElement, scroll)
+      : createCoords(0);
   const x = rect.left + scroll.scrollLeft - offsets.x - htmlOffset.x;
   const y = rect.top + scroll.scrollTop - offsets.y - htmlOffset.y;
   return {
     x,
     y,
     width: rect.width,
-    height: rect.height
+    height: rect.height,
   };
 }
 function isStaticPositioned(element) {
@@ -1445,23 +1544,32 @@ function getOffsetParent(element, polyfill) {
   while (offsetParent && isTableElement(offsetParent) && isStaticPositioned(offsetParent)) {
     offsetParent = getTrueOffsetParent(offsetParent, polyfill);
   }
-  if (offsetParent && isLastTraversableNode(offsetParent) && isStaticPositioned(offsetParent) && !isContainingBlock(offsetParent)) {
+  if (
+    offsetParent &&
+    isLastTraversableNode(offsetParent) &&
+    isStaticPositioned(offsetParent) &&
+    !isContainingBlock(offsetParent)
+  ) {
     return win;
   }
   return offsetParent || getContainingBlock(element) || win;
 }
-var getElementRects = async function(data) {
+var getElementRects = async function (data) {
   const getOffsetParentFn = this.getOffsetParent || getOffsetParent;
   const getDimensionsFn = this.getDimensions;
   const floatingDimensions = await getDimensionsFn(data.floating);
   return {
-    reference: getRectRelativeToOffsetParent(data.reference, await getOffsetParentFn(data.floating), data.strategy),
+    reference: getRectRelativeToOffsetParent(
+      data.reference,
+      await getOffsetParentFn(data.floating),
+      data.strategy,
+    ),
     floating: {
       x: 0,
       y: 0,
       width: floatingDimensions.width,
-      height: floatingDimensions.height
-    }
+      height: floatingDimensions.height,
+    },
   };
 };
 function isRTL(element) {
@@ -1477,7 +1585,7 @@ var platform = {
   getDimensions,
   getScale,
   isElement,
-  isRTL
+  isRTL,
 };
 function rectsAreEqual(a, b) {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -1501,12 +1609,7 @@ function observeMove(element, onMove) {
     }
     cleanup();
     const elementRectForRootMargin = element.getBoundingClientRect();
-    const {
-      left,
-      top,
-      width,
-      height
-    } = elementRectForRootMargin;
+    const { left, top, width, height } = elementRectForRootMargin;
     if (!skip) {
       onMove();
     }
@@ -1517,10 +1620,11 @@ function observeMove(element, onMove) {
     const insetRight = floor(root.clientWidth - (left + width));
     const insetBottom = floor(root.clientHeight - (top + height));
     const insetLeft = floor(left);
-    const rootMargin = -insetTop + "px " + -insetRight + "px " + -insetBottom + "px " + -insetLeft + "px";
+    const rootMargin =
+      -insetTop + "px " + -insetRight + "px " + -insetBottom + "px " + -insetLeft + "px";
     const options = {
       rootMargin,
-      threshold: max(0, min(1, threshold)) || 1
+      threshold: max(0, min(1, threshold)) || 1,
     };
     let isFirstUpdate = true;
     function handleObserve(entries) {
@@ -1537,7 +1641,10 @@ function observeMove(element, onMove) {
           refresh(false, ratio);
         }
       }
-      if (ratio === 1 && !rectsAreEqual(elementRectForRootMargin, element.getBoundingClientRect())) {
+      if (
+        ratio === 1 &&
+        !rectsAreEqual(elementRectForRootMargin, element.getBoundingClientRect())
+      ) {
         refresh();
       }
       isFirstUpdate = false;
@@ -1546,7 +1653,7 @@ function observeMove(element, onMove) {
       io = new IntersectionObserver(handleObserve, {
         ...options,
         // Handle <iframe>s
-        root: root.ownerDocument
+        root: root.ownerDocument,
       });
     } catch (_e) {
       io = new IntersectionObserver(handleObserve, options);
@@ -1565,14 +1672,21 @@ function autoUpdate(reference, floating, update, options) {
     ancestorResize = true,
     elementResize = typeof ResizeObserver === "function",
     layoutShift = typeof IntersectionObserver === "function",
-    animationFrame = false
+    animationFrame = false,
   } = options;
   const referenceEl = unwrapElement(reference);
-  const ancestors = ancestorScroll || ancestorResize ? [...referenceEl ? getOverflowAncestors(referenceEl) : [], ...floating ? getOverflowAncestors(floating) : []] : [];
+  const ancestors =
+    ancestorScroll || ancestorResize
+      ? [
+          ...(referenceEl ? getOverflowAncestors(referenceEl) : []),
+          ...(floating ? getOverflowAncestors(floating) : []),
+        ]
+      : [];
   ancestors.forEach((ancestor) => {
-    ancestorScroll && ancestor.addEventListener("scroll", update, {
-      passive: true
-    });
+    ancestorScroll &&
+      ancestor.addEventListener("scroll", update, {
+        passive: true,
+      });
     ancestorResize && ancestor.addEventListener("resize", update);
   });
   const cleanupIo = referenceEl && layoutShift ? observeMove(referenceEl, update) : null;
@@ -1637,15 +1751,15 @@ var computePosition2 = (reference, floating, options) => {
   const cache = /* @__PURE__ */ new Map();
   const mergedOptions = {
     platform,
-    ...options
+    ...options,
   };
   const platformWithCache = {
     ...mergedOptions.platform,
-    _c: cache
+    _c: cache,
   };
   return computePosition(reference, floating, {
     ...mergedOptions,
-    platform: platformWithCache
+    platform: platformWithCache,
   });
 };
 
@@ -1654,8 +1768,7 @@ var React = __toESM(require_react(), 1);
 var import_react = __toESM(require_react(), 1);
 var ReactDOM = __toESM(require_react_dom(), 1);
 var isClient = typeof document !== "undefined";
-var noop = function noop2() {
-};
+var noop = function noop2() {};
 var index = isClient ? import_react.useLayoutEffect : noop;
 function deepEqual(a, b) {
   if (a === b) {
@@ -1731,13 +1844,10 @@ function useFloating(options) {
     strategy = "absolute",
     middleware = [],
     platform: platform2,
-    elements: {
-      reference: externalReference,
-      floating: externalFloating
-    } = {},
+    elements: { reference: externalReference, floating: externalFloating } = {},
     transform = true,
     whileElementsMounted,
-    open
+    open,
   } = options;
   const [data, setData] = React.useState({
     x: 0,
@@ -1745,7 +1855,7 @@ function useFloating(options) {
     strategy,
     placement,
     middlewareData: {},
-    isPositioned: false
+    isPositioned: false,
   });
   const [latestMiddleware, setLatestMiddleware] = React.useState(middleware);
   if (!deepEqual(latestMiddleware, middleware)) {
@@ -1781,7 +1891,7 @@ function useFloating(options) {
     const config = {
       placement,
       strategy,
-      middleware: latestMiddleware
+      middleware: latestMiddleware,
     };
     if (platformRef.current) {
       config.platform = platformRef.current;
@@ -1793,7 +1903,7 @@ function useFloating(options) {
         // but still mounted (such as when transitioning out). To ensure
         // `isPositioned` will be `false` initially on the next open, avoid
         // setting it to `true` when `open === false` (must be specified).
-        isPositioned: openRef.current !== false
+        isPositioned: openRef.current !== false,
       };
       if (isMountedRef.current && !deepEqual(dataRef.current, fullData)) {
         dataRef.current = fullData;
@@ -1808,7 +1918,7 @@ function useFloating(options) {
       dataRef.current.isPositioned = false;
       setData((data2) => ({
         ...data2,
-        isPositioned: false
+        isPositioned: false,
       }));
     }
   }, [open]);
@@ -1829,21 +1939,27 @@ function useFloating(options) {
       update();
     }
   }, [referenceEl, floatingEl, update, whileElementsMountedRef, hasWhileElementsMounted]);
-  const refs = React.useMemo(() => ({
-    reference: referenceRef,
-    floating: floatingRef,
-    setReference,
-    setFloating
-  }), [setReference, setFloating]);
-  const elements = React.useMemo(() => ({
-    reference: referenceEl,
-    floating: floatingEl
-  }), [referenceEl, floatingEl]);
+  const refs = React.useMemo(
+    () => ({
+      reference: referenceRef,
+      floating: floatingRef,
+      setReference,
+      setFloating,
+    }),
+    [setReference, setFloating],
+  );
+  const elements = React.useMemo(
+    () => ({
+      reference: referenceEl,
+      floating: floatingEl,
+    }),
+    [referenceEl, floatingEl],
+  );
   const floatingStyles = React.useMemo(() => {
     const initialStyles = {
       position: strategy,
       left: 0,
-      top: 0
+      top: 0,
     };
     if (!elements.floating) {
       return initialStyles;
@@ -1854,24 +1970,27 @@ function useFloating(options) {
       return {
         ...initialStyles,
         transform: "translate(" + x + "px, " + y + "px)",
-        ...getDPR(elements.floating) >= 1.5 && {
-          willChange: "transform"
-        }
+        ...(getDPR(elements.floating) >= 1.5 && {
+          willChange: "transform",
+        }),
       };
     }
     return {
       position: strategy,
       left: x,
-      top: y
+      top: y,
     };
   }, [strategy, transform, elements.floating, data.x, data.y]);
-  return React.useMemo(() => ({
-    ...data,
-    update,
-    refs,
-    elements,
-    floatingStyles
-  }), [data, update, refs, elements, floatingStyles]);
+  return React.useMemo(
+    () => ({
+      ...data,
+      update,
+      refs,
+      elements,
+      floatingStyles,
+    }),
+    [data, update, refs, elements, floatingStyles],
+  );
 }
 var arrow$1 = (options) => {
   function isRef(value) {
@@ -1881,15 +2000,12 @@ var arrow$1 = (options) => {
     name: "arrow",
     options,
     fn(state) {
-      const {
-        element,
-        padding
-      } = typeof options === "function" ? options(state) : options;
+      const { element, padding } = typeof options === "function" ? options(state) : options;
       if (element && isRef(element)) {
         if (element.current != null) {
           return arrow2({
             element: element.current,
-            padding
+            padding,
           }).fn(state);
         }
         return {};
@@ -1897,11 +2013,11 @@ var arrow$1 = (options) => {
       if (element) {
         return arrow2({
           element,
-          padding
+          padding,
         }).fn(state);
       }
       return {};
-    }
+    },
   };
 };
 var offset3 = (options, deps) => {
@@ -1909,7 +2025,7 @@ var offset3 = (options, deps) => {
   return {
     name: result.name,
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 var shift3 = (options, deps) => {
@@ -1917,14 +2033,14 @@ var shift3 = (options, deps) => {
   return {
     name: result.name,
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 var limitShift3 = (options, deps) => {
   const result = limitShift2(options);
   return {
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 var flip3 = (options, deps) => {
@@ -1932,7 +2048,7 @@ var flip3 = (options, deps) => {
   return {
     name: result.name,
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 var size3 = (options, deps) => {
@@ -1940,7 +2056,7 @@ var size3 = (options, deps) => {
   return {
     name: result.name,
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 var hide3 = (options, deps) => {
@@ -1948,7 +2064,7 @@ var hide3 = (options, deps) => {
   return {
     name: result.name,
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 var arrow3 = (options, deps) => {
@@ -1956,7 +2072,7 @@ var arrow3 = (options, deps) => {
   return {
     name: result.name,
     fn: result.fn,
-    options: [options, deps]
+    options: [options, deps],
   };
 };
 
@@ -1966,18 +2082,17 @@ var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
 var NAME = "Arrow";
 var Arrow = React2.forwardRef((props, forwardedRef) => {
   const { children, width = 10, height = 5, ...arrowProps } = props;
-  return (0, import_jsx_runtime.jsx)(
-    Primitive.svg,
-    {
-      ...arrowProps,
-      ref: forwardedRef,
-      width,
-      height,
-      viewBox: "0 0 30 10",
-      preserveAspectRatio: "none",
-      children: props.asChild ? children : (0, import_jsx_runtime.jsx)("polygon", { points: "0,0 30,0 15,10" })
-    }
-  );
+  return (0, import_jsx_runtime.jsx)(Primitive.svg, {
+    ...arrowProps,
+    ref: forwardedRef,
+    width,
+    height,
+    viewBox: "0 0 30 10",
+    preserveAspectRatio: "none",
+    children: props.asChild
+      ? children
+      : (0, import_jsx_runtime.jsx)("polygon", { points: "0,0 30,0 15,10" }),
+  });
 });
 Arrow.displayName = NAME;
 var Root = Arrow;
@@ -1990,178 +2105,176 @@ var [PopperProvider, usePopperContext] = createPopperContext(POPPER_NAME);
 var Popper = (props) => {
   const { __scopePopper, children } = props;
   const [anchor, setAnchor] = React3.useState(null);
-  return (0, import_jsx_runtime2.jsx)(PopperProvider, { scope: __scopePopper, anchor, onAnchorChange: setAnchor, children });
+  return (0, import_jsx_runtime2.jsx)(PopperProvider, {
+    scope: __scopePopper,
+    anchor,
+    onAnchorChange: setAnchor,
+    children,
+  });
 };
 Popper.displayName = POPPER_NAME;
 var ANCHOR_NAME = "PopperAnchor";
-var PopperAnchor = React3.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopePopper, virtualRef, ...anchorProps } = props;
-    const context = usePopperContext(ANCHOR_NAME, __scopePopper);
-    const ref = React3.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, ref);
-    const anchorRef = React3.useRef(null);
-    React3.useEffect(() => {
-      const previousAnchor = anchorRef.current;
-      anchorRef.current = virtualRef?.current || ref.current;
-      if (previousAnchor !== anchorRef.current) {
-        context.onAnchorChange(anchorRef.current);
-      }
-    });
-    return virtualRef ? null : (0, import_jsx_runtime2.jsx)(Primitive.div, { ...anchorProps, ref: composedRefs });
-  }
-);
+var PopperAnchor = React3.forwardRef((props, forwardedRef) => {
+  const { __scopePopper, virtualRef, ...anchorProps } = props;
+  const context = usePopperContext(ANCHOR_NAME, __scopePopper);
+  const ref = React3.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, ref);
+  const anchorRef = React3.useRef(null);
+  React3.useEffect(() => {
+    const previousAnchor = anchorRef.current;
+    anchorRef.current = virtualRef?.current || ref.current;
+    if (previousAnchor !== anchorRef.current) {
+      context.onAnchorChange(anchorRef.current);
+    }
+  });
+  return virtualRef
+    ? null
+    : (0, import_jsx_runtime2.jsx)(Primitive.div, { ...anchorProps, ref: composedRefs });
+});
 PopperAnchor.displayName = ANCHOR_NAME;
 var CONTENT_NAME = "PopperContent";
 var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME);
-var PopperContent = React3.forwardRef(
-  (props, forwardedRef) => {
-    const {
-      __scopePopper,
-      side = "bottom",
-      sideOffset = 0,
-      align = "center",
-      alignOffset = 0,
-      arrowPadding = 0,
-      avoidCollisions = true,
-      collisionBoundary = [],
-      collisionPadding: collisionPaddingProp = 0,
-      sticky = "partial",
-      hideWhenDetached = false,
-      updatePositionStrategy = "optimized",
-      onPlaced,
-      ...contentProps
-    } = props;
-    const context = usePopperContext(CONTENT_NAME, __scopePopper);
-    const [content, setContent] = React3.useState(null);
-    const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
-    const [arrow4, setArrow] = React3.useState(null);
-    const arrowSize = useSize(arrow4);
-    const arrowWidth = arrowSize?.width ?? 0;
-    const arrowHeight = arrowSize?.height ?? 0;
-    const desiredPlacement = side + (align !== "center" ? "-" + align : "");
-    const collisionPadding = typeof collisionPaddingProp === "number" ? collisionPaddingProp : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
-    const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
-    const hasExplicitBoundaries = boundary.length > 0;
-    const detectOverflowOptions = {
-      padding: collisionPadding,
-      boundary: boundary.filter(isNotNull),
-      // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
-      altBoundary: hasExplicitBoundaries
-    };
-    const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
-      // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
-      strategy: "fixed",
-      placement: desiredPlacement,
-      whileElementsMounted: (...args) => {
-        const cleanup = autoUpdate(...args, {
-          animationFrame: updatePositionStrategy === "always"
-        });
-        return cleanup;
-      },
-      elements: {
-        reference: context.anchor
-      },
-      middleware: [
-        offset3({ mainAxis: sideOffset + arrowHeight, alignmentAxis: alignOffset }),
-        avoidCollisions && shift3({
+var PopperContent = React3.forwardRef((props, forwardedRef) => {
+  const {
+    __scopePopper,
+    side = "bottom",
+    sideOffset = 0,
+    align = "center",
+    alignOffset = 0,
+    arrowPadding = 0,
+    avoidCollisions = true,
+    collisionBoundary = [],
+    collisionPadding: collisionPaddingProp = 0,
+    sticky = "partial",
+    hideWhenDetached = false,
+    updatePositionStrategy = "optimized",
+    onPlaced,
+    ...contentProps
+  } = props;
+  const context = usePopperContext(CONTENT_NAME, __scopePopper);
+  const [content, setContent] = React3.useState(null);
+  const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
+  const [arrow4, setArrow] = React3.useState(null);
+  const arrowSize = useSize(arrow4);
+  const arrowWidth = arrowSize?.width ?? 0;
+  const arrowHeight = arrowSize?.height ?? 0;
+  const desiredPlacement = side + (align !== "center" ? "-" + align : "");
+  const collisionPadding =
+    typeof collisionPaddingProp === "number"
+      ? collisionPaddingProp
+      : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
+  const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
+  const hasExplicitBoundaries = boundary.length > 0;
+  const detectOverflowOptions = {
+    padding: collisionPadding,
+    boundary: boundary.filter(isNotNull),
+    // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
+    altBoundary: hasExplicitBoundaries,
+  };
+  const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
+    // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
+    strategy: "fixed",
+    placement: desiredPlacement,
+    whileElementsMounted: (...args) => {
+      const cleanup = autoUpdate(...args, {
+        animationFrame: updatePositionStrategy === "always",
+      });
+      return cleanup;
+    },
+    elements: {
+      reference: context.anchor,
+    },
+    middleware: [
+      offset3({ mainAxis: sideOffset + arrowHeight, alignmentAxis: alignOffset }),
+      avoidCollisions &&
+        shift3({
           mainAxis: true,
           crossAxis: false,
           limiter: sticky === "partial" ? limitShift3() : void 0,
-          ...detectOverflowOptions
-        }),
-        avoidCollisions && flip3({ ...detectOverflowOptions }),
-        size3({
           ...detectOverflowOptions,
-          apply: ({ elements, rects, availableWidth, availableHeight }) => {
-            const { width: anchorWidth, height: anchorHeight } = rects.reference;
-            const contentStyle = elements.floating.style;
-            contentStyle.setProperty("--radix-popper-available-width", `${availableWidth}px`);
-            contentStyle.setProperty("--radix-popper-available-height", `${availableHeight}px`);
-            contentStyle.setProperty("--radix-popper-anchor-width", `${anchorWidth}px`);
-            contentStyle.setProperty("--radix-popper-anchor-height", `${anchorHeight}px`);
-          }
         }),
-        arrow4 && arrow3({ element: arrow4, padding: arrowPadding }),
-        transformOrigin({ arrowWidth, arrowHeight }),
-        hideWhenDetached && hide3({ strategy: "referenceHidden", ...detectOverflowOptions })
-      ]
-    });
-    const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
-    const handlePlaced = useCallbackRef(onPlaced);
-    useLayoutEffect2(() => {
-      if (isPositioned) {
-        handlePlaced?.();
-      }
-    }, [isPositioned, handlePlaced]);
-    const arrowX = middlewareData.arrow?.x;
-    const arrowY = middlewareData.arrow?.y;
-    const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
-    const [contentZIndex, setContentZIndex] = React3.useState();
-    useLayoutEffect2(() => {
-      if (content) setContentZIndex(window.getComputedStyle(content).zIndex);
-    }, [content]);
-    return (0, import_jsx_runtime2.jsx)(
-      "div",
-      {
-        ref: refs.setFloating,
-        "data-radix-popper-content-wrapper": "",
-        style: {
-          ...floatingStyles,
-          transform: isPositioned ? floatingStyles.transform : "translate(0, -200%)",
-          // keep off the page when measuring
-          minWidth: "max-content",
-          zIndex: contentZIndex,
-          ["--radix-popper-transform-origin"]: [
-            middlewareData.transformOrigin?.x,
-            middlewareData.transformOrigin?.y
-          ].join(" "),
-          // hide the content if using the hide middleware and should be hidden
-          // set visibility to hidden and disable pointer events so the UI behaves
-          // as if the PopperContent isn't there at all
-          ...middlewareData.hide?.referenceHidden && {
-            visibility: "hidden",
-            pointerEvents: "none"
-          }
+      avoidCollisions && flip3({ ...detectOverflowOptions }),
+      size3({
+        ...detectOverflowOptions,
+        apply: ({ elements, rects, availableWidth, availableHeight }) => {
+          const { width: anchorWidth, height: anchorHeight } = rects.reference;
+          const contentStyle = elements.floating.style;
+          contentStyle.setProperty("--radix-popper-available-width", `${availableWidth}px`);
+          contentStyle.setProperty("--radix-popper-available-height", `${availableHeight}px`);
+          contentStyle.setProperty("--radix-popper-anchor-width", `${anchorWidth}px`);
+          contentStyle.setProperty("--radix-popper-anchor-height", `${anchorHeight}px`);
         },
-        dir: props.dir,
-        children: (0, import_jsx_runtime2.jsx)(
-          PopperContentProvider,
-          {
-            scope: __scopePopper,
-            placedSide,
-            onArrowChange: setArrow,
-            arrowX,
-            arrowY,
-            shouldHideArrow: cannotCenterArrow,
-            children: (0, import_jsx_runtime2.jsx)(
-              Primitive.div,
-              {
-                "data-side": placedSide,
-                "data-align": placedAlign,
-                ...contentProps,
-                ref: composedRefs,
-                style: {
-                  ...contentProps.style,
-                  // if the PopperContent hasn't been placed yet (not all measurements done)
-                  // we prevent animations so that users's animation don't kick in too early referring wrong sides
-                  animation: !isPositioned ? "none" : void 0
-                }
-              }
-            )
-          }
-        )
-      }
-    );
-  }
-);
+      }),
+      arrow4 && arrow3({ element: arrow4, padding: arrowPadding }),
+      transformOrigin({ arrowWidth, arrowHeight }),
+      hideWhenDetached && hide3({ strategy: "referenceHidden", ...detectOverflowOptions }),
+    ],
+  });
+  const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
+  const handlePlaced = useCallbackRef(onPlaced);
+  useLayoutEffect2(() => {
+    if (isPositioned) {
+      handlePlaced?.();
+    }
+  }, [isPositioned, handlePlaced]);
+  const arrowX = middlewareData.arrow?.x;
+  const arrowY = middlewareData.arrow?.y;
+  const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
+  const [contentZIndex, setContentZIndex] = React3.useState();
+  useLayoutEffect2(() => {
+    if (content) setContentZIndex(window.getComputedStyle(content).zIndex);
+  }, [content]);
+  return (0, import_jsx_runtime2.jsx)("div", {
+    ref: refs.setFloating,
+    "data-radix-popper-content-wrapper": "",
+    style: {
+      ...floatingStyles,
+      transform: isPositioned ? floatingStyles.transform : "translate(0, -200%)",
+      // keep off the page when measuring
+      minWidth: "max-content",
+      zIndex: contentZIndex,
+      ["--radix-popper-transform-origin"]: [
+        middlewareData.transformOrigin?.x,
+        middlewareData.transformOrigin?.y,
+      ].join(" "),
+      // hide the content if using the hide middleware and should be hidden
+      // set visibility to hidden and disable pointer events so the UI behaves
+      // as if the PopperContent isn't there at all
+      ...(middlewareData.hide?.referenceHidden && {
+        visibility: "hidden",
+        pointerEvents: "none",
+      }),
+    },
+    dir: props.dir,
+    children: (0, import_jsx_runtime2.jsx)(PopperContentProvider, {
+      scope: __scopePopper,
+      placedSide,
+      onArrowChange: setArrow,
+      arrowX,
+      arrowY,
+      shouldHideArrow: cannotCenterArrow,
+      children: (0, import_jsx_runtime2.jsx)(Primitive.div, {
+        "data-side": placedSide,
+        "data-align": placedAlign,
+        ...contentProps,
+        ref: composedRefs,
+        style: {
+          ...contentProps.style,
+          // if the PopperContent hasn't been placed yet (not all measurements done)
+          // we prevent animations so that users's animation don't kick in too early referring wrong sides
+          animation: !isPositioned ? "none" : void 0,
+        },
+      }),
+    }),
+  });
+});
 PopperContent.displayName = CONTENT_NAME;
 var ARROW_NAME = "PopperArrow";
 var OPPOSITE_SIDE = {
   top: "bottom",
   right: "left",
   bottom: "top",
-  left: "right"
+  left: "right",
 };
 var PopperArrow = React3.forwardRef(function PopperArrow2(props, forwardedRef) {
   const { __scopePopper, ...arrowProps } = props;
@@ -2171,43 +2284,37 @@ var PopperArrow = React3.forwardRef(function PopperArrow2(props, forwardedRef) {
     // we have to use an extra wrapper because `ResizeObserver` (used by `useSize`)
     // doesn't report size as we'd expect on SVG elements.
     // it reports their bounding box which is effectively the largest path inside the SVG.
-    (0, import_jsx_runtime2.jsx)(
-      "span",
-      {
-        ref: contentContext.onArrowChange,
+    (0, import_jsx_runtime2.jsx)("span", {
+      ref: contentContext.onArrowChange,
+      style: {
+        position: "absolute",
+        left: contentContext.arrowX,
+        top: contentContext.arrowY,
+        [baseSide]: 0,
+        transformOrigin: {
+          top: "",
+          right: "0 0",
+          bottom: "center 0",
+          left: "100% 0",
+        }[contentContext.placedSide],
+        transform: {
+          top: "translateY(100%)",
+          right: "translateY(50%) rotate(90deg) translateX(-50%)",
+          bottom: `rotate(180deg)`,
+          left: "translateY(50%) rotate(-90deg) translateX(50%)",
+        }[contentContext.placedSide],
+        visibility: contentContext.shouldHideArrow ? "hidden" : void 0,
+      },
+      children: (0, import_jsx_runtime2.jsx)(Root, {
+        ...arrowProps,
+        ref: forwardedRef,
         style: {
-          position: "absolute",
-          left: contentContext.arrowX,
-          top: contentContext.arrowY,
-          [baseSide]: 0,
-          transformOrigin: {
-            top: "",
-            right: "0 0",
-            bottom: "center 0",
-            left: "100% 0"
-          }[contentContext.placedSide],
-          transform: {
-            top: "translateY(100%)",
-            right: "translateY(50%) rotate(90deg) translateX(-50%)",
-            bottom: `rotate(180deg)`,
-            left: "translateY(50%) rotate(-90deg) translateX(50%)"
-          }[contentContext.placedSide],
-          visibility: contentContext.shouldHideArrow ? "hidden" : void 0
+          ...arrowProps.style,
+          // ensures the element can be measured correctly (mostly for if SVG)
+          display: "block",
         },
-        children: (0, import_jsx_runtime2.jsx)(
-          Root,
-          {
-            ...arrowProps,
-            ref: forwardedRef,
-            style: {
-              ...arrowProps.style,
-              // ensures the element can be measured correctly (mostly for if SVG)
-              display: "block"
-            }
-          }
-        )
-      }
-    )
+      }),
+    })
   );
 });
 PopperArrow.displayName = ARROW_NAME;
@@ -2243,7 +2350,7 @@ var transformOrigin = (options) => ({
       y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
     }
     return { data: { x, y } };
-  }
+  },
 });
 function getSideAndAlignFromPlacement(placement) {
   const [side, align = "center"] = placement.split("-");
@@ -2254,11 +2361,5 @@ var Anchor = PopperAnchor;
 var Content = PopperContent;
 var Arrow2 = PopperArrow;
 
-export {
-  createPopperScope,
-  Root2,
-  Anchor,
-  Content,
-  Arrow2 as Arrow
-};
+export { createPopperScope, Root2, Anchor, Content, Arrow2 as Arrow };
 //# sourceMappingURL=chunk-KH6CFC4X.js.map

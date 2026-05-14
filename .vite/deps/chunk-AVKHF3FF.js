@@ -7,10 +7,12 @@ function createHistory(opts) {
   const subscribers = /* @__PURE__ */ new Set();
   const notify = (action) => {
     location = opts.getLocation();
-    subscribers.forEach((subscriber) => subscriber({
-      location,
-      action
-    }));
+    subscribers.forEach((subscriber) =>
+      subscriber({
+        location,
+        action,
+      }),
+    );
   };
   const handleIndexChange = (action) => {
     if (opts.notifyOnIndexChange ?? true) notify(action);
@@ -23,17 +25,20 @@ function createHistory(opts) {
     }
     const blockers = opts.getBlockers?.() ?? [];
     const isPushOrReplace = actionInfo.type === "PUSH" || actionInfo.type === "REPLACE";
-    if (typeof document !== "undefined" && blockers.length && isPushOrReplace) for (const blocker of blockers) {
-      const nextLocation = parseHref(actionInfo.path, actionInfo.state);
-      if (await blocker.blockerFn({
-        currentLocation: location,
-        nextLocation,
-        action: actionInfo.type
-      })) {
-        opts.onBlocked?.();
-        return;
+    if (typeof document !== "undefined" && blockers.length && isPushOrReplace)
+      for (const blocker of blockers) {
+        const nextLocation = parseHref(actionInfo.path, actionInfo.state);
+        if (
+          await blocker.blockerFn({
+            currentLocation: location,
+            nextLocation,
+            action: actionInfo.type,
+          })
+        ) {
+          opts.onBlocked?.();
+          return;
+        }
       }
-    }
     task();
   };
   return {
@@ -61,7 +66,7 @@ function createHistory(opts) {
         navigateOpts,
         type: "PUSH",
         path,
-        state
+        state,
       });
     },
     replace: (path, state, navigateOpts) => {
@@ -75,7 +80,7 @@ function createHistory(opts) {
         navigateOpts,
         type: "REPLACE",
         path,
-        state
+        state,
       });
     },
     go: (index, navigateOpts) => {
@@ -84,11 +89,11 @@ function createHistory(opts) {
           opts.go(index);
           handleIndexChange({
             type: "GO",
-            index
+            index,
           });
         },
         navigateOpts,
-        type: "GO"
+        type: "GO",
       });
     },
     back: (navigateOpts) => {
@@ -98,7 +103,7 @@ function createHistory(opts) {
           handleIndexChange({ type: "BACK" });
         },
         navigateOpts,
-        type: "BACK"
+        type: "BACK",
       });
     },
     forward: (navigateOpts) => {
@@ -108,14 +113,13 @@ function createHistory(opts) {
           handleIndexChange({ type: "FORWARD" });
         },
         navigateOpts,
-        type: "FORWARD"
+        type: "FORWARD",
       });
     },
     canGoBack: () => location.state[stateIndexKey] !== 0,
     createHref: (str) => opts.createHref(str),
     block: (blocker) => {
-      if (!opts.setBlockers) return () => {
-      };
+      if (!opts.setBlockers) return () => {};
       const blockers = opts.getBlockers?.() ?? [];
       opts.setBlockers([...blockers, blocker]);
       return () => {
@@ -125,7 +129,7 @@ function createHistory(opts) {
     },
     flush: () => opts.flush?.(),
     destroy: () => opts.destroy?.(),
-    notify
+    notify,
   };
 }
 function assignKeyAndIndex(index, state) {
@@ -135,7 +139,7 @@ function assignKeyAndIndex(index, state) {
     ...state,
     key,
     __TSR_key: key,
-    [stateIndexKey]: index
+    [stateIndexKey]: index,
   };
 }
 function createBrowserHistory(opts) {
@@ -144,16 +148,25 @@ function createBrowserHistory(opts) {
   const originalReplaceState = win.history.replaceState;
   let blockers = [];
   const _getBlockers = () => blockers;
-  const _setBlockers = (newBlockers) => blockers = newBlockers;
+  const _setBlockers = (newBlockers) => (blockers = newBlockers);
   const createHref = opts?.createHref ?? ((path) => path);
-  const parseLocation = opts?.parseLocation ?? (() => parseHref(`${win.location.pathname}${win.location.search}${win.location.hash}`, win.history.state));
+  const parseLocation =
+    opts?.parseLocation ??
+    (() =>
+      parseHref(
+        `${win.location.pathname}${win.location.search}${win.location.hash}`,
+        win.history.state,
+      ));
   if (!win.history.state?.__TSR_key && !win.history.state?.key) {
     const addedKey = createRandomKey();
-    win.history.replaceState({
-      [stateIndexKey]: 0,
-      key: addedKey,
-      __TSR_key: addedKey
-    }, "");
+    win.history.replaceState(
+      {
+        [stateIndexKey]: 0,
+        key: addedKey,
+        __TSR_key: addedKey,
+      },
+      "",
+    );
   }
   let currentLocation = parseLocation();
   let rollbackLocation;
@@ -180,7 +193,7 @@ function createBrowserHistory(opts) {
     next = {
       href,
       state,
-      isPush: next?.isPush || type === "push"
+      isPush: next?.isPush || type === "push",
     };
     if (!scheduled) scheduled = Promise.resolve().then(() => flush());
   };
@@ -197,27 +210,32 @@ function createBrowserHistory(opts) {
     const delta = nextLocation.state[stateIndexKey] - currentLocation.state[stateIndexKey];
     const isForward = delta === 1;
     const isBack = delta === -1;
-    const isGo = !isForward && !isBack || nextPopIsGo;
+    const isGo = (!isForward && !isBack) || nextPopIsGo;
     nextPopIsGo = false;
     const action = isGo ? "GO" : isBack ? "BACK" : "FORWARD";
-    const notify = isGo ? {
-      type: "GO",
-      index: delta
-    } : { type: isBack ? "BACK" : "FORWARD" };
+    const notify = isGo
+      ? {
+          type: "GO",
+          index: delta,
+        }
+      : { type: isBack ? "BACK" : "FORWARD" };
     if (skipBlockerNextPop) skipBlockerNextPop = false;
     else {
       const blockers2 = _getBlockers();
       if (typeof document !== "undefined" && blockers2.length) {
-        for (const blocker of blockers2) if (await blocker.blockerFn({
-          currentLocation,
-          nextLocation,
-          action
-        })) {
-          ignoreNextPop = true;
-          win.history.go(1);
-          history.notify(notify);
-          return;
-        }
+        for (const blocker of blockers2)
+          if (
+            await blocker.blockerFn({
+              currentLocation,
+              nextLocation,
+              action,
+            })
+          ) {
+            ignoreNextPop = true;
+            win.history.go(1);
+            history.notify(notify);
+            return;
+          }
       }
     }
     currentLocation = parseLocation();
@@ -230,20 +248,21 @@ function createBrowserHistory(opts) {
     }
     let shouldBlock = false;
     const blockers2 = _getBlockers();
-    if (typeof document !== "undefined" && blockers2.length) for (const blocker of blockers2) {
-      const shouldHaveBeforeUnload = blocker.enableBeforeUnload ?? true;
-      if (shouldHaveBeforeUnload === true) {
-        shouldBlock = true;
-        break;
+    if (typeof document !== "undefined" && blockers2.length)
+      for (const blocker of blockers2) {
+        const shouldHaveBeforeUnload = blocker.enableBeforeUnload ?? true;
+        if (shouldHaveBeforeUnload === true) {
+          shouldBlock = true;
+          break;
+        }
+        if (typeof shouldHaveBeforeUnload === "function" && shouldHaveBeforeUnload() === true) {
+          shouldBlock = true;
+          break;
+        }
       }
-      if (typeof shouldHaveBeforeUnload === "function" && shouldHaveBeforeUnload() === true) {
-        shouldBlock = true;
-        break;
-      }
-    }
     if (shouldBlock) {
       e.preventDefault();
-      return e.returnValue = "";
+      return (e.returnValue = "");
     }
   };
   const history = createHistory({
@@ -274,20 +293,21 @@ function createBrowserHistory(opts) {
       win.removeEventListener(popStateEvent, onPushPopEvent);
     },
     onBlocked: () => {
-      if (rollbackLocation && currentLocation !== rollbackLocation) currentLocation = rollbackLocation;
+      if (rollbackLocation && currentLocation !== rollbackLocation)
+        currentLocation = rollbackLocation;
     },
     getBlockers: _getBlockers,
     setBlockers: _setBlockers,
-    notifyOnIndexChange: false
+    notifyOnIndexChange: false,
   });
   win.addEventListener(beforeUnloadEvent, onBeforeUnload, { capture: true });
   win.addEventListener(popStateEvent, onPushPopEvent);
-  win.history.pushState = function(...args) {
+  win.history.pushState = function (...args) {
     const res = originalPushState.apply(win.history, args);
     if (!history._ignoreSubscribers) onPushPop("PUSH");
     return res;
   };
-  win.history.replaceState = function(...args) {
+  win.history.replaceState = function (...args) {
     const res = originalReplaceState.apply(win.history, args);
     if (!history._ignoreSubscribers) onPushPop("REPLACE");
     return res;
@@ -303,19 +323,24 @@ function createHashHistory(opts) {
       const pathPart = hashSplit[0] ?? "/";
       const searchPart = win.location.search;
       const hashEntries = hashSplit.slice(1);
-      return parseHref(`${pathPart}${searchPart}${hashEntries.length === 0 ? "" : `#${hashEntries.join("#")}`}`, win.history.state);
+      return parseHref(
+        `${pathPart}${searchPart}${hashEntries.length === 0 ? "" : `#${hashEntries.join("#")}`}`,
+        win.history.state,
+      );
     },
-    createHref: (href) => `${win.location.pathname}${win.location.search}#${href}`
+    createHref: (href) => `${win.location.pathname}${win.location.search}#${href}`,
   });
 }
 function createMemoryHistory(opts = { initialEntries: ["/"] }) {
   const entries = opts.initialEntries;
-  let index = opts.initialIndex ? Math.min(Math.max(opts.initialIndex, 0), entries.length - 1) : entries.length - 1;
+  let index = opts.initialIndex
+    ? Math.min(Math.max(opts.initialIndex, 0), entries.length - 1)
+    : entries.length - 1;
   const states = entries.map((_entry, index2) => assignKeyAndIndex(index2, void 0));
   const getLocation = () => parseHref(entries[index], states[index]);
   let blockers = [];
   const _getBlockers = () => blockers;
-  const _setBlockers = (newBlockers) => blockers = newBlockers;
+  const _setBlockers = (newBlockers) => (blockers = newBlockers);
   return createHistory({
     getLocation,
     getLength: () => entries.length,
@@ -343,7 +368,7 @@ function createMemoryHistory(opts = { initialEntries: ["/"] }) {
     },
     createHref: (path) => path,
     getBlockers: _getBlockers,
-    setBlockers: _setBlockers
+    setBlockers: _setBlockers,
   });
 }
 function sanitizePath(path) {
@@ -358,25 +383,31 @@ function parseHref(href, state) {
   const addedKey = createRandomKey();
   return {
     href: sanitizedHref,
-    pathname: sanitizedHref.substring(0, hashIndex > 0 ? searchIndex > 0 ? Math.min(hashIndex, searchIndex) : hashIndex : searchIndex > 0 ? searchIndex : sanitizedHref.length),
+    pathname: sanitizedHref.substring(
+      0,
+      hashIndex > 0
+        ? searchIndex > 0
+          ? Math.min(hashIndex, searchIndex)
+          : hashIndex
+        : searchIndex > 0
+          ? searchIndex
+          : sanitizedHref.length,
+    ),
     hash: hashIndex > -1 ? sanitizedHref.substring(hashIndex) : "",
-    search: searchIndex > -1 ? sanitizedHref.slice(searchIndex, hashIndex === -1 ? void 0 : hashIndex) : "",
+    search:
+      searchIndex > -1
+        ? sanitizedHref.slice(searchIndex, hashIndex === -1 ? void 0 : hashIndex)
+        : "",
     state: state || {
       [stateIndexKey]: 0,
       key: addedKey,
-      __TSR_key: addedKey
-    }
+      __TSR_key: addedKey,
+    },
   };
 }
 function createRandomKey() {
   return (Math.random() + 1).toString(36).substring(7);
 }
 
-export {
-  createHistory,
-  createBrowserHistory,
-  createHashHistory,
-  createMemoryHistory,
-  parseHref
-};
+export { createHistory, createBrowserHistory, createHashHistory, createMemoryHistory, parseHref };
 //# sourceMappingURL=chunk-AVKHF3FF.js.map

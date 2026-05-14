@@ -8,8 +8,5 @@ function isNotFound(obj) {
   return obj?.isNotFound === true;
 }
 
-export {
-  notFound,
-  isNotFound
-};
+export { notFound, isNotFound };
 //# sourceMappingURL=chunk-XOQNJMC5.js.map

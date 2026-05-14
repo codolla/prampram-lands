@@ -1,14 +1,6 @@
-import {
-  hydrateSsrMatchId,
-  mergeHeaders
-} from "./chunk-N22YCUSM.js";
-import {
-  isNotFound
-} from "./chunk-XOQNJMC5.js";
-import {
-  createControlledPromise,
-  invariant
-} from "./chunk-CLINTJPG.js";
+import { hydrateSsrMatchId, mergeHeaders } from "./chunk-N22YCUSM.js";
+import { isNotFound } from "./chunk-XOQNJMC5.js";
+import { createControlledPromise, invariant } from "./chunk-CLINTJPG.js";
 import "./chunk-PR4QN5HX.js";
 
 // node_modules/@tanstack/router-core/dist/esm/ssr/json.js
@@ -29,7 +21,10 @@ function hydrateMatch(match, deyhydratedMatch) {
 }
 async function hydrate(router) {
   if (!window.$_TSR) {
-    if (true) throw new Error("Invariant failed: Expected to find bootstrap data on window.$_TSR, but we did not. Please file an issue!");
+    if (true)
+      throw new Error(
+        "Invariant failed: Expected to find bootstrap data on window.$_TSR, but we did not. Please file an issue!",
+      );
     invariant();
   }
   const serializationAdapters = router.options.serializationAdapters;
@@ -43,22 +38,30 @@ async function hydrate(router) {
   }
   window.$_TSR.initialized = true;
   if (!window.$_TSR.router) {
-    if (true) throw new Error("Invariant failed: Expected to find a dehydrated data on window.$_TSR.router, but we did not. Please file an issue!");
+    if (true)
+      throw new Error(
+        "Invariant failed: Expected to find a dehydrated data on window.$_TSR.router, but we did not. Please file an issue!",
+      );
     invariant();
   }
   const dehydratedRouter = window.$_TSR.router;
   dehydratedRouter.matches.forEach((dehydratedMatch) => {
     dehydratedMatch.i = hydrateSsrMatchId(dehydratedMatch.i);
   });
-  if (dehydratedRouter.lastMatchId) dehydratedRouter.lastMatchId = hydrateSsrMatchId(dehydratedRouter.lastMatchId);
+  if (dehydratedRouter.lastMatchId)
+    dehydratedRouter.lastMatchId = hydrateSsrMatchId(dehydratedRouter.lastMatchId);
   const { manifest, dehydratedData, lastMatchId } = dehydratedRouter;
   router.ssr = { manifest };
   const nonce = document.querySelector('meta[property="csp-nonce"]')?.content;
   router.options.ssr = { nonce };
   const matches = router.matchRoutes(router.stores.location.get());
-  const routeChunkPromise = Promise.all(matches.map((match) => router.loadRouteChunk(router.looseRoutesById[match.routeId])));
+  const routeChunkPromise = Promise.all(
+    matches.map((match) => router.loadRouteChunk(router.looseRoutesById[match.routeId])),
+  );
   function setMatchForcePending(match) {
-    const pendingMinMs = router.looseRoutesById[match.routeId].options.pendingMinMs ?? router.options.defaultPendingMinMs;
+    const pendingMinMs =
+      router.looseRoutesById[match.routeId].options.pendingMinMs ??
+      router.options.defaultPendingMinMs;
     if (pendingMinMs) {
       const minPendingPromise = createControlledPromise();
       match._nonReactive.minPendingPromise = minPendingPromise;
@@ -69,7 +72,7 @@ async function hydrate(router) {
           prev._nonReactive.minPendingPromise = void 0;
           return {
             ...prev,
-            _forcePending: void 0
+            _forcePending: void 0,
           };
         });
       }, pendingMinMs);
@@ -102,59 +105,62 @@ async function hydrate(router) {
   await router.options.hydrate?.(dehydratedData);
   const activeMatches = router.stores.matches.get();
   const location = router.stores.location.get();
-  await Promise.all(activeMatches.map(async (match) => {
-    try {
-      const route = router.looseRoutesById[match.routeId];
-      const parentContext = activeMatches[match.index - 1]?.context ?? router.options.context;
-      if (route.options.context) {
-        const contextFnContext = {
-          deps: match.loaderDeps,
-          params: match.params,
-          context: parentContext ?? {},
-          location,
-          navigate: (opts) => router.navigate({
-            ...opts,
-            _fromLocation: location
-          }),
-          buildLocation: router.buildLocation,
-          cause: match.cause,
-          abortController: match.abortController,
-          preload: false,
-          matches,
-          routeId: route.id
+  await Promise.all(
+    activeMatches.map(async (match) => {
+      try {
+        const route = router.looseRoutesById[match.routeId];
+        const parentContext = activeMatches[match.index - 1]?.context ?? router.options.context;
+        if (route.options.context) {
+          const contextFnContext = {
+            deps: match.loaderDeps,
+            params: match.params,
+            context: parentContext ?? {},
+            location,
+            navigate: (opts) =>
+              router.navigate({
+                ...opts,
+                _fromLocation: location,
+              }),
+            buildLocation: router.buildLocation,
+            cause: match.cause,
+            abortController: match.abortController,
+            preload: false,
+            matches,
+            routeId: route.id,
+          };
+          match.__routeContext = route.options.context(contextFnContext) ?? void 0;
+        }
+        match.context = {
+          ...parentContext,
+          ...match.__routeContext,
+          ...match.__beforeLoadContext,
         };
-        match.__routeContext = route.options.context(contextFnContext) ?? void 0;
+        const assetContext = {
+          ssr: router.options.ssr,
+          matches: activeMatches,
+          match,
+          params: match.params,
+          loaderData: match.loaderData,
+        };
+        const headFnContent = await route.options.head?.(assetContext);
+        const scripts = await route.options.scripts?.(assetContext);
+        match.meta = headFnContent?.meta;
+        match.links = headFnContent?.links;
+        match.headScripts = headFnContent?.scripts;
+        match.styles = headFnContent?.styles;
+        match.scripts = scripts;
+      } catch (err) {
+        if (isNotFound(err)) {
+          match.error = { isNotFound: true };
+          console.error(`NotFound error during hydration for routeId: ${match.routeId}`, err);
+        } else {
+          match.error = err;
+          console.error(`Error during hydration for route ${match.routeId}:`, err);
+          throw err;
+        }
       }
-      match.context = {
-        ...parentContext,
-        ...match.__routeContext,
-        ...match.__beforeLoadContext
-      };
-      const assetContext = {
-        ssr: router.options.ssr,
-        matches: activeMatches,
-        match,
-        params: match.params,
-        loaderData: match.loaderData
-      };
-      const headFnContent = await route.options.head?.(assetContext);
-      const scripts = await route.options.scripts?.(assetContext);
-      match.meta = headFnContent?.meta;
-      match.links = headFnContent?.links;
-      match.headScripts = headFnContent?.scripts;
-      match.styles = headFnContent?.styles;
-      match.scripts = scripts;
-    } catch (err) {
-      if (isNotFound(err)) {
-        match.error = { isNotFound: true };
-        console.error(`NotFound error during hydration for routeId: ${match.routeId}`, err);
-      } else {
-        match.error = err;
-        console.error(`Error during hydration for route ${match.routeId}:`, err);
-        throw err;
-      }
-    }
-  }));
+    }),
+  );
   const isSpaMode = matches[matches.length - 1].id !== lastMatchId;
   if (!matches.some((m) => m.ssr === false) && !isSpaMode) {
     matches.forEach((match) => {
@@ -163,13 +169,18 @@ async function hydrate(router) {
     router.stores.resolvedLocation.set(router.stores.location.get());
     return routeChunkPromise;
   }
-  const loadPromise = Promise.resolve().then(() => router.load()).catch((err) => {
-    console.error("Error during router hydration:", err);
-  });
+  const loadPromise = Promise.resolve()
+    .then(() => router.load())
+    .catch((err) => {
+      console.error("Error during router hydration:", err);
+    });
   if (isSpaMode) {
     const match = matches[1];
     if (!match) {
-      if (true) throw new Error("Invariant failed: Expected to find a match below the root match in SPA mode.");
+      if (true)
+        throw new Error(
+          "Invariant failed: Expected to find a match below the root match in SPA mode.",
+        );
       invariant();
     }
     setMatchForcePending(match);
@@ -184,16 +195,12 @@ async function hydrate(router) {
         router.updateMatch(match.id, (prev) => ({
           ...prev,
           _displayPending: void 0,
-          displayPendingPromise: void 0
+          displayPendingPromise: void 0,
         }));
       });
     });
   }
   return routeChunkPromise;
 }
-export {
-  hydrate,
-  json,
-  mergeHeaders
-};
+export { hydrate, json, mergeHeaders };
 //# sourceMappingURL=@tanstack_router-core_ssr_client.js.map

@@ -1,32 +1,42 @@
-import {
-  require_shim
-} from "./chunk-HHGWYVLT.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __commonJS,
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_shim } from "./chunk-HHGWYVLT.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __commonJS, __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
 var require_with_selector_development = __commonJS({
-  "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js"(exports) {
+  "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js"(
+    exports,
+  ) {
     "use strict";
-    (function() {
+    (function () {
       function is(x, y) {
-        return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
+        return (x === y && (0 !== x || 1 / x === 1 / y)) || (x !== x && y !== y);
       }
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var React = require_react(), shim = require_shim(), objectIs = "function" === typeof Object.is ? Object.is : is, useSyncExternalStore = shim.useSyncExternalStore, useRef = React.useRef, useEffect = React.useEffect, useMemo = React.useMemo, useDebugValue = React.useDebugValue;
-      exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
+      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
+        "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart &&
+        __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+      var React = require_react(),
+        shim = require_shim(),
+        objectIs = "function" === typeof Object.is ? Object.is : is,
+        useSyncExternalStore = shim.useSyncExternalStore,
+        useRef = React.useRef,
+        useEffect = React.useEffect,
+        useMemo = React.useMemo,
+        useDebugValue = React.useDebugValue;
+      exports.useSyncExternalStoreWithSelector = function (
+        subscribe,
+        getSnapshot,
+        getServerSnapshot,
+        selector,
+        isEqual,
+      ) {
         var instRef = useRef(null);
         if (null === instRef.current) {
           var inst = { hasValue: false, value: null };
           instRef.current = inst;
         } else inst = instRef.current;
         instRef = useMemo(
-          function() {
+          function () {
             function memoizedSelector(nextSnapshot) {
               if (!hasMemo) {
                 hasMemo = true;
@@ -35,45 +45,51 @@ var require_with_selector_development = __commonJS({
                 if (void 0 !== isEqual && inst.hasValue) {
                   var currentSelection = inst.value;
                   if (isEqual(currentSelection, nextSnapshot))
-                    return memoizedSelection = currentSelection;
+                    return (memoizedSelection = currentSelection);
                 }
-                return memoizedSelection = nextSnapshot;
+                return (memoizedSelection = nextSnapshot);
               }
               currentSelection = memoizedSelection;
-              if (objectIs(memoizedSnapshot, nextSnapshot))
-                return currentSelection;
+              if (objectIs(memoizedSnapshot, nextSnapshot)) return currentSelection;
               var nextSelection = selector(nextSnapshot);
               if (void 0 !== isEqual && isEqual(currentSelection, nextSelection))
-                return memoizedSnapshot = nextSnapshot, currentSelection;
+                return ((memoizedSnapshot = nextSnapshot), currentSelection);
               memoizedSnapshot = nextSnapshot;
-              return memoizedSelection = nextSelection;
+              return (memoizedSelection = nextSelection);
             }
-            var hasMemo = false, memoizedSnapshot, memoizedSelection, maybeGetServerSnapshot = void 0 === getServerSnapshot ? null : getServerSnapshot;
+            var hasMemo = false,
+              memoizedSnapshot,
+              memoizedSelection,
+              maybeGetServerSnapshot = void 0 === getServerSnapshot ? null : getServerSnapshot;
             return [
-              function() {
+              function () {
                 return memoizedSelector(getSnapshot());
               },
-              null === maybeGetServerSnapshot ? void 0 : function() {
-                return memoizedSelector(maybeGetServerSnapshot());
-              }
+              null === maybeGetServerSnapshot
+                ? void 0
+                : function () {
+                    return memoizedSelector(maybeGetServerSnapshot());
+                  },
             ];
           },
-          [getSnapshot, getServerSnapshot, selector, isEqual]
+          [getSnapshot, getServerSnapshot, selector, isEqual],
         );
         var value = useSyncExternalStore(subscribe, instRef[0], instRef[1]);
         useEffect(
-          function() {
+          function () {
             inst.hasValue = true;
             inst.value = value;
           },
-          [value]
+          [value],
         );
         useDebugValue(value);
         return value;
       };
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
+        "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
+        __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
     })();
-  }
+  },
 });
 
 // node_modules/use-sync-external-store/shim/with-selector.js
@@ -85,31 +101,27 @@ var require_with_selector = __commonJS({
     } else {
       module.exports = require_with_selector_development();
     }
-  }
+  },
 });
 
 // node_modules/@tanstack/store/dist/esm/alien.js
 var ReactiveFlags = ((ReactiveFlags2) => {
-  ReactiveFlags2[ReactiveFlags2["None"] = 0] = "None";
-  ReactiveFlags2[ReactiveFlags2["Mutable"] = 1] = "Mutable";
-  ReactiveFlags2[ReactiveFlags2["Watching"] = 2] = "Watching";
-  ReactiveFlags2[ReactiveFlags2["RecursedCheck"] = 4] = "RecursedCheck";
-  ReactiveFlags2[ReactiveFlags2["Recursed"] = 8] = "Recursed";
-  ReactiveFlags2[ReactiveFlags2["Dirty"] = 16] = "Dirty";
-  ReactiveFlags2[ReactiveFlags2["Pending"] = 32] = "Pending";
+  ReactiveFlags2[(ReactiveFlags2["None"] = 0)] = "None";
+  ReactiveFlags2[(ReactiveFlags2["Mutable"] = 1)] = "Mutable";
+  ReactiveFlags2[(ReactiveFlags2["Watching"] = 2)] = "Watching";
+  ReactiveFlags2[(ReactiveFlags2["RecursedCheck"] = 4)] = "RecursedCheck";
+  ReactiveFlags2[(ReactiveFlags2["Recursed"] = 8)] = "Recursed";
+  ReactiveFlags2[(ReactiveFlags2["Dirty"] = 16)] = "Dirty";
+  ReactiveFlags2[(ReactiveFlags2["Pending"] = 32)] = "Pending";
   return ReactiveFlags2;
 })(ReactiveFlags || {});
-function createReactiveSystem({
-  update,
-  notify,
-  unwatched
-}) {
+function createReactiveSystem({ update, notify, unwatched }) {
   return {
     link: link2,
     unlink: unlink2,
     propagate: propagate2,
     checkDirty: checkDirty2,
-    shallowPropagate: shallowPropagate2
+    shallowPropagate: shallowPropagate2,
   };
   function link2(dep, sub, version) {
     const prevDep = sub.depsTail;
@@ -126,15 +138,18 @@ function createReactiveSystem({
     if (prevSub !== void 0 && prevSub.version === version && prevSub.sub === sub) {
       return;
     }
-    const newLink = sub.depsTail = dep.subsTail = {
-      version,
-      dep,
-      sub,
-      prevDep,
-      nextDep,
-      prevSub,
-      nextSub: void 0
-    };
+    const newLink =
+      (sub.depsTail =
+      dep.subsTail =
+        {
+          version,
+          dep,
+          sub,
+          prevDep,
+          nextDep,
+          prevSub,
+          nextSub: void 0,
+        });
     if (nextDep !== void 0) {
       nextDep.prevDep = newLink;
     }
@@ -188,7 +203,7 @@ function createReactiveSystem({
       } else if (!(flags & (4 | 8))) {
         flags = 0;
       } else if (!(flags & 4)) {
-        sub.flags = flags & -9 | 32;
+        sub.flags = (flags & -9) | 32;
       } else if (!(flags & (16 | 32)) && isValidLink(link22, sub)) {
         sub.flags = flags | (8 | 32);
         flags &= 1;
@@ -319,9 +334,7 @@ function toObserver(nextHandler, errorHandler, completionHandler) {
   return {
     next: (isObserver ? nextHandler.next : nextHandler)?.bind(self),
     error: (isObserver ? nextHandler.error : errorHandler)?.bind(self),
-    complete: (isObserver ? nextHandler.complete : completionHandler)?.bind(
-      self
-    )
+    complete: (isObserver ? nextHandler.complete : completionHandler)?.bind(self),
   };
 }
 var queuedEffects = [];
@@ -341,7 +354,7 @@ var { link, unlink, propagate, checkDirty, shallowPropagate } = createReactiveSy
       atom.flags = ReactiveFlags.Mutable | ReactiveFlags.Dirty;
       purgeDeps(atom);
     }
-  }
+  },
 });
 var notifyIndex = 0;
 var queuedEffectsLength = 0;
@@ -401,7 +414,7 @@ function createAsyncAtom(getValue, options) {
             flush();
           }
         }
-      }
+      },
     );
     return { status: "pending" };
   }, options);
@@ -438,7 +451,7 @@ function createAtom(valueOrFn, options) {
       return {
         unsubscribe: () => {
           e.stop();
-        }
+        },
       };
     },
     _update(getValue) {
@@ -456,7 +469,12 @@ function createAtom(valueOrFn, options) {
       }
       try {
         const oldValue = atom._snapshot;
-        const newValue = typeof getValue === "function" ? getValue(oldValue) : getValue === void 0 && isComputed ? getter(oldValue) : getValue;
+        const newValue =
+          typeof getValue === "function"
+            ? getValue(oldValue)
+            : getValue === void 0 && isComputed
+              ? getter(oldValue)
+              : getValue;
         if (oldValue === void 0 || !compare(oldValue, newValue)) {
           atom._snapshot = newValue;
           return true;
@@ -469,13 +487,16 @@ function createAtom(valueOrFn, options) {
         }
         purgeDeps(atom);
       }
-    }
+    },
   };
   if (isComputed) {
     atom.flags = ReactiveFlags.Mutable | ReactiveFlags.Dirty;
-    atom.get = function() {
+    atom.get = function () {
       const flags = atom.flags;
-      if (flags & ReactiveFlags.Dirty || flags & ReactiveFlags.Pending && checkDirty(atom.deps, atom)) {
+      if (
+        flags & ReactiveFlags.Dirty ||
+        (flags & ReactiveFlags.Pending && checkDirty(atom.deps, atom))
+      ) {
         if (atom._update()) {
           const subs = atom.subs;
           if (subs !== void 0) {
@@ -491,7 +512,7 @@ function createAtom(valueOrFn, options) {
       return atom._snapshot;
     };
   } else {
-    atom.set = function(valueOrFn2) {
+    atom.set = function (valueOrFn2) {
       if (atom._update(valueOrFn2)) {
         const subs = atom.subs;
         if (subs !== void 0) {
@@ -527,7 +548,10 @@ function effect(fn) {
     flags: ReactiveFlags.Watching | ReactiveFlags.RecursedCheck,
     notify() {
       const flags = this.flags;
-      if (flags & ReactiveFlags.Dirty || flags & ReactiveFlags.Pending && checkDirty(this.deps, this)) {
+      if (
+        flags & ReactiveFlags.Dirty ||
+        (flags & ReactiveFlags.Pending && checkDirty(this.deps, this))
+      ) {
         run();
       } else {
         this.flags = ReactiveFlags.Watching;
@@ -537,7 +561,7 @@ function effect(fn) {
       this.flags = ReactiveFlags.None;
       this.depsTail = void 0;
       purgeDeps(this);
-    }
+    },
   };
   run();
   return effectObj;
@@ -546,9 +570,7 @@ function effect(fn) {
 // node_modules/@tanstack/store/dist/esm/store.js
 var Store = class {
   constructor(valueOrFn) {
-    this.atom = createAtom(
-      valueOrFn
-    );
+    this.atom = createAtom(valueOrFn);
   }
   setState(updater) {
     this.atom.set(updater);
@@ -565,9 +587,7 @@ var Store = class {
 };
 var ReadonlyStore = class {
   constructor(valueOrFn) {
-    this.atom = createAtom(
-      valueOrFn
-    );
+    this.atom = createAtom(valueOrFn);
   }
   get state() {
     return this.atom.get();
@@ -596,13 +616,12 @@ function useStore(atom, selector, compare = defaultCompare) {
   const subscribe = (0, import_react.useCallback)(
     (handleStoreChange) => {
       if (!atom) {
-        return () => {
-        };
+        return () => {};
       }
       const { unsubscribe } = atom.subscribe(handleStoreChange);
       return unsubscribe;
     },
-    [atom]
+    [atom],
   );
   const boundGetSnapshot = (0, import_react.useCallback)(() => atom?.get(), [atom]);
   const selectedSnapshot = (0, import_with_selector.useSyncExternalStoreWithSelector)(
@@ -610,7 +629,7 @@ function useStore(atom, selector, compare = defaultCompare) {
     boundGetSnapshot,
     boundGetSnapshot,
     selector,
-    compare
+    compare,
   );
   return selectedSnapshot;
 }
@@ -646,16 +665,17 @@ function shallow(objA, objB) {
     return false;
   }
   for (let i = 0; i < keysA.length; i++) {
-    if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) {
+    if (
+      !Object.prototype.hasOwnProperty.call(objB, keysA[i]) ||
+      !Object.is(objA[keysA[i]], objB[keysA[i]])
+    ) {
       return false;
     }
   }
   return true;
 }
 function getOwnKeys(obj) {
-  return Object.keys(obj).concat(
-    Object.getOwnPropertySymbols(obj)
-  );
+  return Object.keys(obj).concat(Object.getOwnPropertySymbols(obj));
 }
 export {
   ReadonlyStore,
@@ -667,6 +687,6 @@ export {
   flush,
   shallow,
   toObserver,
-  useStore
+  useStore,
 };
 //# sourceMappingURL=@tanstack_react-router___@tanstack_react-store.js.map

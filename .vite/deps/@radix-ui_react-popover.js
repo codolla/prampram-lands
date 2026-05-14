@@ -1,51 +1,24 @@
 "use client";
-import {
-  Anchor,
-  Arrow,
-  Content,
-  Root2,
-  createPopperScope
-} from "./chunk-KH6CFC4X.js";
+import { Anchor, Arrow, Content, Root2, createPopperScope } from "./chunk-KH6CFC4X.js";
 import "./chunk-CRRA55JQ.js";
-import {
-  Combination_default,
-  FocusScope,
-  hideOthers,
-  useFocusGuards
-} from "./chunk-WZBSIZNY.js";
-import {
-  DismissableLayer,
-  Portal
-} from "./chunk-4YKFFH32.js";
-import {
-  useId
-} from "./chunk-Y7SI5NHG.js";
+import { Combination_default, FocusScope, hideOthers, useFocusGuards } from "./chunk-WZBSIZNY.js";
+import { DismissableLayer, Portal } from "./chunk-4YKFFH32.js";
+import { useId } from "./chunk-Y7SI5NHG.js";
 import "./chunk-2HMNGHK2.js";
 import "./chunk-T5Z3LJQL.js";
-import {
-  Presence
-} from "./chunk-AIMOOC6Y.js";
+import { Presence } from "./chunk-AIMOOC6Y.js";
 import {
   Primitive,
   composeEventHandlers,
   createContextScope,
-  useControllableState
+  useControllableState,
 } from "./chunk-MVQIMK6M.js";
 import "./chunk-OJ36KNVJ.js";
-import {
-  composeRefs,
-  useComposedRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
+import { composeRefs, useComposedRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
 import "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-popover/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -69,7 +42,13 @@ function createSlot(ownerName) {
           return child;
         }
       });
-      return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children: React.isValidElement(newElement) ? React.cloneElement(newElement, void 0, newChildren) : null });
+      return (0, import_jsx_runtime.jsx)(SlotClone, {
+        ...slotProps,
+        ref: forwardedRef,
+        children: React.isValidElement(newElement)
+          ? React.cloneElement(newElement, void 0, newChildren)
+          : null,
+      });
     }
     return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children });
   });
@@ -104,7 +83,12 @@ function createSlottable(ownerName) {
 }
 var Slottable = createSlottable("Slottable");
 function isSlottable(child) {
-  return React.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
+  return (
+    React.isValidElement(child) &&
+    typeof child.type === "function" &&
+    "__radixId" in child.type &&
+    child.type.__radixId === SLOTTABLE_IDENTIFIER
+  );
 }
 function mergeProps(slotProps, childProps) {
   const overrideProps = { ...childProps };
@@ -148,7 +132,7 @@ function getElementRef(element) {
 var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var POPOVER_NAME = "Popover";
 var [createPopoverContext, createPopoverScope] = createContextScope(POPOVER_NAME, [
-  createPopperScope
+  createPopperScope,
 ]);
 var usePopperScope = createPopperScope();
 var [PopoverProvider, usePopoverContext] = createPopoverContext(POPOVER_NAME);
@@ -159,7 +143,7 @@ var Popover = (props) => {
     open: openProp,
     defaultOpen,
     onOpenChange,
-    modal = false
+    modal = false,
   } = props;
   const popperScope = usePopperScope(__scopePopover);
   const triggerRef = React2.useRef(null);
@@ -168,11 +152,11 @@ var Popover = (props) => {
     prop: openProp,
     defaultProp: defaultOpen ?? false,
     onChange: onOpenChange,
-    caller: POPOVER_NAME
+    caller: POPOVER_NAME,
   });
-  return (0, import_jsx_runtime2.jsx)(Root2, { ...popperScope, children: (0, import_jsx_runtime2.jsx)(
-    PopoverProvider,
-    {
+  return (0, import_jsx_runtime2.jsx)(Root2, {
+    ...popperScope,
+    children: (0, import_jsx_runtime2.jsx)(PopoverProvider, {
       scope: __scopePopover,
       contentId: useId(),
       triggerRef,
@@ -183,239 +167,227 @@ var Popover = (props) => {
       onCustomAnchorAdd: React2.useCallback(() => setHasCustomAnchor(true), []),
       onCustomAnchorRemove: React2.useCallback(() => setHasCustomAnchor(false), []),
       modal,
-      children
-    }
-  ) });
+      children,
+    }),
+  });
 };
 Popover.displayName = POPOVER_NAME;
 var ANCHOR_NAME = "PopoverAnchor";
-var PopoverAnchor = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopePopover, ...anchorProps } = props;
-    const context = usePopoverContext(ANCHOR_NAME, __scopePopover);
-    const popperScope = usePopperScope(__scopePopover);
-    const { onCustomAnchorAdd, onCustomAnchorRemove } = context;
-    React2.useEffect(() => {
-      onCustomAnchorAdd();
-      return () => onCustomAnchorRemove();
-    }, [onCustomAnchorAdd, onCustomAnchorRemove]);
-    return (0, import_jsx_runtime2.jsx)(Anchor, { ...popperScope, ...anchorProps, ref: forwardedRef });
-  }
-);
+var PopoverAnchor = React2.forwardRef((props, forwardedRef) => {
+  const { __scopePopover, ...anchorProps } = props;
+  const context = usePopoverContext(ANCHOR_NAME, __scopePopover);
+  const popperScope = usePopperScope(__scopePopover);
+  const { onCustomAnchorAdd, onCustomAnchorRemove } = context;
+  React2.useEffect(() => {
+    onCustomAnchorAdd();
+    return () => onCustomAnchorRemove();
+  }, [onCustomAnchorAdd, onCustomAnchorRemove]);
+  return (0, import_jsx_runtime2.jsx)(Anchor, {
+    ...popperScope,
+    ...anchorProps,
+    ref: forwardedRef,
+  });
+});
 PopoverAnchor.displayName = ANCHOR_NAME;
 var TRIGGER_NAME = "PopoverTrigger";
-var PopoverTrigger = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopePopover, ...triggerProps } = props;
-    const context = usePopoverContext(TRIGGER_NAME, __scopePopover);
-    const popperScope = usePopperScope(__scopePopover);
-    const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
-    const trigger = (0, import_jsx_runtime2.jsx)(
-      Primitive.button,
-      {
-        type: "button",
-        "aria-haspopup": "dialog",
-        "aria-expanded": context.open,
-        "aria-controls": context.contentId,
-        "data-state": getState(context.open),
-        ...triggerProps,
-        ref: composedTriggerRef,
-        onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
-      }
-    );
-    return context.hasCustomAnchor ? trigger : (0, import_jsx_runtime2.jsx)(Anchor, { asChild: true, ...popperScope, children: trigger });
-  }
-);
+var PopoverTrigger = React2.forwardRef((props, forwardedRef) => {
+  const { __scopePopover, ...triggerProps } = props;
+  const context = usePopoverContext(TRIGGER_NAME, __scopePopover);
+  const popperScope = usePopperScope(__scopePopover);
+  const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
+  const trigger = (0, import_jsx_runtime2.jsx)(Primitive.button, {
+    type: "button",
+    "aria-haspopup": "dialog",
+    "aria-expanded": context.open,
+    "aria-controls": context.contentId,
+    "data-state": getState(context.open),
+    ...triggerProps,
+    ref: composedTriggerRef,
+    onClick: composeEventHandlers(props.onClick, context.onOpenToggle),
+  });
+  return context.hasCustomAnchor
+    ? trigger
+    : (0, import_jsx_runtime2.jsx)(Anchor, { asChild: true, ...popperScope, children: trigger });
+});
 PopoverTrigger.displayName = TRIGGER_NAME;
 var PORTAL_NAME = "PopoverPortal";
 var [PortalProvider, usePortalContext] = createPopoverContext(PORTAL_NAME, {
-  forceMount: void 0
+  forceMount: void 0,
 });
 var PopoverPortal = (props) => {
   const { __scopePopover, forceMount, children, container } = props;
   const context = usePopoverContext(PORTAL_NAME, __scopePopover);
-  return (0, import_jsx_runtime2.jsx)(PortalProvider, { scope: __scopePopover, forceMount, children: (0, import_jsx_runtime2.jsx)(Presence, { present: forceMount || context.open, children: (0, import_jsx_runtime2.jsx)(Portal, { asChild: true, container, children }) }) });
+  return (0, import_jsx_runtime2.jsx)(PortalProvider, {
+    scope: __scopePopover,
+    forceMount,
+    children: (0, import_jsx_runtime2.jsx)(Presence, {
+      present: forceMount || context.open,
+      children: (0, import_jsx_runtime2.jsx)(Portal, { asChild: true, container, children }),
+    }),
+  });
 };
 PopoverPortal.displayName = PORTAL_NAME;
 var CONTENT_NAME = "PopoverContent";
-var PopoverContent = React2.forwardRef(
-  (props, forwardedRef) => {
-    const portalContext = usePortalContext(CONTENT_NAME, props.__scopePopover);
-    const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = usePopoverContext(CONTENT_NAME, props.__scopePopover);
-    return (0, import_jsx_runtime2.jsx)(Presence, { present: forceMount || context.open, children: context.modal ? (0, import_jsx_runtime2.jsx)(PopoverContentModal, { ...contentProps, ref: forwardedRef }) : (0, import_jsx_runtime2.jsx)(PopoverContentNonModal, { ...contentProps, ref: forwardedRef }) });
-  }
-);
+var PopoverContent = React2.forwardRef((props, forwardedRef) => {
+  const portalContext = usePortalContext(CONTENT_NAME, props.__scopePopover);
+  const { forceMount = portalContext.forceMount, ...contentProps } = props;
+  const context = usePopoverContext(CONTENT_NAME, props.__scopePopover);
+  return (0, import_jsx_runtime2.jsx)(Presence, {
+    present: forceMount || context.open,
+    children: context.modal
+      ? (0, import_jsx_runtime2.jsx)(PopoverContentModal, { ...contentProps, ref: forwardedRef })
+      : (0, import_jsx_runtime2.jsx)(PopoverContentNonModal, {
+          ...contentProps,
+          ref: forwardedRef,
+        }),
+  });
+});
 PopoverContent.displayName = CONTENT_NAME;
 var Slot2 = createSlot("PopoverContent.RemoveScroll");
-var PopoverContentModal = React2.forwardRef(
-  (props, forwardedRef) => {
-    const context = usePopoverContext(CONTENT_NAME, props.__scopePopover);
-    const contentRef = React2.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, contentRef);
-    const isRightClickOutsideRef = React2.useRef(false);
-    React2.useEffect(() => {
-      const content = contentRef.current;
-      if (content) return hideOthers(content);
-    }, []);
-    return (0, import_jsx_runtime2.jsx)(Combination_default, { as: Slot2, allowPinchZoom: true, children: (0, import_jsx_runtime2.jsx)(
-      PopoverContentImpl,
-      {
-        ...props,
-        ref: composedRefs,
-        trapFocus: context.open,
-        disableOutsidePointerEvents: true,
-        onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
-          event.preventDefault();
-          if (!isRightClickOutsideRef.current) context.triggerRef.current?.focus();
-        }),
-        onPointerDownOutside: composeEventHandlers(
-          props.onPointerDownOutside,
-          (event) => {
-            const originalEvent = event.detail.originalEvent;
-            const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
-            const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
-            isRightClickOutsideRef.current = isRightClick;
-          },
-          { checkForDefaultPrevented: false }
-        ),
-        onFocusOutside: composeEventHandlers(
-          props.onFocusOutside,
-          (event) => event.preventDefault(),
-          { checkForDefaultPrevented: false }
-        )
-      }
-    ) });
-  }
-);
-var PopoverContentNonModal = React2.forwardRef(
-  (props, forwardedRef) => {
-    const context = usePopoverContext(CONTENT_NAME, props.__scopePopover);
-    const hasInteractedOutsideRef = React2.useRef(false);
-    const hasPointerDownOutsideRef = React2.useRef(false);
-    return (0, import_jsx_runtime2.jsx)(
-      PopoverContentImpl,
-      {
-        ...props,
-        ref: forwardedRef,
-        trapFocus: false,
-        disableOutsidePointerEvents: false,
-        onCloseAutoFocus: (event) => {
-          props.onCloseAutoFocus?.(event);
-          if (!event.defaultPrevented) {
-            if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
-            event.preventDefault();
-          }
-          hasInteractedOutsideRef.current = false;
-          hasPointerDownOutsideRef.current = false;
+var PopoverContentModal = React2.forwardRef((props, forwardedRef) => {
+  const context = usePopoverContext(CONTENT_NAME, props.__scopePopover);
+  const contentRef = React2.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, contentRef);
+  const isRightClickOutsideRef = React2.useRef(false);
+  React2.useEffect(() => {
+    const content = contentRef.current;
+    if (content) return hideOthers(content);
+  }, []);
+  return (0, import_jsx_runtime2.jsx)(Combination_default, {
+    as: Slot2,
+    allowPinchZoom: true,
+    children: (0, import_jsx_runtime2.jsx)(PopoverContentImpl, {
+      ...props,
+      ref: composedRefs,
+      trapFocus: context.open,
+      disableOutsidePointerEvents: true,
+      onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
+        event.preventDefault();
+        if (!isRightClickOutsideRef.current) context.triggerRef.current?.focus();
+      }),
+      onPointerDownOutside: composeEventHandlers(
+        props.onPointerDownOutside,
+        (event) => {
+          const originalEvent = event.detail.originalEvent;
+          const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
+          const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
+          isRightClickOutsideRef.current = isRightClick;
         },
-        onInteractOutside: (event) => {
-          props.onInteractOutside?.(event);
-          if (!event.defaultPrevented) {
-            hasInteractedOutsideRef.current = true;
-            if (event.detail.originalEvent.type === "pointerdown") {
-              hasPointerDownOutsideRef.current = true;
-            }
-          }
-          const target = event.target;
-          const targetIsTrigger = context.triggerRef.current?.contains(target);
-          if (targetIsTrigger) event.preventDefault();
-          if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
-            event.preventDefault();
-          }
+        { checkForDefaultPrevented: false },
+      ),
+      onFocusOutside: composeEventHandlers(
+        props.onFocusOutside,
+        (event) => event.preventDefault(),
+        { checkForDefaultPrevented: false },
+      ),
+    }),
+  });
+});
+var PopoverContentNonModal = React2.forwardRef((props, forwardedRef) => {
+  const context = usePopoverContext(CONTENT_NAME, props.__scopePopover);
+  const hasInteractedOutsideRef = React2.useRef(false);
+  const hasPointerDownOutsideRef = React2.useRef(false);
+  return (0, import_jsx_runtime2.jsx)(PopoverContentImpl, {
+    ...props,
+    ref: forwardedRef,
+    trapFocus: false,
+    disableOutsidePointerEvents: false,
+    onCloseAutoFocus: (event) => {
+      props.onCloseAutoFocus?.(event);
+      if (!event.defaultPrevented) {
+        if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
+        event.preventDefault();
+      }
+      hasInteractedOutsideRef.current = false;
+      hasPointerDownOutsideRef.current = false;
+    },
+    onInteractOutside: (event) => {
+      props.onInteractOutside?.(event);
+      if (!event.defaultPrevented) {
+        hasInteractedOutsideRef.current = true;
+        if (event.detail.originalEvent.type === "pointerdown") {
+          hasPointerDownOutsideRef.current = true;
         }
       }
-    );
-  }
-);
-var PopoverContentImpl = React2.forwardRef(
-  (props, forwardedRef) => {
-    const {
-      __scopePopover,
-      trapFocus,
-      onOpenAutoFocus,
-      onCloseAutoFocus,
+      const target = event.target;
+      const targetIsTrigger = context.triggerRef.current?.contains(target);
+      if (targetIsTrigger) event.preventDefault();
+      if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
+        event.preventDefault();
+      }
+    },
+  });
+});
+var PopoverContentImpl = React2.forwardRef((props, forwardedRef) => {
+  const {
+    __scopePopover,
+    trapFocus,
+    onOpenAutoFocus,
+    onCloseAutoFocus,
+    disableOutsidePointerEvents,
+    onEscapeKeyDown,
+    onPointerDownOutside,
+    onFocusOutside,
+    onInteractOutside,
+    ...contentProps
+  } = props;
+  const context = usePopoverContext(CONTENT_NAME, __scopePopover);
+  const popperScope = usePopperScope(__scopePopover);
+  useFocusGuards();
+  return (0, import_jsx_runtime2.jsx)(FocusScope, {
+    asChild: true,
+    loop: true,
+    trapped: trapFocus,
+    onMountAutoFocus: onOpenAutoFocus,
+    onUnmountAutoFocus: onCloseAutoFocus,
+    children: (0, import_jsx_runtime2.jsx)(DismissableLayer, {
+      asChild: true,
       disableOutsidePointerEvents,
+      onInteractOutside,
       onEscapeKeyDown,
       onPointerDownOutside,
       onFocusOutside,
-      onInteractOutside,
-      ...contentProps
-    } = props;
-    const context = usePopoverContext(CONTENT_NAME, __scopePopover);
-    const popperScope = usePopperScope(__scopePopover);
-    useFocusGuards();
-    return (0, import_jsx_runtime2.jsx)(
-      FocusScope,
-      {
-        asChild: true,
-        loop: true,
-        trapped: trapFocus,
-        onMountAutoFocus: onOpenAutoFocus,
-        onUnmountAutoFocus: onCloseAutoFocus,
-        children: (0, import_jsx_runtime2.jsx)(
-          DismissableLayer,
-          {
-            asChild: true,
-            disableOutsidePointerEvents,
-            onInteractOutside,
-            onEscapeKeyDown,
-            onPointerDownOutside,
-            onFocusOutside,
-            onDismiss: () => context.onOpenChange(false),
-            children: (0, import_jsx_runtime2.jsx)(
-              Content,
-              {
-                "data-state": getState(context.open),
-                role: "dialog",
-                id: context.contentId,
-                ...popperScope,
-                ...contentProps,
-                ref: forwardedRef,
-                style: {
-                  ...contentProps.style,
-                  // re-namespace exposed content custom properties
-                  ...{
-                    "--radix-popover-content-transform-origin": "var(--radix-popper-transform-origin)",
-                    "--radix-popover-content-available-width": "var(--radix-popper-available-width)",
-                    "--radix-popover-content-available-height": "var(--radix-popper-available-height)",
-                    "--radix-popover-trigger-width": "var(--radix-popper-anchor-width)",
-                    "--radix-popover-trigger-height": "var(--radix-popper-anchor-height)"
-                  }
-                }
-              }
-            )
-          }
-        )
-      }
-    );
-  }
-);
-var CLOSE_NAME = "PopoverClose";
-var PopoverClose = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopePopover, ...closeProps } = props;
-    const context = usePopoverContext(CLOSE_NAME, __scopePopover);
-    return (0, import_jsx_runtime2.jsx)(
-      Primitive.button,
-      {
-        type: "button",
-        ...closeProps,
+      onDismiss: () => context.onOpenChange(false),
+      children: (0, import_jsx_runtime2.jsx)(Content, {
+        "data-state": getState(context.open),
+        role: "dialog",
+        id: context.contentId,
+        ...popperScope,
+        ...contentProps,
         ref: forwardedRef,
-        onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false))
-      }
-    );
-  }
-);
+        style: {
+          ...contentProps.style,
+          // re-namespace exposed content custom properties
+          ...{
+            "--radix-popover-content-transform-origin": "var(--radix-popper-transform-origin)",
+            "--radix-popover-content-available-width": "var(--radix-popper-available-width)",
+            "--radix-popover-content-available-height": "var(--radix-popper-available-height)",
+            "--radix-popover-trigger-width": "var(--radix-popper-anchor-width)",
+            "--radix-popover-trigger-height": "var(--radix-popper-anchor-height)",
+          },
+        },
+      }),
+    }),
+  });
+});
+var CLOSE_NAME = "PopoverClose";
+var PopoverClose = React2.forwardRef((props, forwardedRef) => {
+  const { __scopePopover, ...closeProps } = props;
+  const context = usePopoverContext(CLOSE_NAME, __scopePopover);
+  return (0, import_jsx_runtime2.jsx)(Primitive.button, {
+    type: "button",
+    ...closeProps,
+    ref: forwardedRef,
+    onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false)),
+  });
+});
 PopoverClose.displayName = CLOSE_NAME;
 var ARROW_NAME = "PopoverArrow";
-var PopoverArrow = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopePopover, ...arrowProps } = props;
-    const popperScope = usePopperScope(__scopePopover);
-    return (0, import_jsx_runtime2.jsx)(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef });
-  }
-);
+var PopoverArrow = React2.forwardRef((props, forwardedRef) => {
+  const { __scopePopover, ...arrowProps } = props;
+  const popperScope = usePopperScope(__scopePopover);
+  return (0, import_jsx_runtime2.jsx)(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef });
+});
 PopoverArrow.displayName = ARROW_NAME;
 function getState(open) {
   return open ? "open" : "closed";
@@ -442,6 +414,6 @@ export {
   Portal2 as Portal,
   Root22 as Root,
   Trigger,
-  createPopoverScope
+  createPopoverScope,
 };
 //# sourceMappingURL=@radix-ui_react-popover.js.map

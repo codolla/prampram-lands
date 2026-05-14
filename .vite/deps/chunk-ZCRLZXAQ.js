@@ -1,11 +1,11 @@
 // node_modules/seroval/dist/esm/development/index.mjs
 var Feature = ((Feature2) => {
-  Feature2[Feature2["AggregateError"] = 1] = "AggregateError";
-  Feature2[Feature2["ArrowFunction"] = 2] = "ArrowFunction";
-  Feature2[Feature2["ErrorPrototypeStack"] = 4] = "ErrorPrototypeStack";
-  Feature2[Feature2["ObjectAssign"] = 8] = "ObjectAssign";
-  Feature2[Feature2["BigIntTypedArray"] = 16] = "BigIntTypedArray";
-  Feature2[Feature2["RegExp"] = 32] = "RegExp";
+  Feature2[(Feature2["AggregateError"] = 1)] = "AggregateError";
+  Feature2[(Feature2["ArrowFunction"] = 2)] = "ArrowFunction";
+  Feature2[(Feature2["ErrorPrototypeStack"] = 4)] = "ErrorPrototypeStack";
+  Feature2[(Feature2["ObjectAssign"] = 8)] = "ObjectAssign";
+  Feature2[(Feature2["BigIntTypedArray"] = 16)] = "BigIntTypedArray";
+  Feature2[(Feature2["RegExp"] = 32)] = "RegExp";
   return Feature2;
 })(Feature || {});
 var ALL_ENABLED = 1 | 2 | 4 | 8 | 16 | 32;
@@ -23,58 +23,45 @@ var SYM_TO_PRIMITIVE = Symbol.toPrimitive;
 var SYM_TO_STRING_TAG = Symbol.toStringTag;
 var SYM_UNSCOPABLES = Symbol.unscopables;
 var SYMBOL_STRING = {
-  [
-    0
+  [0]:
     /* AsyncIterator */
-  ]: "Symbol.asyncIterator",
-  [
-    1
+    "Symbol.asyncIterator",
+  [1]:
     /* HasInstance */
-  ]: "Symbol.hasInstance",
-  [
-    2
+    "Symbol.hasInstance",
+  [2]:
     /* IsConcatSpreadable */
-  ]: "Symbol.isConcatSpreadable",
-  [
-    3
+    "Symbol.isConcatSpreadable",
+  [3]:
     /* Iterator */
-  ]: "Symbol.iterator",
-  [
-    4
+    "Symbol.iterator",
+  [4]:
     /* Match */
-  ]: "Symbol.match",
-  [
-    5
+    "Symbol.match",
+  [5]:
     /* MatchAll */
-  ]: "Symbol.matchAll",
-  [
-    6
+    "Symbol.matchAll",
+  [6]:
     /* Replace */
-  ]: "Symbol.replace",
-  [
-    7
+    "Symbol.replace",
+  [7]:
     /* Search */
-  ]: "Symbol.search",
-  [
-    8
+    "Symbol.search",
+  [8]:
     /* Species */
-  ]: "Symbol.species",
-  [
-    9
+    "Symbol.species",
+  [9]:
     /* Split */
-  ]: "Symbol.split",
-  [
-    10
+    "Symbol.split",
+  [10]:
     /* ToPrimitive */
-  ]: "Symbol.toPrimitive",
-  [
-    11
+    "Symbol.toPrimitive",
+  [11]:
     /* ToStringTag */
-  ]: "Symbol.toStringTag",
-  [
-    12
+    "Symbol.toStringTag",
+  [12]:
     /* Unscopables */
-  ]: "Symbol.unscopables"
+    "Symbol.unscopables",
 };
 var INV_SYMBOL_REF = {
   [SYM_ASYNC_ITERATOR]: 0,
@@ -89,191 +76,148 @@ var INV_SYMBOL_REF = {
   [SYM_SPLIT]: 9,
   [SYM_TO_PRIMITIVE]: 10,
   [SYM_TO_STRING_TAG]: 11,
-  [SYM_UNSCOPABLES]: 12
+  [SYM_UNSCOPABLES]: 12,
   /* Unscopables */
 };
 var SYMBOL_REF = {
-  [
-    0
+  [0]:
     /* AsyncIterator */
-  ]: SYM_ASYNC_ITERATOR,
-  [
-    1
+    SYM_ASYNC_ITERATOR,
+  [1]:
     /* HasInstance */
-  ]: SYM_HAS_INSTANCE,
-  [
-    2
+    SYM_HAS_INSTANCE,
+  [2]:
     /* IsConcatSpreadable */
-  ]: SYM_IS_CONCAT_SPREADABLE,
-  [
-    3
+    SYM_IS_CONCAT_SPREADABLE,
+  [3]:
     /* Iterator */
-  ]: SYM_ITERATOR,
-  [
-    4
+    SYM_ITERATOR,
+  [4]:
     /* Match */
-  ]: SYM_MATCH,
-  [
-    5
+    SYM_MATCH,
+  [5]:
     /* MatchAll */
-  ]: SYM_MATCH_ALL,
-  [
-    6
+    SYM_MATCH_ALL,
+  [6]:
     /* Replace */
-  ]: SYM_REPLACE,
-  [
-    7
+    SYM_REPLACE,
+  [7]:
     /* Search */
-  ]: SYM_SEARCH,
-  [
-    8
+    SYM_SEARCH,
+  [8]:
     /* Species */
-  ]: SYM_SPECIES,
-  [
-    9
+    SYM_SPECIES,
+  [9]:
     /* Split */
-  ]: SYM_SPLIT,
-  [
-    10
+    SYM_SPLIT,
+  [10]:
     /* ToPrimitive */
-  ]: SYM_TO_PRIMITIVE,
-  [
-    11
+    SYM_TO_PRIMITIVE,
+  [11]:
     /* ToStringTag */
-  ]: SYM_TO_STRING_TAG,
-  [
-    12
+    SYM_TO_STRING_TAG,
+  [12]:
     /* Unscopables */
-  ]: SYM_UNSCOPABLES
+    SYM_UNSCOPABLES,
 };
 var CONSTANT_STRING = {
-  [
-    2
+  [2]:
     /* True */
-  ]: "!0",
-  [
-    3
+    "!0",
+  [3]:
     /* False */
-  ]: "!1",
-  [
-    1
+    "!1",
+  [1]:
     /* Undefined */
-  ]: "void 0",
-  [
-    0
+    "void 0",
+  [0]:
     /* Null */
-  ]: "null",
-  [
-    4
+    "null",
+  [4]:
     /* NegZero */
-  ]: "-0",
-  [
-    5
+    "-0",
+  [5]:
     /* Inf */
-  ]: "1/0",
-  [
-    6
+    "1/0",
+  [6]:
     /* NegInf */
-  ]: "-1/0",
-  [
-    7
+    "-1/0",
+  [7]:
     /* Nan */
-  ]: "0/0"
+    "0/0",
 };
 var NIL = void 0;
 var CONSTANT_VAL = {
-  [
-    2
+  [2]:
     /* True */
-  ]: true,
-  [
-    3
+    true,
+  [3]:
     /* False */
-  ]: false,
-  [
-    1
+    false,
+  [1]:
     /* Undefined */
-  ]: NIL,
-  [
-    0
+    NIL,
+  [0]:
     /* Null */
-  ]: null,
-  [
-    4
+    null,
+  [4]:
     /* NegZero */
-  ]: -0,
-  [
-    5
+    -0,
+  [5]:
     /* Inf */
-  ]: Number.POSITIVE_INFINITY,
-  [
-    6
+    Number.POSITIVE_INFINITY,
+  [6]:
     /* NegInf */
-  ]: Number.NEGATIVE_INFINITY,
-  [
-    7
+    Number.NEGATIVE_INFINITY,
+  [7]:
     /* Nan */
-  ]: Number.NaN
+    Number.NaN,
 };
 var ERROR_CONSTRUCTOR_STRING = {
-  [
-    0
+  [0]:
     /* Error */
-  ]: "Error",
-  [
-    1
+    "Error",
+  [1]:
     /* EvalError */
-  ]: "EvalError",
-  [
-    2
+    "EvalError",
+  [2]:
     /* RangeError */
-  ]: "RangeError",
-  [
-    3
+    "RangeError",
+  [3]:
     /* ReferenceError */
-  ]: "ReferenceError",
-  [
-    4
+    "ReferenceError",
+  [4]:
     /* SyntaxError */
-  ]: "SyntaxError",
-  [
-    5
+    "SyntaxError",
+  [5]:
     /* TypeError */
-  ]: "TypeError",
-  [
-    6
+    "TypeError",
+  [6]:
     /* URIError */
-  ]: "URIError"
+    "URIError",
 };
 var ERROR_CONSTRUCTOR = {
-  [
-    0
+  [0]:
     /* Error */
-  ]: Error,
-  [
-    1
+    Error,
+  [1]:
     /* EvalError */
-  ]: EvalError,
-  [
-    2
+    EvalError,
+  [2]:
     /* RangeError */
-  ]: RangeError,
-  [
-    3
+    RangeError,
+  [3]:
     /* ReferenceError */
-  ]: ReferenceError,
-  [
-    4
+    ReferenceError,
+  [4]:
     /* SyntaxError */
-  ]: SyntaxError,
-  [
-    5
+    SyntaxError,
+  [5]:
     /* TypeError */
-  ]: TypeError,
-  [
-    6
+    TypeError,
+  [6]:
     /* URIError */
-  ]: URIError
+    URIError,
 };
 function createSerovalNode(t, i, s, c, m, p, e, a, f, b, o, l) {
   return {
@@ -288,55 +232,42 @@ function createSerovalNode(t, i, s, c, m, p, e, a, f, b, o, l) {
     f,
     b,
     o,
-    l
+    l,
   };
 }
 function createConstantNode(value) {
-  return createSerovalNode(
-    2,
-    NIL,
-    value,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(2, NIL, value, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL);
 }
 var TRUE_NODE = createConstantNode(
-  2
+  2,
   /* True */
 );
 var FALSE_NODE = createConstantNode(
-  3
+  3,
   /* False */
 );
 var UNDEFINED_NODE = createConstantNode(
-  1
+  1,
   /* Undefined */
 );
 var NULL_NODE = createConstantNode(
-  0
+  0,
   /* Null */
 );
 var NEG_ZERO_NODE = createConstantNode(
-  4
+  4,
   /* NegZero */
 );
 var INFINITY_NODE = createConstantNode(
-  5
+  5,
   /* Inf */
 );
 var NEG_INFINITY_NODE = createConstantNode(
-  6
+  6,
   /* NegInf */
 );
 var NAN_NODE = createConstantNode(
-  7
+  7,
   /* Nan */
 );
 function serializeChar(str) {
@@ -410,10 +341,7 @@ function deserializeReplacer(str) {
   }
 }
 function deserializeString(str) {
-  return str.replace(
-    /(\\\\|\\"|\\n|\\r|\\b|\\t|\\f|\\u2028|\\u2029|\\x3C)/g,
-    deserializeReplacer
-  );
+  return str.replace(/(\\\\|\\"|\\n|\\r|\\b|\\t|\\f|\\u2028|\\u2029|\\x3C)/g, deserializeReplacer);
 }
 var REFERENCES_KEY = "__SEROVAL_REFS__";
 var GLOBAL_CONTEXT_REFERENCES = "$R";
@@ -422,9 +350,7 @@ function getCrossReferenceHeader(id) {
   if (id == null) {
     return `${GLOBAL_CONTEXT_R}=${GLOBAL_CONTEXT_R}||[]`;
   }
-  return `(${GLOBAL_CONTEXT_R}=${GLOBAL_CONTEXT_R}||{})["${serializeString(
-    id
-  )}"]=[]`;
+  return `(${GLOBAL_CONTEXT_R}=${GLOBAL_CONTEXT_R}||{})["${serializeString(id)}"]=[]`;
 }
 var REFERENCE = /* @__PURE__ */ new Map();
 var INV_REFERENCE = /* @__PURE__ */ new Map();
@@ -456,28 +382,28 @@ if (typeof globalThis !== "undefined") {
     value: INV_REFERENCE,
     configurable: true,
     writable: false,
-    enumerable: false
+    enumerable: false,
   });
 } else if (typeof window !== "undefined") {
   Object.defineProperty(window, REFERENCES_KEY, {
     value: INV_REFERENCE,
     configurable: true,
     writable: false,
-    enumerable: false
+    enumerable: false,
   });
 } else if (typeof self !== "undefined") {
   Object.defineProperty(self, REFERENCES_KEY, {
     value: INV_REFERENCE,
     configurable: true,
     writable: false,
-    enumerable: false
+    enumerable: false,
   });
 } else if (typeof global !== "undefined") {
   Object.defineProperty(global, REFERENCES_KEY, {
     value: INV_REFERENCE,
     configurable: true,
     writable: false,
-    enumerable: false
+    enumerable: false,
   });
 }
 function getErrorConstructor(error) {
@@ -555,20 +481,7 @@ function createNumberNode(value) {
   if (Object.is(value, -0)) {
     return NEG_ZERO_NODE;
   }
-  return createSerovalNode(
-    0,
-    NIL,
-    value,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(0, NIL, value, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL);
 }
 function createStringNode(value) {
   return createSerovalNode(
@@ -583,40 +496,14 @@ function createStringNode(value) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createBigIntNode(current) {
-  return createSerovalNode(
-    3,
-    NIL,
-    "" + current,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(3, NIL, "" + current, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL);
 }
 function createIndexedValueNode(id) {
-  return createSerovalNode(
-    4,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(4, id, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL);
 }
 function createDateNode(id, current) {
   const timestamp = current.valueOf();
@@ -632,7 +519,7 @@ function createDateNode(id, current) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createRegExpNode(id, current) {
@@ -648,7 +535,7 @@ function createRegExpNode(id, current) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createWKSymbolNode(id, current) {
@@ -664,7 +551,7 @@ function createWKSymbolNode(id, current) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createReferenceNode(id, ref) {
@@ -680,7 +567,7 @@ function createReferenceNode(id, ref) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createPluginNode(id, tag, value) {
@@ -696,7 +583,7 @@ function createPluginNode(id, tag, value) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createArrayNode(id, current, parsedItems) {
@@ -712,24 +599,11 @@ function createArrayNode(id, current, parsedItems) {
     NIL,
     NIL,
     getObjectFlag(current),
-    NIL
+    NIL,
   );
 }
 function createBoxedNode(id, boxed) {
-  return createSerovalNode(
-    21,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    boxed,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(21, id, NIL, NIL, NIL, NIL, NIL, NIL, boxed, NIL, NIL, NIL);
 }
 function createTypedArrayNode(id, current, buffer) {
   return createSerovalNode(
@@ -744,7 +618,7 @@ function createTypedArrayNode(id, current, buffer) {
     buffer,
     current.byteOffset,
     NIL,
-    current.length
+    current.length,
   );
 }
 function createBigIntTypedArrayNode(id, current, buffer) {
@@ -760,7 +634,7 @@ function createBigIntTypedArrayNode(id, current, buffer) {
     buffer,
     current.byteOffset,
     NIL,
-    current.byteLength
+    current.byteLength,
   );
 }
 function createDataViewNode(id, current, buffer) {
@@ -776,7 +650,7 @@ function createDataViewNode(id, current, buffer) {
     buffer,
     current.byteOffset,
     NIL,
-    current.byteLength
+    current.byteLength,
   );
 }
 function createErrorNode(id, current, options) {
@@ -792,7 +666,7 @@ function createErrorNode(id, current, options) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createAggregateErrorNode(id, current, options) {
@@ -808,136 +682,32 @@ function createAggregateErrorNode(id, current, options) {
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createSetNode(id, items) {
-  return createSerovalNode(
-    7,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    items,
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(7, id, NIL, NIL, NIL, NIL, NIL, items, NIL, NIL, NIL, NIL);
 }
 function createIteratorFactoryInstanceNode(factory, items) {
-  return createSerovalNode(
-    28,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    [factory, items],
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(28, NIL, NIL, NIL, NIL, NIL, NIL, [factory, items], NIL, NIL, NIL, NIL);
 }
 function createAsyncIteratorFactoryInstanceNode(factory, items) {
-  return createSerovalNode(
-    30,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    [factory, items],
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(30, NIL, NIL, NIL, NIL, NIL, NIL, [factory, items], NIL, NIL, NIL, NIL);
 }
 function createStreamConstructorNode(id, factory, sequence) {
-  return createSerovalNode(
-    31,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    sequence,
-    factory,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(31, id, NIL, NIL, NIL, NIL, NIL, sequence, factory, NIL, NIL, NIL);
 }
 function createStreamNextNode(id, parsed) {
-  return createSerovalNode(
-    32,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    parsed,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(32, id, NIL, NIL, NIL, NIL, NIL, NIL, parsed, NIL, NIL, NIL);
 }
 function createStreamThrowNode(id, parsed) {
-  return createSerovalNode(
-    33,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    parsed,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(33, id, NIL, NIL, NIL, NIL, NIL, NIL, parsed, NIL, NIL, NIL);
 }
 function createStreamReturnNode(id, parsed) {
-  return createSerovalNode(
-    34,
-    id,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    parsed,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(34, id, NIL, NIL, NIL, NIL, NIL, NIL, parsed, NIL, NIL, NIL);
 }
 function createSequenceNode(id, sequence, throwAt, doneAt) {
-  return createSerovalNode(
-    35,
-    id,
-    throwAt,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    sequence,
-    NIL,
-    NIL,
-    NIL,
-    doneAt
-  );
+  return createSerovalNode(35, id, throwAt, NIL, NIL, NIL, NIL, sequence, NIL, NIL, NIL, doneAt);
 }
 var { toString: objectToString } = Object.prototype;
 function getErrorMessageDev(type, cause) {
@@ -956,7 +726,8 @@ ${cause.message}
 
 For more information, please check the "cause" property of this error.`;
 }
-var getErrorMessage = (type, cause) => false ? getErrorMessageProd(type) : getErrorMessageDev(type, cause);
+var getErrorMessage = (type, cause) =>
+  false ? getErrorMessageProd(type) : getErrorMessageDev(type, cause);
 var SerovalError = class extends Error {
   constructor(type, cause) {
     super(getErrorMessage(type, cause));
@@ -981,14 +752,16 @@ var SerovalDeserializationError = class extends SerovalError {
 var SerovalUnsupportedTypeError = class extends Error {
   constructor(value) {
     super(
-      false ? getSpecificErrorMessage(
-        1
-        /* UnsupportedType */
-      ) : `The value ${objectToString.call(value)} of type "${typeof value}" cannot be parsed/serialized.
+      false
+        ? getSpecificErrorMessage(
+            1,
+            /* UnsupportedType */
+          )
+        : `The value ${objectToString.call(value)} of type "${typeof value}" cannot be parsed/serialized.
       
 There are few workarounds for this problem:
 - Transform the value in a way that it can be serialized.
-- If the reference is present on multiple runtimes (isomorphic), you can use the Reference API to map the references.`
+- If the reference is present on multiple runtimes (isomorphic), you can use the Reference API to map the references.`,
     );
     this.value = value;
   }
@@ -996,40 +769,52 @@ There are few workarounds for this problem:
 var SerovalUnsupportedNodeError = class extends Error {
   constructor(node) {
     super(
-      false ? getSpecificErrorMessage(
-        2
-        /* UnsupportedNode */
-      ) : 'Unsupported node type "' + node.t + '".'
+      false
+        ? getSpecificErrorMessage(
+            2,
+            /* UnsupportedNode */
+          )
+        : 'Unsupported node type "' + node.t + '".',
     );
   }
 };
 var SerovalMissingPluginError = class extends Error {
   constructor(tag) {
     super(
-      false ? getSpecificErrorMessage(
-        3
-        /* MissingPlugin */
-      ) : 'Missing plugin for tag "' + tag + '".'
+      false
+        ? getSpecificErrorMessage(
+            3,
+            /* MissingPlugin */
+          )
+        : 'Missing plugin for tag "' + tag + '".',
     );
   }
 };
 var SerovalMissingInstanceError = class extends Error {
   constructor(tag) {
     super(
-      false ? getSpecificErrorMessage(
-        4
-        /* MissingInstance */
-      ) : 'Missing "' + tag + '" instance.'
+      false
+        ? getSpecificErrorMessage(
+            4,
+            /* MissingInstance */
+          )
+        : 'Missing "' + tag + '" instance.',
     );
   }
 };
 var SerovalMissingReferenceError = class extends Error {
   constructor(value) {
     super(
-      false ? getSpecificErrorMessage(
-        5
-        /* MissingReference */
-      ) : 'Missing reference for the value "' + objectToString.call(value) + '" of type "' + typeof value + '"'
+      false
+        ? getSpecificErrorMessage(
+            5,
+            /* MissingReference */
+          )
+        : 'Missing reference for the value "' +
+            objectToString.call(value) +
+            '" of type "' +
+            typeof value +
+            '"',
     );
     this.value = value;
   }
@@ -1037,50 +822,60 @@ var SerovalMissingReferenceError = class extends Error {
 var SerovalMissingReferenceForIdError = class extends Error {
   constructor(id) {
     super(
-      false ? getSpecificErrorMessage(
-        6
-        /* MissingReferenceForId */
-      ) : 'Missing reference for id "' + serializeString(id) + '"'
+      false
+        ? getSpecificErrorMessage(
+            6,
+            /* MissingReferenceForId */
+          )
+        : 'Missing reference for id "' + serializeString(id) + '"',
     );
   }
 };
 var SerovalUnknownTypedArrayError = class extends Error {
   constructor(name) {
     super(
-      false ? getSpecificErrorMessage(
-        7
-        /* UnknownTypedArray */
-      ) : 'Unknown TypedArray "' + name + '"'
+      false
+        ? getSpecificErrorMessage(
+            7,
+            /* UnknownTypedArray */
+          )
+        : 'Unknown TypedArray "' + name + '"',
     );
   }
 };
 var SerovalMalformedNodeError = class extends Error {
   constructor(node) {
     super(
-      false ? getSpecificErrorMessage(
-        8
-        /* MalformedNode */
-      ) : 'Malformed node type "' + node.t + '".'
+      false
+        ? getSpecificErrorMessage(
+            8,
+            /* MalformedNode */
+          )
+        : 'Malformed node type "' + node.t + '".',
     );
   }
 };
 var SerovalConflictedNodeIdError = class extends Error {
   constructor(node) {
     super(
-      false ? getSpecificErrorMessage(
-        9
-        /* ConflictedNodeId */
-      ) : 'Conflicted node id "' + node.i + '".'
+      false
+        ? getSpecificErrorMessage(
+            9,
+            /* ConflictedNodeId */
+          )
+        : 'Conflicted node id "' + node.i + '".',
     );
   }
 };
 var SerovalDepthLimitError = class extends Error {
   constructor(limit) {
     super(
-      false ? getSpecificErrorMessage(
-        9
-        /* ConflictedNodeId */
-      ) : "Depth limit of " + limit + " reached"
+      false
+        ? getSpecificErrorMessage(
+            9,
+            /* ConflictedNodeId */
+          )
+        : "Depth limit of " + limit + " reached",
     );
   }
 };
@@ -1094,7 +889,7 @@ var PROMISE_CONSTRUCTOR = () => {
   const resolver = {
     p: 0,
     s: 0,
-    f: 0
+    f: 0,
   };
   resolver.p = new Promise((resolve, reject) => {
     resolver.s = resolve;
@@ -1177,7 +972,7 @@ var STREAM_CONSTRUCTOR = () => {
         success = true;
         listeners.length = 0;
       }
-    }
+    },
   };
 };
 var SERIALIZED_STREAM_CONSTRUCTOR = STREAM_CONSTRUCTOR.toString();
@@ -1189,7 +984,7 @@ var ITERATOR_CONSTRUCTOR = (symbol) => (sequence) => () => {
       if (index > sequence.d) {
         return {
           done: true,
-          value: void 0
+          value: void 0,
         };
       }
       const currentIndex = index++;
@@ -1199,9 +994,9 @@ var ITERATOR_CONSTRUCTOR = (symbol) => (sequence) => () => {
       }
       return {
         done: currentIndex === sequence.d,
-        value: data
+        value: data,
       };
-    }
+    },
   };
   return instance;
 };
@@ -1216,7 +1011,7 @@ var ASYNC_ITERATOR_CONSTRUCTOR = (symbol, createPromise) => (stream) => () => {
     for (; i < len; i++) {
       pending[i].s({
         done: true,
-        value: void 0
+        value: void 0,
       });
     }
   };
@@ -1246,7 +1041,7 @@ var ASYNC_ITERATOR_CONSTRUCTOR = (symbol, createPromise) => (stream) => () => {
       finalize();
       doneAt = buffer.length;
       buffer.push(value);
-    }
+    },
   });
   const instance = {
     [symbol]: () => instance,
@@ -1260,13 +1055,13 @@ var ASYNC_ITERATOR_CONSTRUCTOR = (symbol, createPromise) => (stream) => () => {
         }
         return {
           done: false,
-          value: buffer[index2]
+          value: buffer[index2],
         };
       }
       if (count > doneAt) {
         return {
           done: true,
-          value: void 0
+          value: void 0,
         };
       }
       const index = count++;
@@ -1274,7 +1069,7 @@ var ASYNC_ITERATOR_CONSTRUCTOR = (symbol, createPromise) => (stream) => () => {
       if (index !== doneAt) {
         return {
           done: false,
-          value
+          value,
         };
       }
       if (isThrow) {
@@ -1282,9 +1077,9 @@ var ASYNC_ITERATOR_CONSTRUCTOR = (symbol, createPromise) => (stream) => () => {
       }
       return {
         done: true,
-        value
+        value,
       };
-    }
+    },
   };
   return instance;
 };
@@ -1307,7 +1102,7 @@ function createSequence(values, throwAt, doneAt) {
     __SEROVAL_SEQUENCE__: true,
     v: values,
     t: throwAt,
-    d: doneAt
+    d: doneAt,
   };
 }
 function createSequenceFromIterable(source) {
@@ -1337,56 +1132,44 @@ function sequenceToIterator(sequence) {
 var ITERATOR = {};
 var ASYNC_ITERATOR = {};
 var SPECIAL_REFS = {
-  [
-    0
+  [0]:
     /* MapSentinel */
-  ]: {},
-  [
-    1
+    {},
+  [1]:
     /* PromiseConstructor */
-  ]: {},
-  [
-    2
+    {},
+  [2]:
     /* PromiseSuccess */
-  ]: {},
-  [
-    3
+    {},
+  [3]:
     /* PromiseFailure */
-  ]: {},
-  [
-    4
+    {},
+  [4]:
     /* StreamConstructor */
-  ]: {},
-  [
-    5
+    {},
+  [5]:
     /* ArrayBufferConstructor */
-  ]: {}
+    {},
 };
 var SPECIAL_REF_STRING = {
-  [
-    0
+  [0]:
     /* MapSentinel */
-  ]: "[]",
-  [
-    1
+    "[]",
+  [1]:
     /* PromiseConstructor */
-  ]: SERIALIZED_PROMISE_CONSTRUCTOR,
-  [
-    2
+    SERIALIZED_PROMISE_CONSTRUCTOR,
+  [2]:
     /* PromiseSuccess */
-  ]: SERIALIZED_PROMISE_SUCCESS,
-  [
-    3
+    SERIALIZED_PROMISE_SUCCESS,
+  [3]:
     /* PromiseFailure */
-  ]: SERIALIZED_PROMISE_FAILURE,
-  [
-    4
+    SERIALIZED_PROMISE_FAILURE,
+  [4]:
     /* StreamConstructor */
-  ]: SERIALIZED_STREAM_CONSTRUCTOR,
-  [
-    5
+    SERIALIZED_STREAM_CONSTRUCTOR,
+  [5]:
     /* ArrayBufferConstructor */
-  ]: SERIALIZED_ARRAY_BUFFER_CONSTRUCTOR
+    SERIALIZED_ARRAY_BUFFER_CONSTRUCTOR,
 };
 function isStream(value) {
   return "__SEROVAL_STREAM__" in value;
@@ -1410,18 +1193,12 @@ function createStreamFromAsyncIterable(iterable) {
       stream.throw(error);
     }
   }
-  push().catch(() => {
-  });
+  push().catch(() => {});
   return stream;
 }
-var createAsyncIterable = ASYNC_ITERATOR_CONSTRUCTOR(
-  SYM_ASYNC_ITERATOR,
-  PROMISE_CONSTRUCTOR
-);
+var createAsyncIterable = ASYNC_ITERATOR_CONSTRUCTOR(SYM_ASYNC_ITERATOR, PROMISE_CONSTRUCTOR);
 function streamToAsyncIterable(stream) {
-  return createAsyncIterable(
-    stream
-  );
+  return createAsyncIterable(stream);
 }
 async function promiseToResult(current) {
   try {
@@ -1437,7 +1214,7 @@ function createBaseParserContext(mode, options) {
     marked: /* @__PURE__ */ new Set(),
     features: ALL_ENABLED ^ (options.disabledFeatures || 0),
     refs: options.refs || /* @__PURE__ */ new Map(),
-    depthLimit: options.depthLimit || 1e3
+    depthLimit: options.depthLimit || 1e3,
   };
 }
 function markParserRef(ctx, id) {
@@ -1454,12 +1231,12 @@ function getNodeForIndexedValue(ctx, current) {
     markParserRef(ctx, registeredId);
     return {
       type: 1,
-      value: createIndexedValueNode(registeredId)
+      value: createIndexedValueNode(registeredId),
     };
   }
   return {
     type: 0,
-    value: createIndexForValue(ctx, current)
+    value: createIndexForValue(ctx, current),
   };
 }
 function getReferenceNode(ctx, current) {
@@ -1470,7 +1247,7 @@ function getReferenceNode(ctx, current) {
   if (hasReferenceID(current)) {
     return {
       type: 2,
-      value: createReferenceNode(indexed.value, current)
+      value: createReferenceNode(indexed.value, current),
     };
   }
   return indexed;
@@ -1490,20 +1267,7 @@ function parseSpecialReference(ctx, ref) {
   if (result.type === 1) {
     return result.value;
   }
-  return createSerovalNode(
-    26,
-    result.value,
-    ref,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL,
-    NIL
-  );
+  return createSerovalNode(26, result.value, ref, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL, NIL);
 }
 function parseIteratorFactory(ctx) {
   const result = getNodeForIndexedValue(ctx, ITERATOR);
@@ -1522,7 +1286,7 @@ function parseIteratorFactory(ctx) {
     parseWellKnownSymbol(ctx, SYM_ITERATOR),
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function parseAsyncIteratorFactory(ctx) {
@@ -1541,15 +1305,15 @@ function parseAsyncIteratorFactory(ctx) {
     [
       parseSpecialReference(
         ctx,
-        1
+        1,
         /* PromiseConstructor */
       ),
-      parseWellKnownSymbol(ctx, SYM_ASYNC_ITERATOR)
+      parseWellKnownSymbol(ctx, SYM_ASYNC_ITERATOR),
     ],
     NIL,
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createObjectNode(id, current, empty, record) {
@@ -1565,7 +1329,7 @@ function createObjectNode(id, current, empty, record) {
     NIL,
     NIL,
     getObjectFlag(current),
-    NIL
+    NIL,
   );
 }
 function createMapNode(ctx, id, k, v) {
@@ -1580,12 +1344,12 @@ function createMapNode(ctx, id, k, v) {
     NIL,
     parseSpecialReference(
       ctx,
-      0
+      0,
       /* MapSentinel */
     ),
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createPromiseConstructorNode(ctx, id, resolver) {
@@ -1600,12 +1364,12 @@ function createPromiseConstructorNode(ctx, id, resolver) {
     NIL,
     parseSpecialReference(
       ctx,
-      1
+      1,
       /* PromiseConstructor */
     ),
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createArrayBufferNode(ctx, id, current) {
@@ -1625,18 +1389,18 @@ function createArrayBufferNode(ctx, id, current) {
     NIL,
     parseSpecialReference(
       ctx,
-      5
+      5,
       /* ArrayBufferConstructor */
     ),
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function createAsyncParserContext(mode, options) {
   return {
     base: createBaseParserContext(mode, options),
-    child: void 0
+    child: void 0,
   };
 }
 var AsyncParsePluginContext = class {
@@ -1675,14 +1439,8 @@ async function parseProperties(ctx, depth, properties) {
     valueNodes.push(
       createIteratorFactoryInstanceNode(
         parseIteratorFactory(ctx.base),
-        await parseAsync(
-          ctx,
-          depth,
-          createSequenceFromIterable(
-            properties
-          )
-        )
-      )
+        await parseAsync(ctx, depth, createSequenceFromIterable(properties)),
+      ),
     );
   }
   if (SYM_ASYNC_ITERATOR in properties) {
@@ -1690,14 +1448,8 @@ async function parseProperties(ctx, depth, properties) {
     valueNodes.push(
       createAsyncIteratorFactoryInstanceNode(
         parseAsyncIteratorFactory(ctx.base),
-        await parseAsync(
-          ctx,
-          depth,
-          createStreamFromAsyncIterable(
-            properties
-          )
-        )
-      )
+        await parseAsync(ctx, depth, createStreamFromAsyncIterable(properties)),
+      ),
     );
   }
   if (SYM_TO_STRING_TAG in properties) {
@@ -1706,61 +1458,38 @@ async function parseProperties(ctx, depth, properties) {
   }
   if (SYM_IS_CONCAT_SPREADABLE in properties) {
     keyNodes.push(parseWellKnownSymbol(ctx.base, SYM_IS_CONCAT_SPREADABLE));
-    valueNodes.push(
-      properties[SYM_IS_CONCAT_SPREADABLE] ? TRUE_NODE : FALSE_NODE
-    );
+    valueNodes.push(properties[SYM_IS_CONCAT_SPREADABLE] ? TRUE_NODE : FALSE_NODE);
   }
   return {
     k: keyNodes,
-    v: valueNodes
+    v: valueNodes,
   };
 }
 async function parsePlainObject(ctx, depth, id, current, empty) {
-  return createObjectNode(
-    id,
-    current,
-    empty,
-    await parseProperties(ctx, depth, current)
-  );
+  return createObjectNode(id, current, empty, await parseProperties(ctx, depth, current));
 }
 async function parseBoxed(ctx, depth, id, current) {
   return createBoxedNode(id, await parseAsync(ctx, depth, current.valueOf()));
 }
 async function parseTypedArray(ctx, depth, id, current) {
-  return createTypedArrayNode(
-    id,
-    current,
-    await parseAsync(ctx, depth, current.buffer)
-  );
+  return createTypedArrayNode(id, current, await parseAsync(ctx, depth, current.buffer));
 }
 async function parseBigIntTypedArray(ctx, depth, id, current) {
-  return createBigIntTypedArrayNode(
-    id,
-    current,
-    await parseAsync(ctx, depth, current.buffer)
-  );
+  return createBigIntTypedArrayNode(id, current, await parseAsync(ctx, depth, current.buffer));
 }
 async function parseDataView(ctx, depth, id, current) {
-  return createDataViewNode(
-    id,
-    current,
-    await parseAsync(ctx, depth, current.buffer)
-  );
+  return createDataViewNode(id, current, await parseAsync(ctx, depth, current.buffer));
 }
 async function parseError(ctx, depth, id, current) {
   const options = getErrorOptions(current, ctx.base.features);
-  return createErrorNode(
-    id,
-    current,
-    options ? await parseProperties(ctx, depth, options) : NIL
-  );
+  return createErrorNode(id, current, options ? await parseProperties(ctx, depth, options) : NIL);
 }
 async function parseAggregateError(ctx, depth, id, current) {
   const options = getErrorOptions(current, ctx.base.features);
   return createAggregateErrorNode(
     id,
     current,
-    options ? await parseProperties(ctx, depth, options) : NIL
+    options ? await parseProperties(ctx, depth, options) : NIL,
   );
 }
 async function parseMap(ctx, depth, id, current) {
@@ -1788,13 +1517,9 @@ async function parsePlugin(ctx, depth, id, current) {
         return createPluginNode(
           id,
           plugin.tag,
-          await plugin.parse.async(
-            current,
-            new AsyncParsePluginContext(ctx, depth),
-            {
-              id
-            }
-          )
+          await plugin.parse.async(current, new AsyncParsePluginContext(ctx, depth), {
+            id,
+          }),
         );
       }
     }
@@ -1815,7 +1540,7 @@ async function parsePromise(ctx, depth, id, current) {
     await parseAsync(ctx, depth, result),
     NIL,
     NIL,
-    NIL
+    NIL,
   );
 }
 function parseStreamHandle(depth, id, current, resolve, reject) {
@@ -1830,7 +1555,7 @@ function parseStreamHandle(depth, id, current, resolve, reject) {
         (data) => {
           reject(data);
           cleanup();
-        }
+        },
       );
     },
     throw: (value) => {
@@ -1844,7 +1569,7 @@ function parseStreamHandle(depth, id, current, resolve, reject) {
         (data) => {
           reject(data);
           cleanup();
-        }
+        },
       );
     },
     return: (value) => {
@@ -1858,9 +1583,9 @@ function parseStreamHandle(depth, id, current, resolve, reject) {
         (data) => {
           reject(data);
           cleanup();
-        }
+        },
       );
-    }
+    },
   });
 }
 async function parseStream(ctx, depth, id, current) {
@@ -1868,12 +1593,10 @@ async function parseStream(ctx, depth, id, current) {
     id,
     parseSpecialReference(
       ctx.base,
-      4
+      4,
       /* StreamConstructor */
     ),
-    await new Promise(
-      parseStreamHandle.bind(ctx, depth, id, current)
-    )
+    await new Promise(parseStreamHandle.bind(ctx, depth, id, current)),
   );
 }
 async function parseSequence(ctx, depth, id, current) {
@@ -1895,11 +1618,7 @@ async function parseObjectAsync(ctx, depth, id, current) {
   }
   const currentClass = current.constructor;
   if (currentClass === OpaqueReference) {
-    return parseAsync(
-      ctx,
-      depth,
-      current.replacement
-    );
+    return parseAsync(ctx, depth, current.replacement);
   }
   const parsed = await parsePlugin(ctx, depth, id, current);
   if (parsed) {
@@ -1907,21 +1626,9 @@ async function parseObjectAsync(ctx, depth, id, current) {
   }
   switch (currentClass) {
     case Object:
-      return parsePlainObject(
-        ctx,
-        depth,
-        id,
-        current,
-        false
-      );
+      return parsePlainObject(ctx, depth, id, current, false);
     case NIL:
-      return parsePlainObject(
-        ctx,
-        depth,
-        id,
-        current,
-        true
-      );
+      return parsePlainObject(ctx, depth, id, current, true);
     case Date:
       return createDateNode(id, current);
     case Error:
@@ -1938,11 +1645,7 @@ async function parseObjectAsync(ctx, depth, id, current) {
     case BigInt:
       return parseBoxed(ctx, depth, id, current);
     case ArrayBuffer:
-      return createArrayBufferNode(
-        ctx.base,
-        id,
-        current
-      );
+      return createArrayBufferNode(ctx.base, id, current);
     case Int8Array:
     case Int16Array:
     case Int32Array:
@@ -1952,21 +1655,11 @@ async function parseObjectAsync(ctx, depth, id, current) {
     case Uint8ClampedArray:
     case Float32Array:
     case Float64Array:
-      return parseTypedArray(
-        ctx,
-        depth,
-        id,
-        current
-      );
+      return parseTypedArray(ctx, depth, id, current);
     case DataView:
       return parseDataView(ctx, depth, id, current);
     case Map:
-      return parseMap(
-        ctx,
-        depth,
-        id,
-        current
-      );
+      return parseMap(ctx, depth, id, current);
     case Set:
       return parseSet(ctx, depth, id, current);
     default:
@@ -1983,23 +1676,17 @@ async function parseObjectAsync(ctx, depth, id, current) {
     switch (currentClass) {
       case BigInt64Array:
       case BigUint64Array:
-        return parseBigIntTypedArray(
-          ctx,
-          depth,
-          id,
-          current
-        );
+        return parseBigIntTypedArray(ctx, depth, id, current);
       default:
         break;
     }
   }
-  if (currentFeatures & 1 && typeof AggregateError !== "undefined" && (currentClass === AggregateError || current instanceof AggregateError)) {
-    return parseAggregateError(
-      ctx,
-      depth,
-      id,
-      current
-    );
+  if (
+    currentFeatures & 1 &&
+    typeof AggregateError !== "undefined" &&
+    (currentClass === AggregateError || current instanceof AggregateError)
+  ) {
+    return parseAggregateError(ctx, depth, id, current);
   }
   if (current instanceof Error) {
     return parseError(ctx, depth, id, current);
@@ -2035,7 +1722,9 @@ async function parseAsync(ctx, depth, current) {
     case "object": {
       if (current) {
         const ref = getReferenceNode(ctx.base, current);
-        return ref.type === 0 ? await parseObjectAsync(ctx, depth + 1, ref.value, current) : ref.value;
+        return ref.type === 0
+          ? await parseObjectAsync(ctx, depth + 1, ref.value, current)
+          : ref.value;
       }
       return NULL_NODE;
     }
@@ -2055,8 +1744,8 @@ async function parseTopAsync(ctx, current) {
   }
 }
 var SerovalMode = ((SerovalMode2) => {
-  SerovalMode2[SerovalMode2["Vanilla"] = 1] = "Vanilla";
-  SerovalMode2[SerovalMode2["Cross"] = 2] = "Cross";
+  SerovalMode2[(SerovalMode2["Vanilla"] = 1)] = "Vanilla";
+  SerovalMode2[(SerovalMode2["Cross"] = 2)] = "Cross";
   return SerovalMode2;
 })(SerovalMode || {});
 function createPlugin(plugin) {
@@ -2132,7 +1821,7 @@ function createBaseDeserializerContext(mode, options) {
     plugins: options.plugins,
     refs: options.refs || /* @__PURE__ */ new Map(),
     features: (_a = options.features) != null ? _a : ALL_ENABLED ^ (options.disabledFeatures || 0),
-    depthLimit: options.depthLimit || DEFAULT_DEPTH_LIMIT
+    depthLimit: options.depthLimit || DEFAULT_DEPTH_LIMIT,
   };
 }
 function createVanillaDeserializerContext(options) {
@@ -2141,15 +1830,15 @@ function createVanillaDeserializerContext(options) {
     base: createBaseDeserializerContext(1, options),
     child: NIL,
     state: {
-      marked: new Set(options.markedRefs)
-    }
+      marked: new Set(options.markedRefs),
+    },
   };
 }
 function createCrossDeserializerContext(options) {
   return {
     mode: 2,
     base: createBaseDeserializerContext(2, options),
-    child: NIL
+    child: NIL,
   };
 }
 var DeserializePluginContext = class {
@@ -2165,7 +1854,7 @@ function guardIndexedValue(ctx, id) {
   if (id < 0 || !Number.isFinite(id) || !Number.isInteger(id)) {
     throw new SerovalMalformedNodeError({
       t: 4,
-      i: id
+      i: id,
     });
   }
   if (ctx.refs.has(id)) {
@@ -2185,7 +1874,9 @@ function assignIndexedValueCross(ctx, id, value) {
   return value;
 }
 function assignIndexedValue(ctx, id, value) {
-  return ctx.mode === 1 ? assignIndexedValueVanilla(ctx, id, value) : assignIndexedValueCross(ctx, id, value);
+  return ctx.mode === 1
+    ? assignIndexedValueVanilla(ctx, id, value)
+    : assignIndexedValueCross(ctx, id, value);
 }
 function deserializeKnownValue(node, record, key) {
   if (Object.hasOwn(record, key)) {
@@ -2194,20 +1885,12 @@ function deserializeKnownValue(node, record, key) {
   throw new SerovalMalformedNodeError(node);
 }
 function deserializeReference(ctx, node) {
-  return assignIndexedValue(
-    ctx,
-    node.i,
-    getReference(deserializeString(node.s))
-  );
+  return assignIndexedValue(ctx, node.i, getReference(deserializeString(node.s)));
 }
 function deserializeArray(ctx, depth, node) {
   const items = node.a;
   const len = items.length;
-  const result = assignIndexedValue(
-    ctx,
-    node.i,
-    new Array(len)
-  );
+  const result = assignIndexedValue(ctx, node.i, new Array(len));
   for (let i = 0, item; i < len; i++) {
     item = items[i];
     if (item) {
@@ -2250,17 +1933,13 @@ function assignStringProperty(object, key, value) {
       value,
       configurable: true,
       enumerable: true,
-      writable: true
+      writable: true,
     });
   }
 }
 function assignProperty(ctx, depth, object, key, value) {
   if (typeof key === "string") {
-    assignStringProperty(
-      object,
-      deserializeString(key),
-      deserialize(ctx, depth, value)
-    );
+    assignStringProperty(object, deserializeString(key), deserialize(ctx, depth, value));
   } else {
     const actual = deserialize(ctx, depth, key);
     switch (typeof actual) {
@@ -2291,7 +1970,7 @@ function deserializeObject(ctx, depth, node) {
   const result = assignIndexedValue(
     ctx,
     node.i,
-    node.t === 10 ? {} : /* @__PURE__ */ Object.create(null)
+    node.t === 10 ? {} : /* @__PURE__ */ Object.create(null),
   );
   deserializeProperties(ctx, depth, node.p, result);
   applyObjectFlag(result, node.o);
@@ -2320,10 +1999,7 @@ function deserializeSet(ctx, depth, node) {
 function deserializeMap(ctx, depth, node) {
   const result = assignIndexedValue(ctx, node.i, /* @__PURE__ */ new Map());
   for (let i = 0, keys = node.e.k, vals = node.e.v, len = keys.length; i < len; i++) {
-    result.set(
-      deserialize(ctx, depth, keys[i]),
-      deserialize(ctx, depth, vals[i])
-    );
+    result.set(deserialize(ctx, depth, keys[i]), deserialize(ctx, depth, vals[i]));
   }
   return result;
 }
@@ -2334,7 +2010,7 @@ function deserializeArrayBuffer(ctx, node) {
   const result = assignIndexedValue(
     ctx,
     node.i,
-    ARRAY_BUFFER_CONSTRUCTOR(deserializeString(node.s))
+    ARRAY_BUFFER_CONSTRUCTOR(deserializeString(node.s)),
   );
   return result;
 }
@@ -2346,11 +2022,7 @@ function deserializeTypedArray(ctx, depth, node) {
   if (offset < 0 || offset > source.byteLength) {
     throw new SerovalMalformedNodeError(node);
   }
-  const result = assignIndexedValue(
-    ctx,
-    node.i,
-    new construct(source, offset, node.l)
-  );
+  const result = assignIndexedValue(ctx, node.i, new construct(source, offset, node.l));
   return result;
 }
 function deserializeDataView(ctx, depth, node) {
@@ -2360,11 +2032,7 @@ function deserializeDataView(ctx, depth, node) {
   if (offset < 0 || offset > source.byteLength) {
     throw new SerovalMalformedNodeError(node);
   }
-  const result = assignIndexedValue(
-    ctx,
-    node.i,
-    new DataView(source, offset, node.l)
-  );
+  const result = assignIndexedValue(ctx, node.i, new DataView(source, offset, node.l));
   return result;
 }
 function deserializeDictionary(ctx, depth, node, result) {
@@ -2375,20 +2043,12 @@ function deserializeDictionary(ctx, depth, node, result) {
   return result;
 }
 function deserializeAggregateError(ctx, depth, node) {
-  const result = assignIndexedValue(
-    ctx,
-    node.i,
-    new AggregateError([], deserializeString(node.m))
-  );
+  const result = assignIndexedValue(ctx, node.i, new AggregateError([], deserializeString(node.m)));
   return deserializeDictionary(ctx, depth, node, result);
 }
 function deserializeError(ctx, depth, node) {
   const construct = deserializeKnownValue(node, ERROR_CONSTRUCTOR, node.s);
-  const result = assignIndexedValue(
-    ctx,
-    node.i,
-    new construct(deserializeString(node.m))
-  );
+  const result = assignIndexedValue(ctx, node.i, new construct(deserializeString(node.m)));
   return deserializeDictionary(ctx, depth, node, result);
 }
 function deserializePromise(ctx, depth, node) {
@@ -2407,7 +2067,7 @@ function deserializeBoxed(ctx, depth, node) {
     ctx,
     node.i,
     // biome-ignore lint/style/useConsistentBuiltinInstantiation: intended
-    Object(deserialize(ctx, depth, node.f))
+    Object(deserialize(ctx, depth, node.f)),
   );
 }
 function deserializePlugin(ctx, depth, node) {
@@ -2421,8 +2081,8 @@ function deserializePlugin(ctx, depth, node) {
           ctx,
           node.i,
           plugin.deserialize(node.s, new DeserializePluginContext(ctx, depth), {
-            id: node.i
-          })
+            id: node.i,
+          }),
         );
       }
     }
@@ -2430,11 +2090,7 @@ function deserializePlugin(ctx, depth, node) {
   throw new SerovalMissingPluginError(node.c);
 }
 function deserializePromiseConstructor(ctx, node) {
-  return assignIndexedValue(
-    ctx,
-    node.i,
-    assignIndexedValue(ctx, node.s, PROMISE_CONSTRUCTOR()).p
-  );
+  return assignIndexedValue(ctx, node.i, assignIndexedValue(ctx, node.s, PROMISE_CONSTRUCTOR()).p);
 }
 function deserializePromiseResolve(ctx, depth, node) {
   const deferred = ctx.base.refs.get(node.i);
@@ -2506,11 +2162,7 @@ function deserializeAsyncIteratorFactory(ctx, depth, node) {
   return NIL;
 }
 function deserializeSequence(ctx, depth, node) {
-  const result = assignIndexedValue(
-    ctx,
-    node.i,
-    createSequence([], node.s, node.l)
-  );
+  const result = assignIndexedValue(ctx, node.i, createSequence([], node.s, node.l));
   for (let i = 0, len = node.a.length; i < len; i++) {
     result.v[i] = deserialize(ctx, depth, node.a[i]);
   }
@@ -2640,7 +2292,13 @@ function getIdentifier(index) {
 var IDENTIFIER_CHECK = /^[$A-Z_][0-9A-Z_$]*$/i;
 function isValidIdentifier(name) {
   const char = name[0];
-  return (char === "$" || char === "_" || char >= "A" && char <= "Z" || char >= "a" && char <= "z") && IDENTIFIER_CHECK.test(name);
+  return (
+    (char === "$" ||
+      char === "_" ||
+      (char >= "A" && char <= "Z") ||
+      (char >= "a" && char <= "z")) &&
+    IDENTIFIER_CHECK.test(name)
+  );
 }
 function getAssignmentExpression(assignment) {
   switch (assignment.t) {
@@ -2664,28 +2322,28 @@ function mergeAssignments(assignments) {
         t: 0,
         s: item.s,
         k: NIL,
-        v: getAssignmentExpression(current)
+        v: getAssignmentExpression(current),
       };
     } else if (item.t === 2 && item.s === prev.s) {
       current = {
         t: 2,
         s: getAssignmentExpression(current),
         k: item.k,
-        v: item.v
+        v: item.v,
       };
     } else if (item.t === 1 && item.s === prev.s) {
       current = {
         t: 1,
         s: getAssignmentExpression(current),
         k: NIL,
-        v: item.v
+        v: item.v,
       };
     } else if (item.t === 3 && item.s === prev.s) {
       current = {
         t: 3,
         s: getAssignmentExpression(current),
         k: item.k,
-        v: NIL
+        v: NIL,
       };
     } else {
       newAssignments.push(current);
@@ -2713,22 +2371,18 @@ var MAP_CONSTRUCTOR = "new Map";
 var PROMISE_RESOLVE = "Promise.resolve";
 var PROMISE_REJECT = "Promise.reject";
 var OBJECT_FLAG_CONSTRUCTOR = {
-  [
-    3
+  [3]:
     /* Frozen */
-  ]: "Object.freeze",
-  [
-    2
+    "Object.freeze",
+  [2]:
     /* Sealed */
-  ]: "Object.seal",
-  [
-    1
+    "Object.seal",
+  [1]:
     /* NonExtensible */
-  ]: "Object.preventExtensions",
-  [
-    0
+    "Object.preventExtensions",
+  [0]:
     /* None */
-  ]: NIL
+    NIL,
 };
 function createBaseSerializerContext(mode, options) {
   return {
@@ -2738,13 +2392,13 @@ function createBaseSerializerContext(mode, options) {
     marked: new Set(options.markedRefs),
     stack: [],
     flags: [],
-    assignments: []
+    assignments: [],
   };
 }
 function createVanillaSerializerState() {
   return {
     valid: /* @__PURE__ */ new Map(),
-    vars: []
+    vars: [],
   };
 }
 function createVanillaSerializerContext(options) {
@@ -2752,7 +2406,7 @@ function createVanillaSerializerContext(options) {
     mode: 1,
     base: createBaseSerializerContext(1, options),
     state: createVanillaSerializerState(),
-    child: NIL
+    child: NIL,
   };
 }
 function createCrossSerializerContext(options) {
@@ -2760,7 +2414,7 @@ function createCrossSerializerContext(options) {
     mode: 2,
     base: createBaseSerializerContext(2, options),
     state: options,
-    child: NIL
+    child: NIL,
   };
 }
 var SerializePluginContext = class {
@@ -2801,7 +2455,7 @@ function pushObjectFlag(ctx, flag, id) {
     markSerializerRef(ctx.base, id);
     ctx.base.flags.push({
       type: flag,
-      value: getRefParam(ctx, id)
+      value: getRefParam(ctx, id),
     });
   }
 }
@@ -2829,7 +2483,7 @@ function createAssignment(ctx, source, value) {
     t: 0,
     s: source,
     k: NIL,
-    v: value
+    v: value,
   });
 }
 function createAddAssignment(ctx, ref, value) {
@@ -2837,7 +2491,7 @@ function createAddAssignment(ctx, ref, value) {
     t: 1,
     s: getRefParam(ctx, ref),
     k: NIL,
-    v: value
+    v: value,
   });
 }
 function createSetAssignment(ctx, ref, key, value) {
@@ -2845,7 +2499,7 @@ function createSetAssignment(ctx, ref, key, value) {
     t: 2,
     s: getRefParam(ctx, ref),
     k: key,
-    v: value
+    v: value,
   });
 }
 function createDeleteAssignment(ctx, ref, key) {
@@ -2853,7 +2507,7 @@ function createDeleteAssignment(ctx, ref, key) {
     t: 3,
     s: getRefParam(ctx, ref),
     k: key,
-    v: NIL
+    v: NIL,
   });
 }
 function createArrayAssign(ctx, ref, index, value) {
@@ -2863,11 +2517,7 @@ function createObjectAssign(ctx, ref, key, value) {
   createAssignment(ctx.base, getRefParam(ctx, ref) + "." + key, value);
 }
 function createSequenceAssign(ctx, ref, index, value) {
-  createAssignment(
-    ctx.base,
-    getRefParam(ctx, ref) + ".v[" + index + "]",
-    value
-  );
+  createAssignment(ctx.base, getRefParam(ctx, ref) + ".v[" + index + "]", value);
 }
 function isIndexedValueInStack(ctx, node) {
   return node.t === 4 && ctx.stack.includes(node.i);
@@ -2885,12 +2535,7 @@ function serializeArrayItem(ctx, id, item, index) {
   if (item) {
     if (isIndexedValueInStack(ctx.base, item)) {
       markSerializerRef(ctx.base, id);
-      createArrayAssign(
-        ctx,
-        id,
-        index,
-        getRefParam(ctx, item.i)
-      );
+      createArrayAssign(ctx, id, index, getRefParam(ctx, item.i));
       return "";
     }
     return serialize(ctx, item);
@@ -2919,30 +2564,25 @@ function serializeArray(ctx, node) {
 function serializeProperty(ctx, source, key, val) {
   if (typeof key === "string") {
     const check = Number(key);
-    const isIdentifier = (
+    const isIdentifier =
       // Test if key is a valid positive number or JS identifier
       // so that we don't have to serialize the key and wrap with brackets
-      check >= 0 && // It's also important to consider that if the key is
-      // indeed numeric, we need to make sure that when
-      // converted back into a string, it's still the same
-      // to the original key. This allows us to differentiate
-      // keys that has numeric formats but in a different
-      // format, which can cause unintentional key declaration
-      // Example: { 0x1: 1 } vs { '0x1': 1 }
-      check.toString() === key || isValidIdentifier(key)
-    );
+      (check >= 0 && // It's also important to consider that if the key is
+        // indeed numeric, we need to make sure that when
+        // converted back into a string, it's still the same
+        // to the original key. This allows us to differentiate
+        // keys that has numeric formats but in a different
+        // format, which can cause unintentional key declaration
+        // Example: { 0x1: 1 } vs { '0x1': 1 }
+        check.toString() === key) ||
+      isValidIdentifier(key);
     if (isIndexedValueInStack(ctx.base, val)) {
       const refParam = getRefParam(ctx, val.i);
       markSerializerRef(ctx.base, source.i);
       if (isIdentifier && check !== check) {
         createObjectAssign(ctx, source.i, key, refParam);
       } else {
-        createArrayAssign(
-          ctx,
-          source.i,
-          isIdentifier ? key : '"' + key + '"',
-          refParam
-        );
+        createArrayAssign(ctx, source.i, isIdentifier ? key : '"' + key + '"', refParam);
       }
       return "";
     }
@@ -2981,28 +2621,23 @@ function serializeStringKeyAssignment(ctx, source, mainAssignments, key, value) 
   const base = ctx.base;
   const serialized = serialize(ctx, value);
   const check = Number(key);
-  const isIdentifier = (
+  const isIdentifier =
     // Test if key is a valid positive number or JS identifier
     // so that we don't have to serialize the key and wrap with brackets
-    check >= 0 && // It's also important to consider that if the key is
-    // indeed numeric, we need to make sure that when
-    // converted back into a string, it's still the same
-    // to the original key. This allows us to differentiate
-    // keys that has numeric formats but in a different
-    // format, which can cause unintentional key declaration
-    // Example: { 0x1: 1 } vs { '0x1': 1 }
-    check.toString() === key || isValidIdentifier(key)
-  );
+    (check >= 0 && // It's also important to consider that if the key is
+      // indeed numeric, we need to make sure that when
+      // converted back into a string, it's still the same
+      // to the original key. This allows us to differentiate
+      // keys that has numeric formats but in a different
+      // format, which can cause unintentional key declaration
+      // Example: { 0x1: 1 } vs { '0x1': 1 }
+      check.toString() === key) ||
+    isValidIdentifier(key);
   if (isIndexedValueInStack(base, value)) {
     if (isIdentifier && check !== check) {
       createObjectAssign(ctx, source.i, key, serialized);
     } else {
-      createArrayAssign(
-        ctx,
-        source.i,
-        isIdentifier ? key : '"' + key + '"',
-        serialized
-      );
+      createArrayAssign(ctx, source.i, isIdentifier ? key : '"' + key + '"', serialized);
     }
   } else {
     const parentAssignment = base.assignments;
@@ -3010,12 +2645,7 @@ function serializeStringKeyAssignment(ctx, source, mainAssignments, key, value) 
     if (isIdentifier && check !== check) {
       createObjectAssign(ctx, source.i, key, serialized);
     } else {
-      createArrayAssign(
-        ctx,
-        source.i,
-        isIdentifier ? key : '"' + key + '"',
-        serialized
-      );
+      createArrayAssign(ctx, source.i, isIdentifier ? key : '"' + key + '"', serialized);
     }
     base.assignments = parentAssignment;
   }
@@ -3059,7 +2689,14 @@ function serializeDictionary(ctx, node, init) {
       markSerializerRef(base, node.i);
       const assignments = serializeAssignments(ctx, node, node.p);
       if (assignments) {
-        return "(" + assignIndexedValue2(ctx, node.i, init) + "," + assignments + getRefParam(ctx, node.i) + ")";
+        return (
+          "(" +
+          assignIndexedValue2(ctx, node.i, init) +
+          "," +
+          assignments +
+          getRefParam(ctx, node.i) +
+          ")"
+        );
       }
     }
   }
@@ -3082,11 +2719,7 @@ function serializeSetItem(ctx, id, item) {
   const base = ctx.base;
   if (isIndexedValueInStack(base, item)) {
     markSerializerRef(base, id);
-    createAddAssignment(
-      ctx,
-      id,
-      getRefParam(ctx, item.i)
-    );
+    createAddAssignment(ctx, id, getRefParam(ctx, item.i));
     return "";
   }
   return serialize(ctx, item);
@@ -3188,11 +2821,7 @@ function serializeDataView(ctx, node) {
 function serializeAggregateError(ctx, node) {
   const id = node.i;
   ctx.base.stack.push(id);
-  const serialized = serializeDictionary(
-    ctx,
-    node,
-    'new AggregateError([],"' + node.m + '")'
-  );
+  const serialized = serializeDictionary(ctx, node, 'new AggregateError([],"' + node.m + '")');
   ctx.base.stack.pop();
   return serialized;
 }
@@ -3200,7 +2829,7 @@ function serializeError(ctx, node) {
   return serializeDictionary(
     ctx,
     node,
-    "new " + ERROR_CONSTRUCTOR_STRING[node.s] + '("' + node.m + '")'
+    "new " + ERROR_CONSTRUCTOR_STRING[node.s] + '("' + node.m + '")',
   );
 }
 function serializePromise(ctx, node) {
@@ -3211,7 +2840,11 @@ function serializePromise(ctx, node) {
   const base = ctx.base;
   if (isIndexedValueInStack(base, fulfilled)) {
     const ref = getRefParam(ctx, fulfilled.i);
-    serialized = promiseConstructor + (node.s ? "().then(" + createFunction([], ref) + ")" : "().catch(" + createEffectfulFunction([], "throw " + ref) + ")");
+    serialized =
+      promiseConstructor +
+      (node.s
+        ? "().then(" + createFunction([], ref) + ")"
+        : "().catch(" + createEffectfulFunction([], "throw " + ref) + ")");
   } else {
     base.stack.push(id);
     const result = serialize(ctx, fulfilled);
@@ -3231,24 +2864,34 @@ function serializePromiseConstructor(ctx, node) {
   if (ctx.mode === 1) {
     throw new SerovalUnsupportedNodeError(node);
   }
-  const resolver = assignIndexedValue2(
-    ctx,
-    node.s,
-    getConstructor(ctx, node.f) + "()"
-  );
+  const resolver = assignIndexedValue2(ctx, node.s, getConstructor(ctx, node.f) + "()");
   return "(" + resolver + ").p";
 }
 function serializePromiseResolve(ctx, node) {
   if (ctx.mode === 1) {
     throw new SerovalUnsupportedNodeError(node);
   }
-  return getConstructor(ctx, node.a[0]) + "(" + getRefParam(ctx, node.i) + "," + serialize(ctx, node.a[1]) + ")";
+  return (
+    getConstructor(ctx, node.a[0]) +
+    "(" +
+    getRefParam(ctx, node.i) +
+    "," +
+    serialize(ctx, node.a[1]) +
+    ")"
+  );
 }
 function serializePromiseReject(ctx, node) {
   if (ctx.mode === 1) {
     throw new SerovalUnsupportedNodeError(node);
   }
-  return getConstructor(ctx, node.a[0]) + "(" + getRefParam(ctx, node.i) + "," + serialize(ctx, node.a[1]) + ")";
+  return (
+    getConstructor(ctx, node.a[0]) +
+    "(" +
+    getRefParam(ctx, node.i) +
+    "," +
+    serialize(ctx, node.a[1]) +
+    ")"
+  );
 }
 function serializePlugin(ctx, node) {
   const currentPlugins = ctx.base.plugins;
@@ -3260,7 +2903,7 @@ function serializePlugin(ctx, node) {
           ctx.child = new SerializePluginContext(ctx);
         }
         return plugin.serialize(node.s, ctx.child, {
-          id: node.i
+          id: node.i,
         });
       }
     }
@@ -3278,7 +2921,7 @@ function serializeIteratorFactory(ctx, node) {
   result += assignIndexedValue2(
     ctx,
     node.i,
-    "(" + SERIALIZED_ITERATOR_CONSTRUCTOR + ")(" + getRefParam(ctx, node.f.i) + ")"
+    "(" + SERIALIZED_ITERATOR_CONSTRUCTOR + ")(" + getRefParam(ctx, node.f.i) + ")",
   );
   if (initialized) {
     result += ")";
@@ -3307,7 +2950,13 @@ function serializeAsyncIteratorFactory(ctx, node) {
   const iterator = assignIndexedValue2(
     ctx,
     node.i,
-    "(" + SERIALIZED_ASYNC_ITERATOR_CONSTRUCTOR + ")(" + getRefParam(ctx, symbol.i) + "," + getRefParam(ctx, promise.i) + ")"
+    "(" +
+      SERIALIZED_ASYNC_ITERATOR_CONSTRUCTOR +
+      ")(" +
+      getRefParam(ctx, symbol.i) +
+      "," +
+      getRefParam(ctx, promise.i) +
+      ")",
   );
   if (result) {
     return result + iterator + ")";
@@ -3318,11 +2967,7 @@ function serializeAsyncIteratorFactoryInstance(ctx, node) {
   return getConstructor(ctx, node.a[0]) + "(" + serialize(ctx, node.a[1]) + ")";
 }
 function serializeStreamConstructor(ctx, node) {
-  const result = assignIndexedValue2(
-    ctx,
-    node.i,
-    getConstructor(ctx, node.f) + "()"
-  );
+  const result = assignIndexedValue2(ctx, node.i, getConstructor(ctx, node.f) + "()");
   const len = node.a.length;
   if (len) {
     let values = serialize(ctx, node.a[0]);
@@ -3346,12 +2991,7 @@ function serializeSequenceItem(ctx, id, index, item) {
   const base = ctx.base;
   if (isIndexedValueInStack(base, item)) {
     markSerializerRef(base, id);
-    createSequenceAssign(
-      ctx,
-      id,
-      index,
-      getRefParam(ctx, item.i)
-    );
+    createSequenceAssign(ctx, id, index, getRefParam(ctx, item.i));
     return "";
   }
   return serialize(ctx, item);
@@ -3494,14 +3134,17 @@ function serializeTopCross(ctx, tree) {
     }
     return body;
   }
-  const args = scopeId == null ? "()" : "(" + GLOBAL_CONTEXT_REFERENCES + '["' + serializeString(scopeId) + '"])';
+  const args =
+    scopeId == null
+      ? "()"
+      : "(" + GLOBAL_CONTEXT_REFERENCES + '["' + serializeString(scopeId) + '"])';
   return "(" + createFunction([params], body) + ")" + args;
 }
 function createSyncParserContext(mode, options) {
   return {
     type: 1,
     base: createBaseParserContext(mode, options),
-    child: NIL
+    child: NIL,
   };
 }
 var SyncParsePluginContext = class {
@@ -3548,14 +3191,14 @@ function createStreamParserState(options) {
     buffer: [],
     onParse: options.onParse,
     onError: options.onError,
-    onDone: options.onDone
+    onDone: options.onDone,
   };
 }
 function createStreamParserContext(options) {
   return {
     type: 2,
     base: createBaseParserContext(2, options),
-    state: createStreamParserState(options)
+    state: createStreamParserState(options),
   };
 }
 function parseItems2(ctx, depth, current) {
@@ -3585,14 +3228,8 @@ function parseProperties2(ctx, depth, properties) {
     valueNodes.push(
       createIteratorFactoryInstanceNode(
         parseIteratorFactory(ctx.base),
-        parseSOS(
-          ctx,
-          depth,
-          createSequenceFromIterable(
-            properties
-          )
-        )
-      )
+        parseSOS(ctx, depth, createSequenceFromIterable(properties)),
+      ),
     );
   }
   if (SYM_ASYNC_ITERATOR in properties) {
@@ -3603,11 +3240,9 @@ function parseProperties2(ctx, depth, properties) {
         parseSOS(
           ctx,
           depth,
-          ctx.type === 1 ? createStream() : createStreamFromAsyncIterable(
-            properties
-          )
-        )
-      )
+          ctx.type === 1 ? createStream() : createStreamFromAsyncIterable(properties),
+        ),
+      ),
     );
   }
   if (SYM_TO_STRING_TAG in properties) {
@@ -3616,57 +3251,38 @@ function parseProperties2(ctx, depth, properties) {
   }
   if (SYM_IS_CONCAT_SPREADABLE in properties) {
     keyNodes.push(parseWellKnownSymbol(ctx.base, SYM_IS_CONCAT_SPREADABLE));
-    valueNodes.push(
-      properties[SYM_IS_CONCAT_SPREADABLE] ? TRUE_NODE : FALSE_NODE
-    );
+    valueNodes.push(properties[SYM_IS_CONCAT_SPREADABLE] ? TRUE_NODE : FALSE_NODE);
   }
   return {
     k: keyNodes,
-    v: valueNodes
+    v: valueNodes,
   };
 }
 function parsePlainObject2(ctx, depth, id, current, empty) {
-  return createObjectNode(
-    id,
-    current,
-    empty,
-    parseProperties2(ctx, depth, current)
-  );
+  return createObjectNode(id, current, empty, parseProperties2(ctx, depth, current));
 }
 function parseBoxed2(ctx, depth, id, current) {
   return createBoxedNode(id, parseSOS(ctx, depth, current.valueOf()));
 }
 function parseTypedArray2(ctx, depth, id, current) {
-  return createTypedArrayNode(
-    id,
-    current,
-    parseSOS(ctx, depth, current.buffer)
-  );
+  return createTypedArrayNode(id, current, parseSOS(ctx, depth, current.buffer));
 }
 function parseBigIntTypedArray2(ctx, depth, id, current) {
-  return createBigIntTypedArrayNode(
-    id,
-    current,
-    parseSOS(ctx, depth, current.buffer)
-  );
+  return createBigIntTypedArrayNode(id, current, parseSOS(ctx, depth, current.buffer));
 }
 function parseDataView2(ctx, depth, id, current) {
   return createDataViewNode(id, current, parseSOS(ctx, depth, current.buffer));
 }
 function parseError2(ctx, depth, id, current) {
   const options = getErrorOptions(current, ctx.base.features);
-  return createErrorNode(
-    id,
-    current,
-    options ? parseProperties2(ctx, depth, options) : NIL
-  );
+  return createErrorNode(id, current, options ? parseProperties2(ctx, depth, options) : NIL);
 }
 function parseAggregateError2(ctx, depth, id, current) {
   const options = getErrorOptions(current, ctx.base.features);
   return createAggregateErrorNode(
     id,
     current,
-    options ? parseProperties2(ctx, depth, options) : NIL
+    options ? parseProperties2(ctx, depth, options) : NIL,
   );
 }
 function parseMap2(ctx, depth, id, current) {
@@ -3690,10 +3306,10 @@ function parseStream2(ctx, depth, id, current) {
     id,
     parseSpecialReference(
       ctx.base,
-      4
+      4,
       /* StreamConstructor */
     ),
-    []
+    [],
   );
   if (ctx.type === 1) {
     return result;
@@ -3725,7 +3341,7 @@ function parseStream2(ctx, depth, id, current) {
         }
       }
       popPendingState(ctx);
-    }
+    },
   });
   return result;
 }
@@ -3746,16 +3362,16 @@ function handlePromiseSuccess(id, depth, data) {
           [
             parseSpecialReference(
               this.base,
-              2
+              2,
               /* PromiseSuccess */
             ),
-            parsed
+            parsed,
           ],
           NIL,
           NIL,
           NIL,
-          NIL
-        )
+          NIL,
+        ),
       );
     }
     popPendingState(this);
@@ -3778,16 +3394,16 @@ function handlePromiseFailure(id, depth, data) {
           [
             parseSpecialReference(
               this.base,
-              3
+              3,
               /* PromiseFailure */
             ),
-            parsed
+            parsed,
           ],
           NIL,
           NIL,
           NIL,
-          NIL
-        )
+          NIL,
+        ),
       );
     }
   }
@@ -3799,7 +3415,7 @@ function parsePromise2(ctx, depth, id, current) {
     pushPendingState(ctx);
     current.then(
       handlePromiseSuccess.bind(ctx, resolver, depth),
-      handlePromiseFailure.bind(ctx, resolver, depth)
+      handlePromiseFailure.bind(ctx, resolver, depth),
     );
   }
   return createPromiseConstructorNode(ctx.base, id, resolver);
@@ -3812,8 +3428,8 @@ function parsePluginSync(ctx, depth, id, current, currentPlugins) {
         id,
         plugin.tag,
         plugin.parse.sync(current, new SyncParsePluginContext(ctx, depth), {
-          id
-        })
+          id,
+        }),
       );
     }
   }
@@ -3827,8 +3443,8 @@ function parsePluginStream(ctx, depth, id, current, currentPlugins) {
         id,
         plugin.tag,
         plugin.parse.stream(current, new StreamParsePluginContext(ctx, depth), {
-          id
-        })
+          id,
+        }),
       );
     }
   }
@@ -3837,7 +3453,9 @@ function parsePluginStream(ctx, depth, id, current, currentPlugins) {
 function parsePlugin2(ctx, depth, id, current) {
   const currentPlugins = ctx.base.plugins;
   if (currentPlugins) {
-    return ctx.type === 1 ? parsePluginSync(ctx, depth, id, current, currentPlugins) : parsePluginStream(ctx, depth, id, current, currentPlugins);
+    return ctx.type === 1
+      ? parsePluginSync(ctx, depth, id, current, currentPlugins)
+      : parsePluginStream(ctx, depth, id, current, currentPlugins);
   }
   return NIL;
 }
@@ -3851,21 +3469,9 @@ function parseSequence2(ctx, depth, id, current) {
 function parseObjectPhase2(ctx, depth, id, current, currentClass) {
   switch (currentClass) {
     case Object:
-      return parsePlainObject2(
-        ctx,
-        depth,
-        id,
-        current,
-        false
-      );
+      return parsePlainObject2(ctx, depth, id, current, false);
     case NIL:
-      return parsePlainObject2(
-        ctx,
-        depth,
-        id,
-        current,
-        true
-      );
+      return parsePlainObject2(ctx, depth, id, current, true);
     case Date:
       return createDateNode(id, current);
     case Error:
@@ -3882,11 +3488,7 @@ function parseObjectPhase2(ctx, depth, id, current, currentClass) {
     case BigInt:
       return parseBoxed2(ctx, depth, id, current);
     case ArrayBuffer:
-      return createArrayBufferNode(
-        ctx.base,
-        id,
-        current
-      );
+      return createArrayBufferNode(ctx.base, id, current);
     case Int8Array:
     case Int16Array:
     case Int32Array:
@@ -3896,21 +3498,11 @@ function parseObjectPhase2(ctx, depth, id, current, currentClass) {
     case Uint8ClampedArray:
     case Float32Array:
     case Float64Array:
-      return parseTypedArray2(
-        ctx,
-        depth,
-        id,
-        current
-      );
+      return parseTypedArray2(ctx, depth, id, current);
     case DataView:
       return parseDataView2(ctx, depth, id, current);
     case Map:
-      return parseMap2(
-        ctx,
-        depth,
-        id,
-        current
-      );
+      return parseMap2(ctx, depth, id, current);
     case Set:
       return parseSet2(ctx, depth, id, current);
     default:
@@ -3927,23 +3519,17 @@ function parseObjectPhase2(ctx, depth, id, current, currentClass) {
     switch (currentClass) {
       case BigInt64Array:
       case BigUint64Array:
-        return parseBigIntTypedArray2(
-          ctx,
-          depth,
-          id,
-          current
-        );
+        return parseBigIntTypedArray2(ctx, depth, id, current);
       default:
         break;
     }
   }
-  if (currentFeatures & 1 && typeof AggregateError !== "undefined" && (currentClass === AggregateError || current instanceof AggregateError)) {
-    return parseAggregateError2(
-      ctx,
-      depth,
-      id,
-      current
-    );
+  if (
+    currentFeatures & 1 &&
+    typeof AggregateError !== "undefined" &&
+    (currentClass === AggregateError || current instanceof AggregateError)
+  ) {
+    return parseAggregateError2(ctx, depth, id, current);
   }
   if (current instanceof Error) {
     return parseError2(ctx, depth, id, current);
@@ -3965,11 +3551,7 @@ function parseObject(ctx, depth, id, current) {
   }
   const currentClass = current.constructor;
   if (currentClass === OpaqueReference) {
-    return parseSOS(
-      ctx,
-      depth,
-      current.replacement
-    );
+    return parseSOS(ctx, depth, current.replacement);
   }
   const parsed = parsePlugin2(ctx, depth, id, current);
   if (parsed) {
@@ -4095,14 +3677,14 @@ function crossSerialize(source, options = {}) {
   const ctx = createSyncParserContext(2, {
     plugins,
     disabledFeatures: options.disabledFeatures,
-    refs: options.refs
+    refs: options.refs,
   });
   const tree = parseTop(ctx, source);
   const serial = createCrossSerializerContext({
     plugins,
     features: ctx.base.features,
     scopeId: options.scopeId,
-    markedRefs: ctx.base.marked
+    markedRefs: ctx.base.marked,
   });
   return serializeTopCross(serial, tree);
 }
@@ -4111,14 +3693,14 @@ async function crossSerializeAsync(source, options = {}) {
   const ctx = createAsyncParserContext(2, {
     plugins,
     disabledFeatures: options.disabledFeatures,
-    refs: options.refs
+    refs: options.refs,
   });
   const tree = await parseTopAsync(ctx, source);
   const serial = createCrossSerializerContext({
     plugins,
     features: ctx.base.features,
     scopeId: options.scopeId,
-    markedRefs: ctx.base.marked
+    markedRefs: ctx.base.marked,
   });
   return serializeTopCross(serial, tree);
 }
@@ -4127,7 +3709,7 @@ function toCrossJSON(source, options = {}) {
   const ctx = createSyncParserContext(2, {
     plugins,
     disabledFeatures: options.disabledFeatures,
-    refs: options.refs
+    refs: options.refs,
   });
   return parseTop(ctx, source);
 }
@@ -4136,7 +3718,7 @@ async function toCrossJSONAsync(source, options = {}) {
   const ctx = createAsyncParserContext(2, {
     plugins,
     disabledFeatures: options.disabledFeatures,
-    refs: options.refs
+    refs: options.refs,
   });
   return await parseTopAsync(ctx, source);
 }
@@ -4151,7 +3733,7 @@ function crossSerializeStream(source, options) {
         plugins,
         features: ctx.base.features,
         scopeId: options.scopeId,
-        markedRefs: ctx.base.marked
+        markedRefs: ctx.base.marked,
       });
       let serialized;
       try {
@@ -4165,7 +3747,7 @@ function crossSerializeStream(source, options) {
       options.onSerialize(serialized, initial);
     },
     onError: options.onError,
-    onDone: options.onDone
+    onDone: options.onDone,
   });
   startStreamParse(ctx, source);
   return destroyStreamParse.bind(null, ctx);
@@ -4179,7 +3761,7 @@ function toCrossJSONStream(source, options) {
     depthLimit: options.depthLimit,
     onParse: options.onParse,
     onError: options.onError,
-    onDone: options.onDone
+    onDone: options.onDone,
   });
   startStreamParse(ctx, source);
   return destroyStreamParse.bind(null, ctx);
@@ -4191,7 +3773,7 @@ function fromCrossJSON(source, options) {
     refs: options.refs,
     features: options.features,
     disabledFeatures: options.disabledFeatures,
-    depthLimit: options.depthLimit
+    depthLimit: options.depthLimit,
   });
   return deserializeTop(ctx, source);
 }
@@ -4222,7 +3804,9 @@ var Serializer = class {
           onSerialize: (data, initial) => {
             if (this.alive) {
               this.options.onData(
-                initial ? this.options.globalIdentifier + '["' + serializeString(key) + '"]=' + data : data
+                initial
+                  ? this.options.globalIdentifier + '["' + serializeString(key) + '"]=' + data
+                  : data,
               );
             }
           },
@@ -4234,8 +3818,8 @@ var Serializer = class {
                 this.done = true;
               }
             }
-          }
-        })
+          },
+        }),
       );
     }
   }
@@ -4276,13 +3860,13 @@ function serialize2(source, options = {}) {
   const plugins = resolvePlugins(options.plugins);
   const ctx = createSyncParserContext(1, {
     plugins,
-    disabledFeatures: options.disabledFeatures
+    disabledFeatures: options.disabledFeatures,
   });
   const tree = parseTop(ctx, source);
   const serial = createVanillaSerializerContext({
     plugins,
     features: ctx.base.features,
-    markedRefs: ctx.base.marked
+    markedRefs: ctx.base.marked,
   });
   return serializeTopVanilla(serial, tree);
 }
@@ -4290,13 +3874,13 @@ async function serializeAsync(source, options = {}) {
   const plugins = resolvePlugins(options.plugins);
   const ctx = createAsyncParserContext(1, {
     plugins,
-    disabledFeatures: options.disabledFeatures
+    disabledFeatures: options.disabledFeatures,
   });
   const tree = await parseTopAsync(ctx, source);
   const serial = createVanillaSerializerContext({
     plugins,
     features: ctx.base.features,
-    markedRefs: ctx.base.marked
+    markedRefs: ctx.base.marked,
   });
   return serializeTopVanilla(serial, tree);
 }
@@ -4307,24 +3891,24 @@ function toJSON(source, options = {}) {
   const plugins = resolvePlugins(options.plugins);
   const ctx = createSyncParserContext(1, {
     plugins,
-    disabledFeatures: options.disabledFeatures
+    disabledFeatures: options.disabledFeatures,
   });
   return {
     t: parseTop(ctx, source),
     f: ctx.base.features,
-    m: Array.from(ctx.base.marked)
+    m: Array.from(ctx.base.marked),
   };
 }
 async function toJSONAsync(source, options = {}) {
   const plugins = resolvePlugins(options.plugins);
   const ctx = createAsyncParserContext(1, {
     plugins,
-    disabledFeatures: options.disabledFeatures
+    disabledFeatures: options.disabledFeatures,
   });
   return {
     t: await parseTopAsync(ctx, source),
     f: ctx.base.features,
-    m: Array.from(ctx.base.marked)
+    m: Array.from(ctx.base.marked),
   };
 }
 function compileJSON(source, options = {}) {
@@ -4332,7 +3916,7 @@ function compileJSON(source, options = {}) {
   const ctx = createVanillaSerializerContext({
     plugins,
     features: source.f,
-    markedRefs: source.m
+    markedRefs: source.m,
   });
   return serializeTopVanilla(ctx, source.t);
 }
@@ -4345,7 +3929,7 @@ function fromJSON(source, options = {}) {
     plugins,
     markedRefs: source.m,
     features: sourceFeatures & ~disabledFeatures,
-    disabledFeatures
+    disabledFeatures,
   });
   return deserializeTop(ctx, source.t);
 }
@@ -4387,6 +3971,6 @@ export {
   toJSON,
   toJSONAsync,
   compileJSON,
-  fromJSON
+  fromJSON,
 };
 //# sourceMappingURL=chunk-ZCRLZXAQ.js.map

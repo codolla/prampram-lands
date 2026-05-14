@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { CONTACT_LINE } from "@/lib/contact";
 
 type Provider = "arkesel" | "hubtel" | "mnotify";
 
@@ -14,8 +15,46 @@ function normalizePhone(raw: string | null | undefined): string | null {
   return p;
 }
 
+function normalizeEmail(raw: string | null | undefined): string | null {
+  const e = (raw ?? "").trim();
+  if (!e) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return null;
+  return e.toLowerCase();
+}
+
 function renderTemplate(tpl: string, vars: Record<string, string | number>): string {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`));
+}
+
+async function sendResendEmail(opts: {
+  apiKey: string;
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+}): Promise<{ ok: boolean; response: string }> {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${opts.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: opts.from,
+      to: [opts.to],
+      subject: opts.subject,
+      text: opts.text,
+    }),
+  });
+  const text = await res.text();
+  return { ok: res.ok, response: text.slice(0, 500) };
+}
+
+function emailConfig(): { apiKey: string; from: string } | null {
+  const apiKey = (process.env.RESEND_API_KEY ?? "").trim();
+  const from = (process.env.RESEND_FROM ?? process.env.RESEND_FROM_EMAIL ?? "").trim();
+  if (!apiKey || !from) return null;
+  return { apiKey, from };
 }
 
 async function sendArkesel(opts: {
@@ -209,7 +248,7 @@ export const sendOverdueReminders = createServerFn({ method: "POST" })
     );
     const { data: ownerRows } = await supabase
       .from("landowners")
-      .select("id, full_name, phone")
+      .select("id, full_name, phone, email")
       .in("id", ownerIds.length ? ownerIds : ["00000000-0000-0000-0000-000000000000"]);
     const ownerMap = new Map((ownerRows ?? []).map((o) => [o.id, o]));
 
@@ -228,6 +267,12 @@ export const sendOverdueReminders = createServerFn({ method: "POST" })
     let sent = 0;
     let failed = 0;
     let skipped = 0;
+    let emailSent = 0;
+    let emailFailed = 0;
+    let emailSkipped = 0;
+
+    const emailCfg = emailConfig();
+    const emailSubject = "Overdue land rate bill reminder";
 
     for (const b of bills ?? []) {
       if (recentBillIds.has(b.id)) {
@@ -260,9 +305,34 @@ export const sendOverdueReminders = createServerFn({ method: "POST" })
       });
       if (r.ok) sent++;
       else failed++;
+
+      const toEmail = normalizeEmail(owner?.email);
+      if (toEmail && emailCfg) {
+        const text = `${message}\n\nIf you have already paid, please ignore this reminder.\n`;
+        const er = await sendResendEmail({
+          apiKey: emailCfg.apiKey,
+          from: emailCfg.from,
+          to: toEmail,
+          subject: emailSubject,
+          text,
+        });
+        if (er.ok) emailSent++;
+        else emailFailed++;
+      } else {
+        emailSkipped++;
+      }
     }
 
-    return { ok: true, error: null, sent, failed, skipped };
+    return {
+      ok: true,
+      error: null,
+      sent,
+      failed,
+      skipped,
+      emailSent,
+      emailFailed,
+      emailSkipped,
+    };
   });
 
 export const sendPaymentNotification = createServerFn({ method: "POST" })
@@ -286,7 +356,7 @@ export const sendPaymentNotification = createServerFn({ method: "POST" })
     const { data: payment, error: payErr } = await supabase
       .from("payments")
       .select(
-        "id, bill_id, amount, paid_at, method, receipt_number, bills(billing_year, lands(land_code, plot_number, landowners(id, full_name, phone)))",
+        "id, bill_id, amount, paid_at, method, receipt_number, bills(billing_year, lands(land_code, plot_number, landowners(id, full_name, phone, email)))",
       )
       .eq("id", data.paymentId)
       .single();
@@ -297,7 +367,12 @@ export const sendPaymentNotification = createServerFn({ method: "POST" })
       lands: {
         land_code: string;
         plot_number: string | null;
-        landowners: { id: string; full_name: string | null; phone: string | null } | null;
+        landowners: {
+          id: string;
+          full_name: string | null;
+          phone: string | null;
+          email: string | null;
+        } | null;
       } | null;
     };
 
@@ -399,6 +474,9 @@ export const sendPaymentNotification = createServerFn({ method: "POST" })
     let sent = 0;
     let failed = 0;
     let skipped = 0;
+    let emailSent = 0;
+    let emailFailed = 0;
+    let emailSkipped = 0;
 
     const landownerId = bill?.lands?.landowners?.id ?? null;
 
@@ -420,11 +498,32 @@ export const sendPaymentNotification = createServerFn({ method: "POST" })
 
     if (recipients.size === 0) skipped = 1;
 
+    const toEmail = normalizeEmail(bill?.lands?.landowners?.email);
+    const emailCfg = emailConfig();
+    if (toEmail && emailCfg) {
+      const subject = `Payment received · ${landCode} (${bill?.billing_year ?? ""})`;
+      const text = `${message}\n\nContact: ${CONTACT_LINE}\n`;
+      const er = await sendResendEmail({
+        apiKey: emailCfg.apiKey,
+        from: emailCfg.from,
+        to: toEmail,
+        subject,
+        text,
+      });
+      if (er.ok) emailSent++;
+      else emailFailed++;
+    } else {
+      emailSkipped++;
+    }
+
     return {
-      ok: failed === 0,
-      error: failed === 0 ? null : "Some messages failed.",
+      ok: failed === 0 && emailFailed === 0,
+      error: failed === 0 && emailFailed === 0 ? null : "Some notifications failed.",
       sent,
       failed,
       skipped,
+      emailSent,
+      emailFailed,
+      emailSkipped,
     };
   });

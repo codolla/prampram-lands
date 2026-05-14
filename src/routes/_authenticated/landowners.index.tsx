@@ -42,8 +42,22 @@ export const Route = createFileRoute("/_authenticated/landowners/")({
 
 const PAGE_SIZE = 25;
 
+type LandownerListRow = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  national_id: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  has_land: boolean;
+  total_count: number;
+};
+
 function LandownersPage() {
   const [search, setSearch] = useState("");
+  const [filterMode, setFilterMode] = useState<"unlinked" | "linked" | "all">("unlinked");
   const qc = useQueryClient();
   const navigate = Route.useNavigate();
   const { hasAnyRole } = useAuth();
@@ -58,23 +72,41 @@ function LandownersPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, pageSize]);
+  }, [search, pageSize, filterMode]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["landowners", search, page, pageSize],
+  const stats = useQuery({
+    queryKey: ["landowners-stats", search],
     queryFn: async () => {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      let q = supabase
-        .from("landowners")
-        .select("id, full_name, phone, email, address, national_id, avatar_url, created_at", {
-          count: "exact",
-        })
-        .order("full_name");
-      if (search) q = q.ilike("full_name", `%${search}%`);
-      const { data, count, error } = await q.range(from, to);
+      const { data, error } = await supabase.rpc(
+        "landowners_search_stats" as never,
+        { search_text: search } as never,
+      );
       if (error) throw error;
-      return { rows: data ?? [], count: count ?? 0 };
+      const row = (data as unknown as Array<Record<string, unknown>> | null)?.[0] ?? {};
+      return {
+        linkedCount: Number(row.linked_count ?? 0),
+        unlinkedCount: Number(row.unlinked_count ?? 0),
+        totalCount: Number(row.total_count ?? 0),
+      };
+    },
+  });
+
+  const landowners = useQuery<{ rows: LandownerListRow[]; count: number }>({
+    queryKey: ["landowners", search, filterMode, page, pageSize],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "landowners_search" as never,
+        {
+          search_text: search,
+          filter_mode: filterMode,
+          page_number: page,
+          page_size: pageSize,
+        } as never,
+      );
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as LandownerListRow[];
+      const count = Number(rows[0]?.total_count ?? 0);
+      return { rows, count };
     },
   });
 
@@ -182,7 +214,7 @@ function LandownersPage() {
     onError: (e: unknown) => toast.error(getUserFacingErrorMessage(e)),
   });
 
-  const rows = data?.rows ?? [];
+  const rows = landowners.data?.rows ?? [];
   const pageIds = rows.map((r) => r.id);
   const pageSelectedCount = pageIds.reduce((n, id) => n + (selectedIds.has(id) ? 1 : 0), 0);
   const allOnPageSelected = pageIds.length > 0 && pageSelectedCount === pageIds.length;
@@ -322,6 +354,13 @@ function LandownersPage() {
             />
           )}
 
+          <Button asChild size="sm" variant="outline">
+            <Link to="/lands">
+              <Landmark className="mr-1 h-4 w-4" />
+              Lands
+            </Link>
+          </Button>
+
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -392,21 +431,90 @@ function LandownersPage() {
         </div>
       }
     >
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        <button
+          type="button"
+          onClick={() => setFilterMode("unlinked")}
+          className="cursor-pointer text-left"
+        >
+          <Card
+            className={`transition ${
+              filterMode === "unlinked" ? "border-primary/40" : "hover:border-primary/25"
+            }`}
+          >
+            <CardHeader className="space-y-0">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+                Unlinked owners
+              </p>
+              <CardTitle className="mt-2 text-3xl tabular-nums">
+                {stats.isLoading ? "—" : (stats.data?.unlinkedCount ?? 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterMode("linked")}
+          className="cursor-pointer text-left"
+        >
+          <Card
+            className={`transition ${
+              filterMode === "linked" ? "border-primary/40" : "hover:border-primary/25"
+            }`}
+          >
+            <CardHeader className="space-y-0">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+                Registered owners
+              </p>
+              <CardTitle className="mt-2 text-3xl tabular-nums">
+                {stats.isLoading ? "—" : (stats.data?.linkedCount ?? 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterMode("all")}
+          className="cursor-pointer text-left"
+        >
+          <Card
+            className={`transition ${
+              filterMode === "all" ? "border-primary/40" : "hover:border-primary/25"
+            }`}
+          >
+            <CardHeader className="space-y-0">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+                All owners
+              </p>
+              <CardTitle className="mt-2 text-3xl tabular-nums">
+                {stats.isLoading ? "—" : (stats.data?.totalCount ?? 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </button>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">All landowners</CardTitle>
+          <CardTitle className="text-base">
+            {filterMode === "unlinked"
+              ? "Unlinked owners"
+              : filterMode === "linked"
+                ? "Registered owners"
+                : "All landowners"}
+          </CardTitle>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by name…"
+                placeholder="Search name, phone, or email…"
                 className="pl-9"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-35">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -419,9 +527,9 @@ function LandownersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {landowners.isLoading ? (
             <TableSkeleton columns={canBulkDelete ? 7 : 6} rows={6} />
-          ) : (data?.rows ?? []).length === 0 ? (
+          ) : rows.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="overflow-x-auto">
@@ -472,7 +580,7 @@ function LandownersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data?.rows ?? []).map((o) => (
+                  {rows.map((o) => (
                     <tr key={o.id} className="border-b last:border-0">
                       {canBulkDelete && (
                         <td className="py-2 pr-2">
@@ -541,7 +649,7 @@ function LandownersPage() {
             </div>
           )}
           {(() => {
-            const total = data?.count ?? 0;
+            const total = landowners.data?.count ?? 0;
             const totalPages = Math.max(1, Math.ceil(total / pageSize));
             if (totalPages <= 1) return null;
             return (

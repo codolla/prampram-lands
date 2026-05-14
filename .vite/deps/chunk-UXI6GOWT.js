@@ -1,9 +1,5 @@
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-use-previous/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -18,7 +14,5 @@ function usePrevious(value) {
   }, [value]);
 }
 
-export {
-  usePrevious
-};
+export { usePrevious };
 //# sourceMappingURL=chunk-UXI6GOWT.js.map

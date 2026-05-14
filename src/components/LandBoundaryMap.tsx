@@ -130,11 +130,11 @@ export function LandBoundaryMap({
       const control = new DrawCtor({
         edit: { featureGroup: draftGroup },
         draw: {
-          polygon: { allowIntersection: false, showArea: true },
+          polyline: { shapeOptions: { color: "#2563eb", weight: 3 }, finishOnDoubleClick: true },
+          polygon: false,
           marker: false,
           circle: false,
           circlemarker: false,
-          polyline: false,
           rectangle: false,
         },
       });
@@ -157,8 +157,6 @@ export function LandBoundaryMap({
           if (first[0] !== last2[0] || first[1] !== last2[1]) ring.push([first[0], first[1]]);
         }
         const polygon: GeoJSONPolygon = { type: "Polygon", coordinates: [ring] };
-        // approx area via leaflet-geometryutil-free fallback: use simple formula in boundary helpers
-        // import lazily to avoid cycle:
         import("@/lib/boundary").then(({ approximateAreaSqm }) => {
           onDraftChange?.(polygon, approximateAreaSqm(ring));
         });
@@ -167,7 +165,16 @@ export function LandBoundaryMap({
       const onCreated = (e: unknown) => {
         const ev = e as { layer: L.Layer };
         draftGroup.clearLayers();
-        draftGroup.addLayer(ev.layer);
+        const latlngsRaw = (ev.layer as unknown as { getLatLngs?: () => unknown }).getLatLngs?.();
+        const pts = Array.isArray(latlngsRaw)
+          ? Array.isArray(latlngsRaw[0])
+            ? (latlngsRaw[0] as L.LatLng[])
+            : (latlngsRaw as L.LatLng[])
+          : [];
+        if (pts.length >= 3) {
+          const poly = L.polygon(pts, { color: "#2563eb", weight: 3, fillOpacity: 0.2 });
+          draftGroup.addLayer(poly);
+        }
         emit();
       };
       map.on("draw:created", onCreated);

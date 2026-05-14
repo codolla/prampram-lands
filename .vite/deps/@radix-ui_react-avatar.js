@@ -1,29 +1,13 @@
 "use client";
-import {
-  createSlot
-} from "./chunk-CXPFXTOM.js";
-import {
-  useCallbackRef
-} from "./chunk-T5Z3LJQL.js";
-import {
-  useLayoutEffect2
-} from "./chunk-OJ36KNVJ.js";
+import { createSlot } from "./chunk-CXPFXTOM.js";
+import { useCallbackRef } from "./chunk-T5Z3LJQL.js";
+import { useLayoutEffect2 } from "./chunk-OJ36KNVJ.js";
 import "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_shim
-} from "./chunk-HHGWYVLT.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_shim } from "./chunk-HHGWYVLT.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-avatar/dist/index.mjs
 var React3 = __toESM(require_react(), 1);
@@ -62,7 +46,7 @@ function createContextScope(scopeName, createContextScopeDeps = []) {
       const contexts = scope?.[scopeName] || scopeContexts;
       return React.useMemo(
         () => ({ [`__scope${scopeName}`]: { ...scope, [scopeName]: contexts } }),
-        [scope, contexts]
+        [scope, contexts],
       );
     };
   };
@@ -75,7 +59,7 @@ function composeContextScopes(...scopes) {
   const createScope = () => {
     const scopeHooks = scopes.map((createScope2) => ({
       useScope: createScope2(),
-      scopeName: createScope2.scopeName
+      scopeName: createScope2.scopeName,
     }));
     return function useComposedScopes(overrideScopes) {
       const nextScopes = scopeHooks.reduce((nextScopes2, { useScope, scopeName }) => {
@@ -111,7 +95,7 @@ var NODES = [
   "select",
   "span",
   "svg",
-  "ul"
+  "ul",
 ];
 var Primitive = NODES.reduce((primitive, node) => {
   const Slot = createSlot(`Primitive.${node}`);
@@ -133,12 +117,11 @@ function useIsHydrated() {
   return (0, import_shim.useSyncExternalStore)(
     subscribe,
     () => true,
-    () => false
+    () => false,
   );
 }
 function subscribe() {
-  return () => {
-  };
+  return () => {};
 }
 
 // node_modules/@radix-ui/react-avatar/dist/index.mjs
@@ -146,57 +129,51 @@ var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
 var AVATAR_NAME = "Avatar";
 var [createAvatarContext, createAvatarScope] = createContextScope(AVATAR_NAME);
 var [AvatarProvider, useAvatarContext] = createAvatarContext(AVATAR_NAME);
-var Avatar = React3.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAvatar, ...avatarProps } = props;
-    const [imageLoadingStatus, setImageLoadingStatus] = React3.useState("idle");
-    return (0, import_jsx_runtime3.jsx)(
-      AvatarProvider,
-      {
-        scope: __scopeAvatar,
-        imageLoadingStatus,
-        onImageLoadingStatusChange: setImageLoadingStatus,
-        children: (0, import_jsx_runtime3.jsx)(Primitive.span, { ...avatarProps, ref: forwardedRef })
-      }
-    );
-  }
-);
+var Avatar = React3.forwardRef((props, forwardedRef) => {
+  const { __scopeAvatar, ...avatarProps } = props;
+  const [imageLoadingStatus, setImageLoadingStatus] = React3.useState("idle");
+  return (0, import_jsx_runtime3.jsx)(AvatarProvider, {
+    scope: __scopeAvatar,
+    imageLoadingStatus,
+    onImageLoadingStatusChange: setImageLoadingStatus,
+    children: (0, import_jsx_runtime3.jsx)(Primitive.span, { ...avatarProps, ref: forwardedRef }),
+  });
+});
 Avatar.displayName = AVATAR_NAME;
 var IMAGE_NAME = "AvatarImage";
-var AvatarImage = React3.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAvatar, src, onLoadingStatusChange = () => {
-    }, ...imageProps } = props;
-    const context = useAvatarContext(IMAGE_NAME, __scopeAvatar);
-    const imageLoadingStatus = useImageLoadingStatus(src, imageProps);
-    const handleLoadingStatusChange = useCallbackRef((status) => {
-      onLoadingStatusChange(status);
-      context.onImageLoadingStatusChange(status);
-    });
-    useLayoutEffect2(() => {
-      if (imageLoadingStatus !== "idle") {
-        handleLoadingStatusChange(imageLoadingStatus);
-      }
-    }, [imageLoadingStatus, handleLoadingStatusChange]);
-    return imageLoadingStatus === "loaded" ? (0, import_jsx_runtime3.jsx)(Primitive.img, { ...imageProps, ref: forwardedRef, src }) : null;
-  }
-);
+var AvatarImage = React3.forwardRef((props, forwardedRef) => {
+  const { __scopeAvatar, src, onLoadingStatusChange = () => {}, ...imageProps } = props;
+  const context = useAvatarContext(IMAGE_NAME, __scopeAvatar);
+  const imageLoadingStatus = useImageLoadingStatus(src, imageProps);
+  const handleLoadingStatusChange = useCallbackRef((status) => {
+    onLoadingStatusChange(status);
+    context.onImageLoadingStatusChange(status);
+  });
+  useLayoutEffect2(() => {
+    if (imageLoadingStatus !== "idle") {
+      handleLoadingStatusChange(imageLoadingStatus);
+    }
+  }, [imageLoadingStatus, handleLoadingStatusChange]);
+  return imageLoadingStatus === "loaded"
+    ? (0, import_jsx_runtime3.jsx)(Primitive.img, { ...imageProps, ref: forwardedRef, src })
+    : null;
+});
 AvatarImage.displayName = IMAGE_NAME;
 var FALLBACK_NAME = "AvatarFallback";
-var AvatarFallback = React3.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAvatar, delayMs, ...fallbackProps } = props;
-    const context = useAvatarContext(FALLBACK_NAME, __scopeAvatar);
-    const [canRender, setCanRender] = React3.useState(delayMs === void 0);
-    React3.useEffect(() => {
-      if (delayMs !== void 0) {
-        const timerId = window.setTimeout(() => setCanRender(true), delayMs);
-        return () => window.clearTimeout(timerId);
-      }
-    }, [delayMs]);
-    return canRender && context.imageLoadingStatus !== "loaded" ? (0, import_jsx_runtime3.jsx)(Primitive.span, { ...fallbackProps, ref: forwardedRef }) : null;
-  }
-);
+var AvatarFallback = React3.forwardRef((props, forwardedRef) => {
+  const { __scopeAvatar, delayMs, ...fallbackProps } = props;
+  const context = useAvatarContext(FALLBACK_NAME, __scopeAvatar);
+  const [canRender, setCanRender] = React3.useState(delayMs === void 0);
+  React3.useEffect(() => {
+    if (delayMs !== void 0) {
+      const timerId = window.setTimeout(() => setCanRender(true), delayMs);
+      return () => window.clearTimeout(timerId);
+    }
+  }, [delayMs]);
+  return canRender && context.imageLoadingStatus !== "loaded"
+    ? (0, import_jsx_runtime3.jsx)(Primitive.span, { ...fallbackProps, ref: forwardedRef })
+    : null;
+});
 AvatarFallback.displayName = FALLBACK_NAME;
 function resolveLoadingStatus(image, src) {
   if (!image) {
@@ -220,9 +197,7 @@ function useImageLoadingStatus(src, { referrerPolicy, crossOrigin }) {
     }
     return imageRef.current;
   })();
-  const [loadingStatus, setLoadingStatus] = React3.useState(
-    () => resolveLoadingStatus(image, src)
-  );
+  const [loadingStatus, setLoadingStatus] = React3.useState(() => resolveLoadingStatus(image, src));
   useLayoutEffect2(() => {
     setLoadingStatus(resolveLoadingStatus(image, src));
   }, [image, src]);
@@ -251,13 +226,5 @@ function useImageLoadingStatus(src, { referrerPolicy, crossOrigin }) {
 var Root = Avatar;
 var Image = AvatarImage;
 var Fallback = AvatarFallback;
-export {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Fallback,
-  Image,
-  Root,
-  createAvatarScope
-};
+export { Avatar, AvatarFallback, AvatarImage, Fallback, Image, Root, createAvatarScope };
 //# sourceMappingURL=@radix-ui_react-avatar.js.map

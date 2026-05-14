@@ -3,13 +3,7 @@ import {
   createHashHistory,
   createHistory,
   createMemoryHistory,
-  parseHref
+  parseHref,
 } from "./chunk-AVKHF3FF.js";
 import "./chunk-PR4QN5HX.js";
-export {
-  createBrowserHistory,
-  createHashHistory,
-  createHistory,
-  createMemoryHistory,
-  parseHref
-};
+export { createBrowserHistory, createHashHistory, createHistory, createMemoryHistory, parseHref };

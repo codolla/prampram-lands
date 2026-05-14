@@ -88,19 +88,21 @@ function deepEqual(a, b, opts) {
   if (isPlainObject(a) && isPlainObject(b)) {
     const ignoreUndefined = opts?.ignoreUndefined ?? true;
     if (opts?.partial) {
-      for (const k in b) if (!ignoreUndefined || b[k] !== void 0) {
-        if (!deepEqual(a[k], b[k], opts)) return false;
-      }
+      for (const k in b)
+        if (!ignoreUndefined || b[k] !== void 0) {
+          if (!deepEqual(a[k], b[k], opts)) return false;
+        }
       return true;
     }
     let aCount = 0;
     if (!ignoreUndefined) aCount = Object.keys(a).length;
     else for (const k in a) if (a[k] !== void 0) aCount++;
     let bCount = 0;
-    for (const k in b) if (!ignoreUndefined || b[k] !== void 0) {
-      bCount++;
-      if (bCount > aCount || !deepEqual(a[k], b[k], opts)) return false;
-    }
+    for (const k in b)
+      if (!ignoreUndefined || b[k] !== void 0) {
+        bCount++;
+        if (bCount > aCount || !deepEqual(a[k], b[k], opts)) return false;
+      }
     return aCount === bCount;
   }
   return false;
@@ -127,7 +129,11 @@ function createControlledPromise(onResolve) {
 }
 function isModuleNotFoundError(error) {
   if (typeof error?.message !== "string") return false;
-  return error.message.startsWith("Failed to fetch dynamically imported module") || error.message.startsWith("error loading dynamically imported module") || error.message.startsWith("Importing a module script failed");
+  return (
+    error.message.startsWith("Failed to fetch dynamically imported module") ||
+    error.message.startsWith("error loading dynamically imported module") ||
+    error.message.startsWith("Importing a module script failed")
+  );
 }
 function isPromise(value) {
   return Boolean(value && typeof value === "object" && typeof value.then === "function");
@@ -156,12 +162,7 @@ function decodeSegment(segment) {
   }
   return sanitizePathSegment(decoded);
 }
-var DEFAULT_PROTOCOL_ALLOWLIST = [
-  "http:",
-  "https:",
-  "mailto:",
-  "tel:"
-];
+var DEFAULT_PROTOCOL_ALLOWLIST = ["http:", "https:", "mailto:", "tel:"];
 function isDangerousProtocol(url, allowlist) {
   if (!url) return false;
   try {
@@ -176,21 +177,23 @@ var HTML_ESCAPE_LOOKUP = {
   ">": "\\u003e",
   "<": "\\u003c",
   "\u2028": "\\u2028",
-  "\u2029": "\\u2029"
+  "\u2029": "\\u2029",
 };
 var HTML_ESCAPE_REGEX = /[&><\u2028\u2029]/g;
 function escapeHtml(str) {
   return str.replace(HTML_ESCAPE_REGEX, (match) => HTML_ESCAPE_LOOKUP[match]);
 }
 function decodePath(path) {
-  if (!path) return {
-    path,
-    handledProtocolRelativeURL: false
-  };
-  if (!/[%\\\x00-\x1f\x7f]/.test(path) && !path.startsWith("//")) return {
-    path,
-    handledProtocolRelativeURL: false
-  };
+  if (!path)
+    return {
+      path,
+      handledProtocolRelativeURL: false,
+    };
+  if (!/[%\\\x00-\x1f\x7f]/.test(path) && !path.startsWith("//"))
+    return {
+      path,
+      handledProtocolRelativeURL: false,
+    };
   const re = /%25|%5C/gi;
   let cursor = 0;
   let result = "";
@@ -207,7 +210,7 @@ function decodePath(path) {
   }
   return {
     path: result,
-    handledProtocolRelativeURL
+    handledProtocolRelativeURL,
   };
 }
 function encodePathLikeUrl(path) {
@@ -250,6 +253,6 @@ export {
   encodePathLikeUrl,
   buildDevStylesUrl,
   arraysEqual,
-  invariant
+  invariant,
 };
 //# sourceMappingURL=chunk-CLINTJPG.js.map

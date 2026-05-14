@@ -1,7 +1,4 @@
-import {
-  createPlugin,
-  createStream
-} from "./chunk-ZCRLZXAQ.js";
+import { createPlugin, createStream } from "./chunk-ZCRLZXAQ.js";
 
 // node_modules/@tanstack/router-core/dist/esm/root.js
 var rootRouteId = "__root__";
@@ -18,14 +15,18 @@ function makeSsrSerovalPlugin(serializationAdapter, options) {
   return createPlugin({
     tag: "$TSR/t/" + serializationAdapter.key,
     test: serializationAdapter.test,
-    parse: { stream(value, ctx, _data) {
-      return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
-    } },
+    parse: {
+      stream(value, ctx, _data) {
+        return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
+      },
+    },
     serialize(node, ctx, _data) {
       options.didRun = true;
-      return GLOBAL_TSR + '.t.get("' + serializationAdapter.key + '")(' + ctx.serialize(node.v) + ")";
+      return (
+        GLOBAL_TSR + '.t.get("' + serializationAdapter.key + '")(' + ctx.serialize(node.v) + ")"
+      );
     },
-    deserialize: void 0
+    deserialize: void 0,
   });
 }
 function makeSerovalPlugin(serializationAdapter) {
@@ -41,12 +42,12 @@ function makeSerovalPlugin(serializationAdapter) {
       },
       stream(value, ctx, _data) {
         return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
-      }
+      },
     },
     serialize: void 0,
     deserialize(node, ctx, _data) {
       return serializationAdapter.fromSerializable(ctx.deserialize(node.v));
-    }
+    },
   });
 }
 
@@ -83,47 +84,48 @@ function base64ToUint8Array(base64) {
 }
 var RAW_STREAM_FACTORY_BINARY = /* @__PURE__ */ Object.create(null);
 var RAW_STREAM_FACTORY_TEXT = /* @__PURE__ */ Object.create(null);
-var RAW_STREAM_FACTORY_CONSTRUCTOR_BINARY = (stream) => new ReadableStream({ start(controller) {
-  stream.on({
-    next(base64) {
-      try {
-        controller.enqueue(base64ToUint8Array(base64));
-      } catch {
-      }
+var RAW_STREAM_FACTORY_CONSTRUCTOR_BINARY = (stream) =>
+  new ReadableStream({
+    start(controller) {
+      stream.on({
+        next(base64) {
+          try {
+            controller.enqueue(base64ToUint8Array(base64));
+          } catch {}
+        },
+        throw(error) {
+          controller.error(error);
+        },
+        return() {
+          try {
+            controller.close();
+          } catch {}
+        },
+      });
     },
-    throw(error) {
-      controller.error(error);
-    },
-    return() {
-      try {
-        controller.close();
-      } catch {
-      }
-    }
   });
-} });
 var textEncoderForFactory = new TextEncoder();
 var RAW_STREAM_FACTORY_CONSTRUCTOR_TEXT = (stream) => {
-  return new ReadableStream({ start(controller) {
-    stream.on({
-      next(value) {
-        try {
-          if (typeof value === "string") controller.enqueue(textEncoderForFactory.encode(value));
-          else controller.enqueue(base64ToUint8Array(value.$b64));
-        } catch {
-        }
-      },
-      throw(error) {
-        controller.error(error);
-      },
-      return() {
-        try {
-          controller.close();
-        } catch {
-        }
-      }
-    });
-  } });
+  return new ReadableStream({
+    start(controller) {
+      stream.on({
+        next(value) {
+          try {
+            if (typeof value === "string") controller.enqueue(textEncoderForFactory.encode(value));
+            else controller.enqueue(base64ToUint8Array(value.$b64));
+          } catch {}
+        },
+        throw(error) {
+          controller.error(error);
+        },
+        return() {
+          try {
+            controller.close();
+          } catch {}
+        },
+      });
+    },
+  });
 };
 var FACTORY_BINARY = `(s=>new ReadableStream({start(c){s.on({next(b){try{const d=atob(b),a=new Uint8Array(d.length);for(let i=0;i<d.length;i++)a[i]=d.charCodeAt(i);c.enqueue(a)}catch(_){}},throw(e){c.error(e)},return(){try{c.close()}catch(_){}}})}}))`;
 var FACTORY_TEXT = `(s=>{const e=new TextEncoder();return new ReadableStream({start(c){s.on({next(v){try{if(typeof v==='string'){c.enqueue(e.encode(v))}else{const d=atob(v.$b64),a=new Uint8Array(d.length);for(let i=0;i<d.length;i++)a[i]=d.charCodeAt(i);c.enqueue(a)}}catch(_){}},throw(x){c.error(x)},return(){try{c.close()}catch(_){}}})}})})`;
@@ -160,8 +162,7 @@ function toTextStream(readable) {
           try {
             const remaining = decoder.decode();
             if (remaining.length > 0) stream.next(remaining);
-          } catch {
-          }
+          } catch {}
           stream.return(void 0);
           break;
         }
@@ -182,51 +183,54 @@ function toTextStream(readable) {
 }
 var RawStreamSSRPlugin = createPlugin({
   tag: "tss/RawStream",
-  extends: [createPlugin({
-    tag: "tss/RawStreamFactory",
-    test(value) {
-      return value === RAW_STREAM_FACTORY_BINARY;
-    },
-    parse: {
-      sync(_value, _ctx, _data) {
-        return {};
+  extends: [
+    createPlugin({
+      tag: "tss/RawStreamFactory",
+      test(value) {
+        return value === RAW_STREAM_FACTORY_BINARY;
       },
-      async async(_value, _ctx, _data) {
-        return {};
+      parse: {
+        sync(_value, _ctx, _data) {
+          return {};
+        },
+        async async(_value, _ctx, _data) {
+          return {};
+        },
+        stream(_value, _ctx, _data) {
+          return {};
+        },
       },
-      stream(_value, _ctx, _data) {
-        return {};
-      }
-    },
-    serialize(_node, _ctx, _data) {
-      return FACTORY_BINARY;
-    },
-    deserialize(_node, _ctx, _data) {
-      return RAW_STREAM_FACTORY_BINARY;
-    }
-  }), createPlugin({
-    tag: "tss/RawStreamFactoryText",
-    test(value) {
-      return value === RAW_STREAM_FACTORY_TEXT;
-    },
-    parse: {
-      sync(_value, _ctx, _data) {
-        return {};
+      serialize(_node, _ctx, _data) {
+        return FACTORY_BINARY;
       },
-      async async(_value, _ctx, _data) {
-        return {};
+      deserialize(_node, _ctx, _data) {
+        return RAW_STREAM_FACTORY_BINARY;
       },
-      stream(_value, _ctx, _data) {
-        return {};
-      }
-    },
-    serialize(_node, _ctx, _data) {
-      return FACTORY_TEXT;
-    },
-    deserialize(_node, _ctx, _data) {
-      return RAW_STREAM_FACTORY_TEXT;
-    }
-  })],
+    }),
+    createPlugin({
+      tag: "tss/RawStreamFactoryText",
+      test(value) {
+        return value === RAW_STREAM_FACTORY_TEXT;
+      },
+      parse: {
+        sync(_value, _ctx, _data) {
+          return {};
+        },
+        async async(_value, _ctx, _data) {
+          return {};
+        },
+        stream(_value, _ctx, _data) {
+          return {};
+        },
+      },
+      serialize(_node, _ctx, _data) {
+        return FACTORY_TEXT;
+      },
+      deserialize(_node, _ctx, _data) {
+        return RAW_STREAM_FACTORY_TEXT;
+      },
+    }),
+  ],
   test(value) {
     return value instanceof RawStream;
   },
@@ -236,35 +240,39 @@ var RawStreamSSRPlugin = createPlugin({
       return {
         hint: ctx.parse(value.hint),
         factory: ctx.parse(factory),
-        stream: ctx.parse(createStream())
+        stream: ctx.parse(createStream()),
       };
     },
     async async(value, ctx, _data) {
       const factory = value.hint === "text" ? RAW_STREAM_FACTORY_TEXT : RAW_STREAM_FACTORY_BINARY;
-      const encodedStream = value.hint === "text" ? toTextStream(value.stream) : toBinaryStream(value.stream);
+      const encodedStream =
+        value.hint === "text" ? toTextStream(value.stream) : toBinaryStream(value.stream);
       return {
         hint: await ctx.parse(value.hint),
         factory: await ctx.parse(factory),
-        stream: await ctx.parse(encodedStream)
+        stream: await ctx.parse(encodedStream),
       };
     },
     stream(value, ctx, _data) {
       const factory = value.hint === "text" ? RAW_STREAM_FACTORY_TEXT : RAW_STREAM_FACTORY_BINARY;
-      const encodedStream = value.hint === "text" ? toTextStream(value.stream) : toBinaryStream(value.stream);
+      const encodedStream =
+        value.hint === "text" ? toTextStream(value.stream) : toBinaryStream(value.stream);
       return {
         hint: ctx.parse(value.hint),
         factory: ctx.parse(factory),
-        stream: ctx.parse(encodedStream)
+        stream: ctx.parse(encodedStream),
       };
-    }
+    },
   },
   serialize(node, ctx, _data) {
     return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.stream) + ")";
   },
   deserialize(node, ctx, _data) {
     const stream = ctx.deserialize(node.stream);
-    return ctx.deserialize(node.hint) === "text" ? RAW_STREAM_FACTORY_CONSTRUCTOR_TEXT(stream) : RAW_STREAM_FACTORY_CONSTRUCTOR_BINARY(stream);
-  }
+    return ctx.deserialize(node.hint) === "text"
+      ? RAW_STREAM_FACTORY_CONSTRUCTOR_TEXT(stream)
+      : RAW_STREAM_FACTORY_CONSTRUCTOR_BINARY(stream);
+  },
 });
 function createRawStreamRPCPlugin(onRawStream) {
   let nextStreamId = 1;
@@ -283,14 +291,18 @@ function createRawStreamRPCPlugin(onRawStream) {
         const streamId = nextStreamId++;
         onRawStream(streamId, value.stream);
         return { streamId: ctx.parse(streamId) };
-      }
+      },
     },
     serialize() {
-      throw new Error("RawStreamRPCPlugin.serialize should not be called. RPC uses JSON serialization, not JS code generation.");
+      throw new Error(
+        "RawStreamRPCPlugin.serialize should not be called. RPC uses JSON serialization, not JS code generation.",
+      );
     },
     deserialize() {
-      throw new Error("RawStreamRPCPlugin.deserialize should not be called. Use createRawStreamDeserializePlugin on client.");
-    }
+      throw new Error(
+        "RawStreamRPCPlugin.deserialize should not be called. Use createRawStreamDeserializePlugin on client.",
+      );
+    },
   });
 }
 function createRawStreamDeserializePlugin(getOrCreateStream) {
@@ -299,11 +311,15 @@ function createRawStreamDeserializePlugin(getOrCreateStream) {
     test: () => false,
     parse: {},
     serialize() {
-      throw new Error("RawStreamDeserializePlugin.serialize should not be called. Client only deserializes.");
+      throw new Error(
+        "RawStreamDeserializePlugin.serialize should not be called. Client only deserializes.",
+      );
     },
     deserialize(node, ctx, _data) {
-      return getOrCreateStream(typeof ctx?.deserialize === "function" ? ctx.deserialize(node.streamId) : node.streamId);
-    }
+      return getOrCreateStream(
+        typeof ctx?.deserialize === "function" ? ctx.deserialize(node.streamId) : node.streamId,
+      );
+    },
   });
 }
 
@@ -322,14 +338,14 @@ var ShallowErrorPlugin = createPlugin({
     },
     stream(value, ctx) {
       return { message: ctx.parse(value.message) };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new Error(" + ctx.serialize(node.message) + ")";
   },
   deserialize(node, ctx) {
     return new Error(ctx.deserialize(node.message));
-  }
+  },
 });
 
 // node_modules/seroval-plugins/dist/esm/development/web.mjs
@@ -344,7 +360,7 @@ function resolveAbortSignalResult(resolve) {
 }
 function resolveAbortSignal(resolve) {
   this.addEventListener("abort", resolveAbortSignalResult.bind(this, resolve), {
-    once: true
+    once: true,
   });
 }
 function abortSignalToPromise(signal) {
@@ -365,14 +381,14 @@ var AbortControllerFactoryPlugin = createPlugin({
     },
     stream() {
       return ABORT_CONTROLLER;
-    }
+    },
   },
   serialize() {
     return PROMISE_TO_ABORT_SIGNAL.toString();
   },
   deserialize() {
     return PROMISE_TO_ABORT_SIGNAL;
-  }
+  },
 });
 var AbortSignalPlugin = createPlugin({
   tag: "seroval-plugins/web/AbortSignal",
@@ -387,7 +403,7 @@ var AbortSignalPlugin = createPlugin({
     sync(value, ctx) {
       if (value.aborted) {
         return {
-          reason: ctx.parse(value.reason)
+          reason: ctx.parse(value.reason),
         };
       }
       return {};
@@ -395,26 +411,26 @@ var AbortSignalPlugin = createPlugin({
     async async(value, ctx) {
       if (value.aborted) {
         return {
-          reason: await ctx.parse(value.reason)
+          reason: await ctx.parse(value.reason),
         };
       }
       const result = await abortSignalToPromise(value);
       return {
-        reason: await ctx.parse(result)
+        reason: await ctx.parse(result),
       };
     },
     stream(value, ctx) {
       if (value.aborted) {
         return {
-          reason: ctx.parse(value.reason)
+          reason: ctx.parse(value.reason),
         };
       }
       const promise = abortSignalToPromise(value);
       return {
         factory: ctx.parse(ABORT_CONTROLLER),
-        controller: ctx.parse(promise)
+        controller: ctx.parse(promise),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     if (node.reason) {
@@ -434,7 +450,7 @@ var AbortSignalPlugin = createPlugin({
     }
     const controller = new AbortController();
     return controller.signal;
-  }
+  },
 });
 var BlobPlugin = createPlugin({
   tag: "seroval-plugins/web/Blob",
@@ -448,25 +464,25 @@ var BlobPlugin = createPlugin({
     async async(value, ctx) {
       return {
         type: await ctx.parse(value.type),
-        buffer: await ctx.parse(await value.arrayBuffer())
+        buffer: await ctx.parse(await value.arrayBuffer()),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new Blob([" + ctx.serialize(node.buffer) + "],{type:" + ctx.serialize(node.type) + "})";
   },
   deserialize(node, ctx) {
     return new Blob([ctx.deserialize(node.buffer)], {
-      type: ctx.deserialize(node.type)
+      type: ctx.deserialize(node.type),
     });
-  }
+  },
 });
 function createCustomEventOptions(current) {
   return {
     detail: current.detail,
     bubbles: current.bubbles,
     cancelable: current.cancelable,
-    composed: current.composed
+    composed: current.composed,
   };
 }
 var CustomEventPlugin = createPlugin({
@@ -481,31 +497,28 @@ var CustomEventPlugin = createPlugin({
     sync(value, ctx) {
       return {
         type: ctx.parse(value.type),
-        options: ctx.parse(createCustomEventOptions(value))
+        options: ctx.parse(createCustomEventOptions(value)),
       };
     },
     async async(value, ctx) {
       return {
         type: await ctx.parse(value.type),
-        options: await ctx.parse(createCustomEventOptions(value))
+        options: await ctx.parse(createCustomEventOptions(value)),
       };
     },
     stream(value, ctx) {
       return {
         type: ctx.parse(value.type),
-        options: ctx.parse(createCustomEventOptions(value))
+        options: ctx.parse(createCustomEventOptions(value)),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new CustomEvent(" + ctx.serialize(node.type) + "," + ctx.serialize(node.options) + ")";
   },
   deserialize(node, ctx) {
-    return new CustomEvent(
-      ctx.deserialize(node.type),
-      ctx.deserialize(node.options)
-    );
-  }
+    return new CustomEvent(ctx.deserialize(node.type), ctx.deserialize(node.options));
+  },
 });
 var DOMExceptionPlugin = createPlugin({
   tag: "seroval-plugins/web/DOMException",
@@ -519,37 +532,34 @@ var DOMExceptionPlugin = createPlugin({
     sync(value, ctx) {
       return {
         name: ctx.parse(value.name),
-        message: ctx.parse(value.message)
+        message: ctx.parse(value.message),
       };
     },
     async async(value, ctx) {
       return {
         name: await ctx.parse(value.name),
-        message: await ctx.parse(value.message)
+        message: await ctx.parse(value.message),
       };
     },
     stream(value, ctx) {
       return {
         name: ctx.parse(value.name),
-        message: ctx.parse(value.message)
+        message: ctx.parse(value.message),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new DOMException(" + ctx.serialize(node.message) + "," + ctx.serialize(node.name) + ")";
   },
   deserialize(node, ctx) {
-    return new DOMException(
-      ctx.deserialize(node.message),
-      ctx.deserialize(node.name)
-    );
-  }
+    return new DOMException(ctx.deserialize(node.message), ctx.deserialize(node.name));
+  },
 });
 function createEventOptions(current) {
   return {
     bubbles: current.bubbles,
     cancelable: current.cancelable,
-    composed: current.composed
+    composed: current.composed,
   };
 }
 var EventPlugin = createPlugin({
@@ -564,31 +574,28 @@ var EventPlugin = createPlugin({
     sync(value, ctx) {
       return {
         type: ctx.parse(value.type),
-        options: ctx.parse(createEventOptions(value))
+        options: ctx.parse(createEventOptions(value)),
       };
     },
     async async(value, ctx) {
       return {
         type: await ctx.parse(value.type),
-        options: await ctx.parse(createEventOptions(value))
+        options: await ctx.parse(createEventOptions(value)),
       };
     },
     stream(value, ctx) {
       return {
         type: ctx.parse(value.type),
-        options: ctx.parse(createEventOptions(value))
+        options: ctx.parse(createEventOptions(value)),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new Event(" + ctx.serialize(node.type) + "," + ctx.serialize(node.options) + ")";
   },
   deserialize(node, ctx) {
-    return new Event(
-      ctx.deserialize(node.type),
-      ctx.deserialize(node.options)
-    );
-  }
+    return new Event(ctx.deserialize(node.type), ctx.deserialize(node.options));
+  },
 });
 var FilePlugin = createPlugin({
   tag: "seroval-plugins/web/File",
@@ -604,22 +611,30 @@ var FilePlugin = createPlugin({
         name: await ctx.parse(value.name),
         options: await ctx.parse({
           type: value.type,
-          lastModified: value.lastModified
+          lastModified: value.lastModified,
         }),
-        buffer: await ctx.parse(await value.arrayBuffer())
+        buffer: await ctx.parse(await value.arrayBuffer()),
       };
-    }
+    },
   },
   serialize(node, ctx) {
-    return "new File([" + ctx.serialize(node.buffer) + "]," + ctx.serialize(node.name) + "," + ctx.serialize(node.options) + ")";
+    return (
+      "new File([" +
+      ctx.serialize(node.buffer) +
+      "]," +
+      ctx.serialize(node.name) +
+      "," +
+      ctx.serialize(node.options) +
+      ")"
+    );
   },
   deserialize(node, ctx) {
     return new File(
       [ctx.deserialize(node.buffer)],
       ctx.deserialize(node.name),
-      ctx.deserialize(node.options)
+      ctx.deserialize(node.options),
     );
-  }
+  },
 });
 var file_default = FilePlugin;
 function convertFormData(instance) {
@@ -651,14 +666,14 @@ var FormDataFactoryPlugin = createPlugin({
     },
     stream() {
       return FORM_DATA_FACTORY;
-    }
+    },
   },
   serialize() {
     return FORM_DATA_FACTORY_CONSTRUCTOR.toString();
   },
   deserialize() {
     return FORM_DATA_FACTORY;
-  }
+  },
 });
 var FormDataPlugin = createPlugin({
   tag: "seroval-plugins/web/FormData",
@@ -673,30 +688,28 @@ var FormDataPlugin = createPlugin({
     sync(value, ctx) {
       return {
         factory: ctx.parse(FORM_DATA_FACTORY),
-        entries: ctx.parse(convertFormData(value))
+        entries: ctx.parse(convertFormData(value)),
       };
     },
     async async(value, ctx) {
       return {
         factory: await ctx.parse(FORM_DATA_FACTORY),
-        entries: await ctx.parse(convertFormData(value))
+        entries: await ctx.parse(convertFormData(value)),
       };
     },
     stream(value, ctx) {
       return {
         factory: ctx.parse(FORM_DATA_FACTORY),
-        entries: ctx.parse(convertFormData(value))
+        entries: ctx.parse(convertFormData(value)),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.entries) + ")";
   },
   deserialize(node, ctx) {
-    return FORM_DATA_FACTORY_CONSTRUCTOR(
-      ctx.deserialize(node.entries)
-    );
-  }
+    return FORM_DATA_FACTORY_CONSTRUCTOR(ctx.deserialize(node.entries));
+  },
 });
 function convertHeaders(instance) {
   const items = [];
@@ -716,26 +729,26 @@ var HeadersPlugin = createPlugin({
   parse: {
     sync(value, ctx) {
       return {
-        value: ctx.parse(convertHeaders(value))
+        value: ctx.parse(convertHeaders(value)),
       };
     },
     async async(value, ctx) {
       return {
-        value: await ctx.parse(convertHeaders(value))
+        value: await ctx.parse(convertHeaders(value)),
       };
     },
     stream(value, ctx) {
       return {
-        value: ctx.parse(convertHeaders(value))
+        value: ctx.parse(convertHeaders(value)),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new Headers(" + ctx.serialize(node.value) + ")";
   },
   deserialize(node, ctx) {
     return new Headers(ctx.deserialize(node.value));
-  }
+  },
 });
 var headers_default = HeadersPlugin;
 var ImageDataPlugin = createPlugin({
@@ -753,8 +766,8 @@ var ImageDataPlugin = createPlugin({
         width: ctx.parse(value.width),
         height: ctx.parse(value.height),
         options: ctx.parse({
-          colorSpace: value.colorSpace
-        })
+          colorSpace: value.colorSpace,
+        }),
       };
     },
     async async(value, ctx) {
@@ -763,8 +776,8 @@ var ImageDataPlugin = createPlugin({
         width: await ctx.parse(value.width),
         height: await ctx.parse(value.height),
         options: await ctx.parse({
-          colorSpace: value.colorSpace
-        })
+          colorSpace: value.colorSpace,
+        }),
       };
     },
     stream(value, ctx) {
@@ -773,45 +786,54 @@ var ImageDataPlugin = createPlugin({
         width: ctx.parse(value.width),
         height: ctx.parse(value.height),
         options: ctx.parse({
-          colorSpace: value.colorSpace
-        })
+          colorSpace: value.colorSpace,
+        }),
       };
-    }
+    },
   },
   serialize(node, ctx) {
-    return "new ImageData(" + ctx.serialize(node.data) + "," + ctx.serialize(node.width) + "," + ctx.serialize(node.height) + "," + ctx.serialize(node.options) + ")";
+    return (
+      "new ImageData(" +
+      ctx.serialize(node.data) +
+      "," +
+      ctx.serialize(node.width) +
+      "," +
+      ctx.serialize(node.height) +
+      "," +
+      ctx.serialize(node.options) +
+      ")"
+    );
   },
   deserialize(node, ctx) {
     return new ImageData(
       ctx.deserialize(node.data),
       ctx.deserialize(node.width),
       ctx.deserialize(node.height),
-      ctx.deserialize(node.options)
+      ctx.deserialize(node.options),
     );
-  }
+  },
 });
 var READABLE_STREAM_FACTORY = {};
-var READABLE_STREAM_FACTORY_CONSTRUCTOR = (stream) => new ReadableStream({
-  start: (controller) => {
-    stream.on({
-      next: (value) => {
-        try {
-          controller.enqueue(value);
-        } catch (_error) {
-        }
-      },
-      throw: (value) => {
-        controller.error(value);
-      },
-      return: () => {
-        try {
-          controller.close();
-        } catch (_error) {
-        }
-      }
-    });
-  }
-});
+var READABLE_STREAM_FACTORY_CONSTRUCTOR = (stream) =>
+  new ReadableStream({
+    start: (controller) => {
+      stream.on({
+        next: (value) => {
+          try {
+            controller.enqueue(value);
+          } catch (_error) {}
+        },
+        throw: (value) => {
+          controller.error(value);
+        },
+        return: () => {
+          try {
+            controller.close();
+          } catch (_error) {}
+        },
+      });
+    },
+  });
 var ReadableStreamFactoryPlugin = createPlugin({
   tag: "seroval-plugins/web/ReadableStreamFactory",
   test(value) {
@@ -826,14 +848,14 @@ var ReadableStreamFactoryPlugin = createPlugin({
     },
     stream() {
       return READABLE_STREAM_FACTORY;
-    }
+    },
   },
   serialize() {
     return READABLE_STREAM_FACTORY_CONSTRUCTOR.toString();
   },
   deserialize() {
     return READABLE_STREAM_FACTORY;
-  }
+  },
 });
 function toStream(value) {
   const stream = createStream();
@@ -851,8 +873,7 @@ function toStream(value) {
       stream.throw(error);
     }
   }
-  push().catch(() => {
-  });
+  push().catch(() => {});
   return stream;
 }
 var ReadableStreamPlugin = createPlugin({
@@ -868,21 +889,21 @@ var ReadableStreamPlugin = createPlugin({
     sync(_value, ctx) {
       return {
         factory: ctx.parse(READABLE_STREAM_FACTORY),
-        stream: ctx.parse(createStream())
+        stream: ctx.parse(createStream()),
       };
     },
     async async(value, ctx) {
       return {
         factory: await ctx.parse(READABLE_STREAM_FACTORY),
-        stream: await ctx.parse(toStream(value))
+        stream: await ctx.parse(toStream(value)),
       };
     },
     stream(value, ctx) {
       return {
         factory: ctx.parse(READABLE_STREAM_FACTORY),
-        stream: ctx.parse(toStream(value))
+        stream: ctx.parse(toStream(value)),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.stream) + ")";
@@ -890,7 +911,7 @@ var ReadableStreamPlugin = createPlugin({
   deserialize(node, ctx) {
     const stream = ctx.deserialize(node.stream);
     return READABLE_STREAM_FACTORY_CONSTRUCTOR(stream);
-  }
+  },
 });
 var readable_stream_default = ReadableStreamPlugin;
 function createRequestOptions(current, body) {
@@ -905,7 +926,7 @@ function createRequestOptions(current, body) {
     mode: current.mode,
     redirect: current.redirect,
     referrer: current.referrer,
-    referrerPolicy: current.referrerPolicy
+    referrerPolicy: current.referrerPolicy,
   };
 }
 var RequestPlugin = createPlugin({
@@ -924,38 +945,32 @@ var RequestPlugin = createPlugin({
         options: await ctx.parse(
           createRequestOptions(
             value,
-            value.body && !value.bodyUsed ? await value.clone().arrayBuffer() : null
-          )
-        )
+            value.body && !value.bodyUsed ? await value.clone().arrayBuffer() : null,
+          ),
+        ),
       };
     },
     stream(value, ctx) {
       return {
         url: ctx.parse(value.url),
         options: ctx.parse(
-          createRequestOptions(
-            value,
-            value.body && !value.bodyUsed ? value.clone().body : null
-          )
-        )
+          createRequestOptions(value, value.body && !value.bodyUsed ? value.clone().body : null),
+        ),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new Request(" + ctx.serialize(node.url) + "," + ctx.serialize(node.options) + ")";
   },
   deserialize(node, ctx) {
-    return new Request(
-      ctx.deserialize(node.url),
-      ctx.deserialize(node.options)
-    );
-  }
+    return new Request(ctx.deserialize(node.url), ctx.deserialize(node.options));
+  },
 });
 function createResponseOptions(current) {
   return {
     headers: current.headers,
     status: current.status,
-    statusText: current.statusText
+    statusText: current.statusText,
   };
 }
 var ResponsePlugin = createPlugin({
@@ -971,29 +986,24 @@ var ResponsePlugin = createPlugin({
     async async(value, ctx) {
       return {
         body: await ctx.parse(
-          value.body && !value.bodyUsed ? await value.clone().arrayBuffer() : null
+          value.body && !value.bodyUsed ? await value.clone().arrayBuffer() : null,
         ),
-        options: await ctx.parse(createResponseOptions(value))
+        options: await ctx.parse(createResponseOptions(value)),
       };
     },
     stream(value, ctx) {
       return {
-        body: ctx.parse(
-          value.body && !value.bodyUsed ? value.clone().body : null
-        ),
-        options: ctx.parse(createResponseOptions(value))
+        body: ctx.parse(value.body && !value.bodyUsed ? value.clone().body : null),
+        options: ctx.parse(createResponseOptions(value)),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new Response(" + ctx.serialize(node.body) + "," + ctx.serialize(node.options) + ")";
   },
   deserialize(node, ctx) {
-    return new Response(
-      ctx.deserialize(node.body),
-      ctx.deserialize(node.options)
-    );
-  }
+    return new Response(ctx.deserialize(node.body), ctx.deserialize(node.options));
+  },
 });
 var URLPlugin = createPlugin({
   tag: "seroval-plugins/web/URL",
@@ -1006,26 +1016,26 @@ var URLPlugin = createPlugin({
   parse: {
     sync(value, ctx) {
       return {
-        value: ctx.parse(value.href)
+        value: ctx.parse(value.href),
       };
     },
     async async(value, ctx) {
       return {
-        value: await ctx.parse(value.href)
+        value: await ctx.parse(value.href),
       };
     },
     stream(value, ctx) {
       return {
-        value: ctx.parse(value.href)
+        value: ctx.parse(value.href),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new URL(" + ctx.serialize(node.value) + ")";
   },
   deserialize(node, ctx) {
     return new URL(ctx.deserialize(node.value));
-  }
+  },
 });
 var URLSearchParamsPlugin = createPlugin({
   tag: "seroval-plugins/web/URLSearchParams",
@@ -1038,34 +1048,30 @@ var URLSearchParamsPlugin = createPlugin({
   parse: {
     sync(value, ctx) {
       return {
-        value: ctx.parse(value.toString())
+        value: ctx.parse(value.toString()),
       };
     },
     async async(value, ctx) {
       return {
-        value: await ctx.parse(value.toString())
+        value: await ctx.parse(value.toString()),
       };
     },
     stream(value, ctx) {
       return {
-        value: ctx.parse(value.toString())
+        value: ctx.parse(value.toString()),
       };
-    }
+    },
   },
   serialize(node, ctx) {
     return "new URLSearchParams(" + ctx.serialize(node.value) + ")";
   },
   deserialize(node, ctx) {
     return new URLSearchParams(ctx.deserialize(node.value));
-  }
+  },
 });
 
 // node_modules/@tanstack/router-core/dist/esm/ssr/serializer/seroval-plugins.js
-var defaultSerovalPlugins = [
-  ShallowErrorPlugin,
-  RawStreamSSRPlugin,
-  readable_stream_default
-];
+var defaultSerovalPlugins = [ShallowErrorPlugin, RawStreamSSRPlugin, readable_stream_default];
 
 // node_modules/@tanstack/router-core/dist/esm/lru-cache.js
 function createLRUCache(max) {
@@ -1118,7 +1124,7 @@ function createLRUCache(max) {
         const entry = {
           key,
           value,
-          prev: newest
+          prev: newest,
         };
         if (newest) newest.next = entry;
         newest = entry;
@@ -1130,7 +1136,7 @@ function createLRUCache(max) {
       cache.clear();
       oldest = void 0;
       newest = void 0;
-    }
+    },
   };
 }
 
@@ -1145,6 +1151,6 @@ export {
   RawStream,
   createRawStreamRPCPlugin,
   createRawStreamDeserializePlugin,
-  defaultSerovalPlugins
+  defaultSerovalPlugins,
 };
 //# sourceMappingURL=chunk-TPESL6GF.js.map

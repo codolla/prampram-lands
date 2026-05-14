@@ -4,13 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Renders a skeleton table with the given column count and row count.
  * Mimics the shape of a typical table while data loads.
  */
-export function TableSkeleton({
-  columns = 5,
-  rows = 6,
-}: {
-  columns?: number;
-  rows?: number;
-}) {
+export function TableSkeleton({ columns = 5, rows = 6 }: { columns?: number; rows?: number }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -28,10 +22,7 @@ export function TableSkeleton({
             <tr key={r} className="border-b border-border/40 last:border-0">
               {Array.from({ length: columns }).map((_, c) => (
                 <td key={c} className="py-3">
-                  <Skeleton
-                    className="h-4"
-                    style={{ width: `${50 + ((r * 7 + c * 13) % 40)}%` }}
-                  />
+                  <Skeleton className="h-4" style={{ width: `${50 + ((r * 7 + c * 13) % 40)}%` }} />
                 </td>
               ))}
             </tr>

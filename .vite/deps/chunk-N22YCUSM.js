@@ -1,7 +1,6 @@
 // node_modules/cookie-es/dist/index.mjs
 var NullObject = (() => {
-  const C = function() {
-  };
+  const C = function () {};
   C.prototype = /* @__PURE__ */ Object.create(null);
   return C;
 })();
@@ -43,7 +42,8 @@ function splitSetCookieString(cookiesString) {
         } else pos = lastComma + 1;
       } else pos += 1;
     }
-    if (!cookiesSeparatorFound || pos >= cookiesString.length) cookiesStrings.push(cookiesString.slice(start));
+    if (!cookiesSeparatorFound || pos >= cookiesString.length)
+      cookiesStrings.push(cookiesString.slice(start));
   }
   return cookiesStrings;
 }
@@ -59,8 +59,10 @@ function mergeHeaders(...headers) {
   return headers.reduce((acc, header) => {
     const headersInstance = toHeadersInstance(header);
     if (!headersInstance) return acc;
-    for (const [key, value] of headersInstance.entries()) if (key === "set-cookie") splitSetCookieString(value).forEach((cookie) => acc.append("set-cookie", cookie));
-    else acc.set(key, value);
+    for (const [key, value] of headersInstance.entries())
+      if (key === "set-cookie")
+        splitSetCookieString(value).forEach((cookie) => acc.append("set-cookie", cookie));
+      else acc.set(key, value);
     return acc;
   }, new Headers());
 }
@@ -73,9 +75,5 @@ function hydrateSsrMatchId(id) {
   return id.replaceAll("\0", "/").replaceAll("�", "/");
 }
 
-export {
-  dehydrateSsrMatchId,
-  hydrateSsrMatchId,
-  mergeHeaders
-};
+export { dehydrateSsrMatchId, hydrateSsrMatchId, mergeHeaders };
 //# sourceMappingURL=chunk-N22YCUSM.js.map

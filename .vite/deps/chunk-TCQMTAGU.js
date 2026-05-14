@@ -3,7 +3,5 @@ function clamp(value, [min, max]) {
   return Math.min(max, Math.max(min, value));
 }
 
-export {
-  clamp
-};
+export { clamp };
 //# sourceMappingURL=chunk-TCQMTAGU.js.map

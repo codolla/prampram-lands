@@ -17,7 +17,7 @@ import {
   Title,
   Trigger,
   WarningProvider,
-  createDialogScope
+  createDialogScope,
 } from "./chunk-QGLM555Z.js";
 import "./chunk-WZBSIZNY.js";
 import "./chunk-4YKFFH32.js";
@@ -50,5 +50,5 @@ export {
   Title,
   Trigger,
   WarningProvider,
-  createDialogScope
+  createDialogScope,
 };

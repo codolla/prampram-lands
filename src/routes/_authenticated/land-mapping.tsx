@@ -95,7 +95,9 @@ function LandMappingPage() {
     () =>
       (lands.data ?? []).map((l) => ({
         id: l.id,
-        label: `${l.land_code}${l.plot_number ? ` · ${l.plot_number}` : ""}`,
+        label: `${l.land_code}${l.plot_number ? ` · ${l.plot_number}` : ""} — ${
+          (l.landowners as { full_name?: string } | null)?.full_name ?? "No owner"
+        }`,
       })),
     [lands.data],
   );
@@ -181,7 +183,7 @@ function LandMappingPage() {
         {/* Top controls */}
         <Card>
           <CardContent className="flex flex-wrap items-end gap-3 p-4">
-            <div className="flex-1 min-w-[220px]">
+            <div className="min-w-55 flex-1">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Working land
               </Label>

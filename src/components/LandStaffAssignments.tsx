@@ -72,10 +72,7 @@ export function LandStaffAssignments({ landId }: { landId: string }) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("land_staff_assignments")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("land_staff_assignments").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -91,16 +88,15 @@ export function LandStaffAssignments({ landId }: { landId: string }) {
 
   const assigned = assignmentsQuery.data ?? [];
   const staff = staffQuery.data ?? [];
-  const nameFor = (uid: string) =>
-    staff.find((s) => s.id === uid)?.label ?? uid.slice(0, 8);
+  const nameFor = (uid: string) => staff.find((s) => s.id === uid)?.label ?? uid.slice(0, 8);
 
   const available = staff.filter((s) => !assigned.some((a) => a.user_id === s.id));
 
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Staff listed here can always see and edit this land, even if it falls
-        outside their assigned zones. Zone-based assignments still apply on top.
+        Staff listed here can always see and edit this land, even if it falls outside their assigned
+        zones. Zone-based assignments still apply on top.
       </p>
 
       {assigned.length === 0 ? (
@@ -108,10 +104,7 @@ export function LandStaffAssignments({ landId }: { landId: string }) {
       ) : (
         <ul className="divide-y rounded-md border border-border">
           {assigned.map((a) => (
-            <li
-              key={a.id}
-              className="flex items-center justify-between gap-3 px-3 py-2"
-            >
+            <li key={a.id} className="flex items-center justify-between gap-3 px-3 py-2">
               <span className="text-sm">{nameFor(a.user_id)}</span>
               {isAdmin && (
                 <Button

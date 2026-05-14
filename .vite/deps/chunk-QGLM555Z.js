@@ -1,39 +1,18 @@
-import {
-  Combination_default,
-  FocusScope,
-  hideOthers,
-  useFocusGuards
-} from "./chunk-WZBSIZNY.js";
-import {
-  DismissableLayer,
-  Portal
-} from "./chunk-4YKFFH32.js";
-import {
-  useId
-} from "./chunk-Y7SI5NHG.js";
-import {
-  Presence
-} from "./chunk-AIMOOC6Y.js";
+import { Combination_default, FocusScope, hideOthers, useFocusGuards } from "./chunk-WZBSIZNY.js";
+import { DismissableLayer, Portal } from "./chunk-4YKFFH32.js";
+import { useId } from "./chunk-Y7SI5NHG.js";
+import { Presence } from "./chunk-AIMOOC6Y.js";
 import {
   Primitive,
   composeEventHandlers,
   createContext2,
   createContextScope,
-  useControllableState
+  useControllableState,
 } from "./chunk-MVQIMK6M.js";
-import {
-  composeRefs,
-  useComposedRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { composeRefs, useComposedRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-dialog/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -57,7 +36,13 @@ function createSlot(ownerName) {
           return child;
         }
       });
-      return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children: React.isValidElement(newElement) ? React.cloneElement(newElement, void 0, newChildren) : null });
+      return (0, import_jsx_runtime.jsx)(SlotClone, {
+        ...slotProps,
+        ref: forwardedRef,
+        children: React.isValidElement(newElement)
+          ? React.cloneElement(newElement, void 0, newChildren)
+          : null,
+      });
     }
     return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children });
   });
@@ -92,7 +77,12 @@ function createSlottable(ownerName) {
 }
 var Slottable = createSlottable("Slottable");
 function isSlottable(child) {
-  return React.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
+  return (
+    React.isValidElement(child) &&
+    typeof child.type === "function" &&
+    "__radixId" in child.type &&
+    child.type.__radixId === SLOTTABLE_IDENTIFIER
+  );
 }
 function mergeProps(slotProps, childProps) {
   const overrideProps = { ...childProps };
@@ -144,7 +134,7 @@ var Dialog = (props) => {
     open: openProp,
     defaultOpen,
     onOpenChange,
-    modal = true
+    modal = true,
   } = props;
   const triggerRef = React2.useRef(null);
   const contentRef = React2.useRef(null);
@@ -152,244 +142,243 @@ var Dialog = (props) => {
     prop: openProp,
     defaultProp: defaultOpen ?? false,
     onChange: onOpenChange,
-    caller: DIALOG_NAME
+    caller: DIALOG_NAME,
   });
-  return (0, import_jsx_runtime2.jsx)(
-    DialogProvider,
-    {
-      scope: __scopeDialog,
-      triggerRef,
-      contentRef,
-      contentId: useId(),
-      titleId: useId(),
-      descriptionId: useId(),
-      open,
-      onOpenChange: setOpen,
-      onOpenToggle: React2.useCallback(() => setOpen((prevOpen) => !prevOpen), [setOpen]),
-      modal,
-      children
-    }
-  );
+  return (0, import_jsx_runtime2.jsx)(DialogProvider, {
+    scope: __scopeDialog,
+    triggerRef,
+    contentRef,
+    contentId: useId(),
+    titleId: useId(),
+    descriptionId: useId(),
+    open,
+    onOpenChange: setOpen,
+    onOpenToggle: React2.useCallback(() => setOpen((prevOpen) => !prevOpen), [setOpen]),
+    modal,
+    children,
+  });
 };
 Dialog.displayName = DIALOG_NAME;
 var TRIGGER_NAME = "DialogTrigger";
-var DialogTrigger = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...triggerProps } = props;
-    const context = useDialogContext(TRIGGER_NAME, __scopeDialog);
-    const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
-    return (0, import_jsx_runtime2.jsx)(
-      Primitive.button,
-      {
-        type: "button",
-        "aria-haspopup": "dialog",
-        "aria-expanded": context.open,
-        "aria-controls": context.contentId,
-        "data-state": getState(context.open),
-        ...triggerProps,
-        ref: composedTriggerRef,
-        onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
-      }
-    );
-  }
-);
+var DialogTrigger = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeDialog, ...triggerProps } = props;
+  const context = useDialogContext(TRIGGER_NAME, __scopeDialog);
+  const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
+  return (0, import_jsx_runtime2.jsx)(Primitive.button, {
+    type: "button",
+    "aria-haspopup": "dialog",
+    "aria-expanded": context.open,
+    "aria-controls": context.contentId,
+    "data-state": getState(context.open),
+    ...triggerProps,
+    ref: composedTriggerRef,
+    onClick: composeEventHandlers(props.onClick, context.onOpenToggle),
+  });
+});
 DialogTrigger.displayName = TRIGGER_NAME;
 var PORTAL_NAME = "DialogPortal";
 var [PortalProvider, usePortalContext] = createDialogContext(PORTAL_NAME, {
-  forceMount: void 0
+  forceMount: void 0,
 });
 var DialogPortal = (props) => {
   const { __scopeDialog, forceMount, children, container } = props;
   const context = useDialogContext(PORTAL_NAME, __scopeDialog);
-  return (0, import_jsx_runtime2.jsx)(PortalProvider, { scope: __scopeDialog, forceMount, children: React2.Children.map(children, (child) => (0, import_jsx_runtime2.jsx)(Presence, { present: forceMount || context.open, children: (0, import_jsx_runtime2.jsx)(Portal, { asChild: true, container, children: child }) })) });
+  return (0, import_jsx_runtime2.jsx)(PortalProvider, {
+    scope: __scopeDialog,
+    forceMount,
+    children: React2.Children.map(children, (child) =>
+      (0, import_jsx_runtime2.jsx)(Presence, {
+        present: forceMount || context.open,
+        children: (0, import_jsx_runtime2.jsx)(Portal, {
+          asChild: true,
+          container,
+          children: child,
+        }),
+      }),
+    ),
+  });
 };
 DialogPortal.displayName = PORTAL_NAME;
 var OVERLAY_NAME = "DialogOverlay";
-var DialogOverlay = React2.forwardRef(
-  (props, forwardedRef) => {
-    const portalContext = usePortalContext(OVERLAY_NAME, props.__scopeDialog);
-    const { forceMount = portalContext.forceMount, ...overlayProps } = props;
-    const context = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
-    return context.modal ? (0, import_jsx_runtime2.jsx)(Presence, { present: forceMount || context.open, children: (0, import_jsx_runtime2.jsx)(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
-  }
-);
-DialogOverlay.displayName = OVERLAY_NAME;
-var Slot2 = createSlot("DialogOverlay.RemoveScroll");
-var DialogOverlayImpl = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...overlayProps } = props;
-    const context = useDialogContext(OVERLAY_NAME, __scopeDialog);
-    return (
-      // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
-      // ie. when `Overlay` and `Content` are siblings
-      (0, import_jsx_runtime2.jsx)(Combination_default, { as: Slot2, allowPinchZoom: true, shards: [context.contentRef], children: (0, import_jsx_runtime2.jsx)(
-        Primitive.div,
-        {
-          "data-state": getState(context.open),
+var DialogOverlay = React2.forwardRef((props, forwardedRef) => {
+  const portalContext = usePortalContext(OVERLAY_NAME, props.__scopeDialog);
+  const { forceMount = portalContext.forceMount, ...overlayProps } = props;
+  const context = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
+  return context.modal
+    ? (0, import_jsx_runtime2.jsx)(Presence, {
+        present: forceMount || context.open,
+        children: (0, import_jsx_runtime2.jsx)(DialogOverlayImpl, {
           ...overlayProps,
           ref: forwardedRef,
-          style: { pointerEvents: "auto", ...overlayProps.style }
-        }
-      ) })
-    );
-  }
-);
-var CONTENT_NAME = "DialogContent";
-var DialogContent = React2.forwardRef(
-  (props, forwardedRef) => {
-    const portalContext = usePortalContext(CONTENT_NAME, props.__scopeDialog);
-    const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME, props.__scopeDialog);
-    return (0, import_jsx_runtime2.jsx)(Presence, { present: forceMount || context.open, children: context.modal ? (0, import_jsx_runtime2.jsx)(DialogContentModal, { ...contentProps, ref: forwardedRef }) : (0, import_jsx_runtime2.jsx)(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
-  }
-);
-DialogContent.displayName = CONTENT_NAME;
-var DialogContentModal = React2.forwardRef(
-  (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME, props.__scopeDialog);
-    const contentRef = React2.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
-    React2.useEffect(() => {
-      const content = contentRef.current;
-      if (content) return hideOthers(content);
-    }, []);
-    return (0, import_jsx_runtime2.jsx)(
-      DialogContentImpl,
-      {
-        ...props,
-        ref: composedRefs,
-        trapFocus: context.open,
-        disableOutsidePointerEvents: true,
-        onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
-          event.preventDefault();
-          context.triggerRef.current?.focus();
         }),
-        onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
-          const originalEvent = event.detail.originalEvent;
-          const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
-          const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
-          if (isRightClick) event.preventDefault();
-        }),
-        onFocusOutside: composeEventHandlers(
-          props.onFocusOutside,
-          (event) => event.preventDefault()
-        )
-      }
-    );
-  }
-);
-var DialogContentNonModal = React2.forwardRef(
-  (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME, props.__scopeDialog);
-    const hasInteractedOutsideRef = React2.useRef(false);
-    const hasPointerDownOutsideRef = React2.useRef(false);
-    return (0, import_jsx_runtime2.jsx)(
-      DialogContentImpl,
-      {
-        ...props,
+      })
+    : null;
+});
+DialogOverlay.displayName = OVERLAY_NAME;
+var Slot2 = createSlot("DialogOverlay.RemoveScroll");
+var DialogOverlayImpl = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeDialog, ...overlayProps } = props;
+  const context = useDialogContext(OVERLAY_NAME, __scopeDialog);
+  return (
+    // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
+    // ie. when `Overlay` and `Content` are siblings
+    (0, import_jsx_runtime2.jsx)(Combination_default, {
+      as: Slot2,
+      allowPinchZoom: true,
+      shards: [context.contentRef],
+      children: (0, import_jsx_runtime2.jsx)(Primitive.div, {
+        "data-state": getState(context.open),
+        ...overlayProps,
         ref: forwardedRef,
-        trapFocus: false,
-        disableOutsidePointerEvents: false,
-        onCloseAutoFocus: (event) => {
-          props.onCloseAutoFocus?.(event);
-          if (!event.defaultPrevented) {
-            if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
-            event.preventDefault();
-          }
-          hasInteractedOutsideRef.current = false;
-          hasPointerDownOutsideRef.current = false;
-        },
-        onInteractOutside: (event) => {
-          props.onInteractOutside?.(event);
-          if (!event.defaultPrevented) {
-            hasInteractedOutsideRef.current = true;
-            if (event.detail.originalEvent.type === "pointerdown") {
-              hasPointerDownOutsideRef.current = true;
-            }
-          }
-          const target = event.target;
-          const targetIsTrigger = context.triggerRef.current?.contains(target);
-          if (targetIsTrigger) event.preventDefault();
-          if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
-            event.preventDefault();
-          }
+        style: { pointerEvents: "auto", ...overlayProps.style },
+      }),
+    })
+  );
+});
+var CONTENT_NAME = "DialogContent";
+var DialogContent = React2.forwardRef((props, forwardedRef) => {
+  const portalContext = usePortalContext(CONTENT_NAME, props.__scopeDialog);
+  const { forceMount = portalContext.forceMount, ...contentProps } = props;
+  const context = useDialogContext(CONTENT_NAME, props.__scopeDialog);
+  return (0, import_jsx_runtime2.jsx)(Presence, {
+    present: forceMount || context.open,
+    children: context.modal
+      ? (0, import_jsx_runtime2.jsx)(DialogContentModal, { ...contentProps, ref: forwardedRef })
+      : (0, import_jsx_runtime2.jsx)(DialogContentNonModal, { ...contentProps, ref: forwardedRef }),
+  });
+});
+DialogContent.displayName = CONTENT_NAME;
+var DialogContentModal = React2.forwardRef((props, forwardedRef) => {
+  const context = useDialogContext(CONTENT_NAME, props.__scopeDialog);
+  const contentRef = React2.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
+  React2.useEffect(() => {
+    const content = contentRef.current;
+    if (content) return hideOthers(content);
+  }, []);
+  return (0, import_jsx_runtime2.jsx)(DialogContentImpl, {
+    ...props,
+    ref: composedRefs,
+    trapFocus: context.open,
+    disableOutsidePointerEvents: true,
+    onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
+      event.preventDefault();
+      context.triggerRef.current?.focus();
+    }),
+    onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
+      const originalEvent = event.detail.originalEvent;
+      const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
+      const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
+      if (isRightClick) event.preventDefault();
+    }),
+    onFocusOutside: composeEventHandlers(props.onFocusOutside, (event) => event.preventDefault()),
+  });
+});
+var DialogContentNonModal = React2.forwardRef((props, forwardedRef) => {
+  const context = useDialogContext(CONTENT_NAME, props.__scopeDialog);
+  const hasInteractedOutsideRef = React2.useRef(false);
+  const hasPointerDownOutsideRef = React2.useRef(false);
+  return (0, import_jsx_runtime2.jsx)(DialogContentImpl, {
+    ...props,
+    ref: forwardedRef,
+    trapFocus: false,
+    disableOutsidePointerEvents: false,
+    onCloseAutoFocus: (event) => {
+      props.onCloseAutoFocus?.(event);
+      if (!event.defaultPrevented) {
+        if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
+        event.preventDefault();
+      }
+      hasInteractedOutsideRef.current = false;
+      hasPointerDownOutsideRef.current = false;
+    },
+    onInteractOutside: (event) => {
+      props.onInteractOutside?.(event);
+      if (!event.defaultPrevented) {
+        hasInteractedOutsideRef.current = true;
+        if (event.detail.originalEvent.type === "pointerdown") {
+          hasPointerDownOutsideRef.current = true;
         }
       }
-    );
-  }
-);
-var DialogContentImpl = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME, __scopeDialog);
-    const contentRef = React2.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, contentRef);
-    useFocusGuards();
-    return (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-      (0, import_jsx_runtime2.jsx)(
-        FocusScope,
-        {
-          asChild: true,
-          loop: true,
-          trapped: trapFocus,
-          onMountAutoFocus: onOpenAutoFocus,
-          onUnmountAutoFocus: onCloseAutoFocus,
-          children: (0, import_jsx_runtime2.jsx)(
-            DismissableLayer,
-            {
-              role: "dialog",
-              id: context.contentId,
-              "aria-describedby": context.descriptionId,
-              "aria-labelledby": context.titleId,
-              "data-state": getState(context.open),
-              ...contentProps,
-              ref: composedRefs,
-              onDismiss: () => context.onOpenChange(false)
-            }
-          )
-        }
-      ),
-      (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-        (0, import_jsx_runtime2.jsx)(TitleWarning, { titleId: context.titleId }),
-        (0, import_jsx_runtime2.jsx)(DescriptionWarning, { contentRef, descriptionId: context.descriptionId })
-      ] })
-    ] });
-  }
-);
+      const target = event.target;
+      const targetIsTrigger = context.triggerRef.current?.contains(target);
+      if (targetIsTrigger) event.preventDefault();
+      if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
+        event.preventDefault();
+      }
+    },
+  });
+});
+var DialogContentImpl = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
+  const context = useDialogContext(CONTENT_NAME, __scopeDialog);
+  const contentRef = React2.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, contentRef);
+  useFocusGuards();
+  return (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, {
+    children: [
+      (0, import_jsx_runtime2.jsx)(FocusScope, {
+        asChild: true,
+        loop: true,
+        trapped: trapFocus,
+        onMountAutoFocus: onOpenAutoFocus,
+        onUnmountAutoFocus: onCloseAutoFocus,
+        children: (0, import_jsx_runtime2.jsx)(DismissableLayer, {
+          role: "dialog",
+          id: context.contentId,
+          "aria-describedby": context.descriptionId,
+          "aria-labelledby": context.titleId,
+          "data-state": getState(context.open),
+          ...contentProps,
+          ref: composedRefs,
+          onDismiss: () => context.onOpenChange(false),
+        }),
+      }),
+      (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, {
+        children: [
+          (0, import_jsx_runtime2.jsx)(TitleWarning, { titleId: context.titleId }),
+          (0, import_jsx_runtime2.jsx)(DescriptionWarning, {
+            contentRef,
+            descriptionId: context.descriptionId,
+          }),
+        ],
+      }),
+    ],
+  });
+});
 var TITLE_NAME = "DialogTitle";
-var DialogTitle = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...titleProps } = props;
-    const context = useDialogContext(TITLE_NAME, __scopeDialog);
-    return (0, import_jsx_runtime2.jsx)(Primitive.h2, { id: context.titleId, ...titleProps, ref: forwardedRef });
-  }
-);
+var DialogTitle = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeDialog, ...titleProps } = props;
+  const context = useDialogContext(TITLE_NAME, __scopeDialog);
+  return (0, import_jsx_runtime2.jsx)(Primitive.h2, {
+    id: context.titleId,
+    ...titleProps,
+    ref: forwardedRef,
+  });
+});
 DialogTitle.displayName = TITLE_NAME;
 var DESCRIPTION_NAME = "DialogDescription";
-var DialogDescription = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...descriptionProps } = props;
-    const context = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
-    return (0, import_jsx_runtime2.jsx)(Primitive.p, { id: context.descriptionId, ...descriptionProps, ref: forwardedRef });
-  }
-);
+var DialogDescription = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeDialog, ...descriptionProps } = props;
+  const context = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
+  return (0, import_jsx_runtime2.jsx)(Primitive.p, {
+    id: context.descriptionId,
+    ...descriptionProps,
+    ref: forwardedRef,
+  });
+});
 DialogDescription.displayName = DESCRIPTION_NAME;
 var CLOSE_NAME = "DialogClose";
-var DialogClose = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeDialog, ...closeProps } = props;
-    const context = useDialogContext(CLOSE_NAME, __scopeDialog);
-    return (0, import_jsx_runtime2.jsx)(
-      Primitive.button,
-      {
-        type: "button",
-        ...closeProps,
-        ref: forwardedRef,
-        onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false))
-      }
-    );
-  }
-);
+var DialogClose = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeDialog, ...closeProps } = props;
+  const context = useDialogContext(CLOSE_NAME, __scopeDialog);
+  return (0, import_jsx_runtime2.jsx)(Primitive.button, {
+    type: "button",
+    ...closeProps,
+    ref: forwardedRef,
+    onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false)),
+  });
+});
 DialogClose.displayName = CLOSE_NAME;
 function getState(open) {
   return open ? "open" : "closed";
@@ -398,7 +387,7 @@ var TITLE_WARNING_NAME = "DialogTitleWarning";
 var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
   contentName: CONTENT_NAME,
   titleName: TITLE_NAME,
-  docsSlug: "dialog"
+  docsSlug: "dialog",
 });
 var TitleWarning = ({ titleId }) => {
   const titleWarningContext = useWarningContext(TITLE_WARNING_NAME);
@@ -455,6 +444,6 @@ export {
   Content,
   Title,
   Description,
-  Close
+  Close,
 };
 //# sourceMappingURL=chunk-QGLM555Z.js.map

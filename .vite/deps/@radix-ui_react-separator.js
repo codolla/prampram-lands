@@ -1,19 +1,9 @@
-import {
-  createSlot
-} from "./chunk-CXPFXTOM.js";
+import { createSlot } from "./chunk-CXPFXTOM.js";
 import "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-separator/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -39,7 +29,7 @@ var NODES = [
   "select",
   "span",
   "svg",
-  "ul"
+  "ul",
 ];
 var Primitive = NODES.reduce((primitive, node) => {
   const Slot = createSlot(`Primitive.${node}`);
@@ -64,24 +54,20 @@ var Separator = React2.forwardRef((props, forwardedRef) => {
   const { decorative, orientation: orientationProp = DEFAULT_ORIENTATION, ...domProps } = props;
   const orientation = isValidOrientation(orientationProp) ? orientationProp : DEFAULT_ORIENTATION;
   const ariaOrientation = orientation === "vertical" ? orientation : void 0;
-  const semanticProps = decorative ? { role: "none" } : { "aria-orientation": ariaOrientation, role: "separator" };
-  return (0, import_jsx_runtime2.jsx)(
-    Primitive.div,
-    {
-      "data-orientation": orientation,
-      ...semanticProps,
-      ...domProps,
-      ref: forwardedRef
-    }
-  );
+  const semanticProps = decorative
+    ? { role: "none" }
+    : { "aria-orientation": ariaOrientation, role: "separator" };
+  return (0, import_jsx_runtime2.jsx)(Primitive.div, {
+    "data-orientation": orientation,
+    ...semanticProps,
+    ...domProps,
+    ref: forwardedRef,
+  });
 });
 Separator.displayName = NAME;
 function isValidOrientation(orientation) {
   return ORIENTATIONS.includes(orientation);
 }
 var Root = Separator;
-export {
-  Root,
-  Separator
-};
+export { Root, Separator };
 //# sourceMappingURL=@radix-ui_react-separator.js.map

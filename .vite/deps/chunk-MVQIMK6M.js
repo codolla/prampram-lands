@@ -1,21 +1,9 @@
-import {
-  useLayoutEffect2
-} from "./chunk-OJ36KNVJ.js";
-import {
-  composeRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { useLayoutEffect2 } from "./chunk-OJ36KNVJ.js";
+import { composeRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-context/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -66,7 +54,7 @@ function createContextScope(scopeName, createContextScopeDeps = []) {
       const contexts = scope?.[scopeName] || scopeContexts;
       return React.useMemo(
         () => ({ [`__scope${scopeName}`]: { ...scope, [scopeName]: contexts } }),
-        [scope, contexts]
+        [scope, contexts],
       );
     };
   };
@@ -79,7 +67,7 @@ function composeContextScopes(...scopes) {
   const createScope = () => {
     const scopeHooks = scopes.map((createScope2) => ({
       useScope: createScope2(),
-      scopeName: createScope2.scopeName
+      scopeName: createScope2.scopeName,
     }));
     return function useComposedScopes(overrideScopes) {
       const nextScopes = scopeHooks.reduce((nextScopes2, { useScope, scopeName }) => {
@@ -95,8 +83,16 @@ function composeContextScopes(...scopes) {
 }
 
 // node_modules/@radix-ui/primitive/dist/index.mjs
-var canUseDOM = !!(typeof window !== "undefined" && window.document && window.document.createElement);
-function composeEventHandlers(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
+var canUseDOM = !!(
+  typeof window !== "undefined" &&
+  window.document &&
+  window.document.createElement
+);
+function composeEventHandlers(
+  originalEventHandler,
+  ourEventHandler,
+  { checkForDefaultPrevented = true } = {},
+) {
   return function handleEvent(event) {
     originalEventHandler?.(event);
     if (checkForDefaultPrevented === false || !event.defaultPrevented) {
@@ -116,16 +112,10 @@ var useReactInsertionEffect = React2[" useInsertionEffect ".trim().toString()];
 
 // node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs
 var useInsertionEffect = React3[" useInsertionEffect ".trim().toString()] || useLayoutEffect2;
-function useControllableState({
-  prop,
-  defaultProp,
-  onChange = () => {
-  },
-  caller
-}) {
+function useControllableState({ prop, defaultProp, onChange = () => {}, caller }) {
   const [uncontrolledProp, setUncontrolledProp, onChangeRef] = useUncontrolledState({
     defaultProp,
-    onChange
+    onChange,
   });
   const isControlled = prop !== void 0;
   const value = isControlled ? prop : uncontrolledProp;
@@ -137,7 +127,7 @@ function useControllableState({
         const from = wasControlled ? "controlled" : "uncontrolled";
         const to = isControlled ? "controlled" : "uncontrolled";
         console.warn(
-          `${caller} is changing from ${from} to ${to}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`
+          `${caller} is changing from ${from} to ${to}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`,
         );
       }
       isControlledRef.current = isControlled;
@@ -154,14 +144,11 @@ function useControllableState({
         setUncontrolledProp(nextValue);
       }
     },
-    [isControlled, prop, setUncontrolledProp, onChangeRef]
+    [isControlled, prop, setUncontrolledProp, onChangeRef],
   );
   return [value, setValue];
 }
-function useUncontrolledState({
-  defaultProp,
-  onChange
-}) {
+function useUncontrolledState({ defaultProp, onChange }) {
   const [value, setValue] = React3.useState(defaultProp);
   const prevValueRef = React3.useRef(value);
   const onChangeRef = React3.useRef(onChange);
@@ -203,7 +190,13 @@ function createSlot(ownerName) {
           return child;
         }
       });
-      return (0, import_jsx_runtime2.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children: React4.isValidElement(newElement) ? React4.cloneElement(newElement, void 0, newChildren) : null });
+      return (0, import_jsx_runtime2.jsx)(SlotClone, {
+        ...slotProps,
+        ref: forwardedRef,
+        children: React4.isValidElement(newElement)
+          ? React4.cloneElement(newElement, void 0, newChildren)
+          : null,
+      });
     }
     return (0, import_jsx_runtime2.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children });
   });
@@ -238,7 +231,12 @@ function createSlottable(ownerName) {
 }
 var Slottable = createSlottable("Slottable");
 function isSlottable(child) {
-  return React4.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
+  return (
+    React4.isValidElement(child) &&
+    typeof child.type === "function" &&
+    "__radixId" in child.type &&
+    child.type.__radixId === SLOTTABLE_IDENTIFIER
+  );
 }
 function mergeProps(slotProps, childProps) {
   const overrideProps = { ...childProps };
@@ -297,7 +295,7 @@ var NODES = [
   "select",
   "span",
   "svg",
-  "ul"
+  "ul",
 ];
 var Primitive = NODES.reduce((primitive, node) => {
   const Slot2 = createSlot(`Primitive.${node}`);
@@ -322,6 +320,6 @@ export {
   composeEventHandlers,
   useControllableState,
   Primitive,
-  dispatchDiscreteCustomEvent
+  dispatchDiscreteCustomEvent,
 };
 //# sourceMappingURL=chunk-MVQIMK6M.js.map

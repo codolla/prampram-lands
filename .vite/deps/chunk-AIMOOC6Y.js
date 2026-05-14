@@ -1,15 +1,7 @@
-import {
-  useLayoutEffect2
-} from "./chunk-OJ36KNVJ.js";
-import {
-  useComposedRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { useLayoutEffect2 } from "./chunk-OJ36KNVJ.js";
+import { useComposedRefs } from "./chunk-I37FV5V7.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-presence/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -23,7 +15,10 @@ function useStateMachine(initialState, machine) {
 var Presence = (props) => {
   const { present, children } = props;
   const presence = usePresence(present);
-  const child = typeof children === "function" ? children({ present: presence.isPresent }) : React2.Children.only(children);
+  const child =
+    typeof children === "function"
+      ? children({ present: presence.isPresent })
+      : React2.Children.only(children);
   const ref = useComposedRefs(presence.ref, getElementRef(child));
   const forceMount = typeof children === "function";
   return forceMount || presence.isPresent ? React2.cloneElement(child, { ref }) : null;
@@ -38,15 +33,15 @@ function usePresence(present) {
   const [state, send] = useStateMachine(initialState, {
     mounted: {
       UNMOUNT: "unmounted",
-      ANIMATION_OUT: "unmountSuspended"
+      ANIMATION_OUT: "unmountSuspended",
     },
     unmountSuspended: {
       MOUNT: "mounted",
-      ANIMATION_END: "unmounted"
+      ANIMATION_END: "unmounted",
     },
     unmounted: {
-      MOUNT: "mounted"
-    }
+      MOUNT: "mounted",
+    },
   });
   React2.useEffect(() => {
     const currentAnimationName = getAnimationName(stylesRef.current);
@@ -117,7 +112,7 @@ function usePresence(present) {
     ref: React2.useCallback((node2) => {
       stylesRef.current = node2 ? getComputedStyle(node2) : null;
       setNode(node2);
-    }, [])
+    }, []),
   };
 }
 function getAnimationName(styles) {
@@ -137,7 +132,5 @@ function getElementRef(element) {
   return element.props.ref || element.ref;
 }
 
-export {
-  Presence
-};
+export { Presence };
 //# sourceMappingURL=chunk-AIMOOC6Y.js.map

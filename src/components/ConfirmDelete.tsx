@@ -52,13 +52,7 @@ const IMPACTS: Record<EntityKind, { intro: string; items: string[] }> = {
   },
 };
 
-export function DeleteImpactWarning({
-  kind,
-  note,
-}: {
-  kind: EntityKind;
-  note?: ReactNode;
-}) {
+export function DeleteImpactWarning({ kind, note }: { kind: EntityKind; note?: ReactNode }) {
   const impact = IMPACTS[kind];
   return (
     <div className="mt-3 space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-left text-xs text-destructive">

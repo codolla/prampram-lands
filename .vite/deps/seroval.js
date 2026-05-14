@@ -35,7 +35,7 @@ import {
   toCrossJSONAsync,
   toCrossJSONStream,
   toJSON,
-  toJSONAsync
+  toJSONAsync,
 } from "./chunk-ZCRLZXAQ.js";
 import "./chunk-PR4QN5HX.js";
 export {
@@ -75,5 +75,5 @@ export {
   toCrossJSONAsync,
   toCrossJSONStream,
   toJSON,
-  toJSONAsync
+  toJSONAsync,
 };

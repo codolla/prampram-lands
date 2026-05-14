@@ -1,12 +1,6 @@
-import {
-  useLayoutEffect2
-} from "./chunk-OJ36KNVJ.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { useLayoutEffect2 } from "./chunk-OJ36KNVJ.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-use-size/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -45,7 +39,5 @@ function useSize(element) {
   return size;
 }
 
-export {
-  useSize
-};
+export { useSize };
 //# sourceMappingURL=chunk-CRRA55JQ.js.map

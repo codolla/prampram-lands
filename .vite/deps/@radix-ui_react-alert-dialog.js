@@ -9,7 +9,7 @@ import {
   Title,
   Trigger,
   WarningProvider,
-  createDialogScope
+  createDialogScope,
 } from "./chunk-QGLM555Z.js";
 import "./chunk-WZBSIZNY.js";
 import "./chunk-4YKFFH32.js";
@@ -17,25 +17,13 @@ import "./chunk-Y7SI5NHG.js";
 import "./chunk-2HMNGHK2.js";
 import "./chunk-T5Z3LJQL.js";
 import "./chunk-AIMOOC6Y.js";
-import {
-  composeEventHandlers,
-  createContextScope
-} from "./chunk-MVQIMK6M.js";
+import { composeEventHandlers, createContextScope } from "./chunk-MVQIMK6M.js";
 import "./chunk-OJ36KNVJ.js";
-import {
-  composeRefs,
-  useComposedRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
+import { composeRefs, useComposedRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
 import "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-alert-dialog/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -59,7 +47,13 @@ function createSlot(ownerName) {
           return child;
         }
       });
-      return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children: React.isValidElement(newElement) ? React.cloneElement(newElement, void 0, newChildren) : null });
+      return (0, import_jsx_runtime.jsx)(SlotClone, {
+        ...slotProps,
+        ref: forwardedRef,
+        children: React.isValidElement(newElement)
+          ? React.cloneElement(newElement, void 0, newChildren)
+          : null,
+      });
     }
     return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children });
   });
@@ -94,7 +88,12 @@ function createSlottable(ownerName) {
 }
 var Slottable = createSlottable("Slottable");
 function isSlottable(child) {
-  return React.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
+  return (
+    React.isValidElement(child) &&
+    typeof child.type === "function" &&
+    "__radixId" in child.type &&
+    child.type.__radixId === SLOTTABLE_IDENTIFIER
+  );
 }
 function mergeProps(slotProps, childProps) {
   const overrideProps = { ...childProps };
@@ -138,7 +137,7 @@ function getElementRef(element) {
 var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var ROOT_NAME = "AlertDialog";
 var [createAlertDialogContext, createAlertDialogScope] = createContextScope(ROOT_NAME, [
-  createDialogScope
+  createDialogScope,
 ]);
 var useDialogScope = createDialogScope();
 var AlertDialog = (props) => {
@@ -148,13 +147,15 @@ var AlertDialog = (props) => {
 };
 AlertDialog.displayName = ROOT_NAME;
 var TRIGGER_NAME = "AlertDialogTrigger";
-var AlertDialogTrigger = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAlertDialog, ...triggerProps } = props;
-    const dialogScope = useDialogScope(__scopeAlertDialog);
-    return (0, import_jsx_runtime2.jsx)(Trigger, { ...dialogScope, ...triggerProps, ref: forwardedRef });
-  }
-);
+var AlertDialogTrigger = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeAlertDialog, ...triggerProps } = props;
+  const dialogScope = useDialogScope(__scopeAlertDialog);
+  return (0, import_jsx_runtime2.jsx)(Trigger, {
+    ...dialogScope,
+    ...triggerProps,
+    ref: forwardedRef,
+  });
+});
 AlertDialogTrigger.displayName = TRIGGER_NAME;
 var PORTAL_NAME = "AlertDialogPortal";
 var AlertDialogPortal = (props) => {
@@ -164,89 +165,86 @@ var AlertDialogPortal = (props) => {
 };
 AlertDialogPortal.displayName = PORTAL_NAME;
 var OVERLAY_NAME = "AlertDialogOverlay";
-var AlertDialogOverlay = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAlertDialog, ...overlayProps } = props;
-    const dialogScope = useDialogScope(__scopeAlertDialog);
-    return (0, import_jsx_runtime2.jsx)(Overlay, { ...dialogScope, ...overlayProps, ref: forwardedRef });
-  }
-);
+var AlertDialogOverlay = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeAlertDialog, ...overlayProps } = props;
+  const dialogScope = useDialogScope(__scopeAlertDialog);
+  return (0, import_jsx_runtime2.jsx)(Overlay, {
+    ...dialogScope,
+    ...overlayProps,
+    ref: forwardedRef,
+  });
+});
 AlertDialogOverlay.displayName = OVERLAY_NAME;
 var CONTENT_NAME = "AlertDialogContent";
-var [AlertDialogContentProvider, useAlertDialogContentContext] = createAlertDialogContext(CONTENT_NAME);
+var [AlertDialogContentProvider, useAlertDialogContentContext] =
+  createAlertDialogContext(CONTENT_NAME);
 var Slottable2 = createSlottable("AlertDialogContent");
-var AlertDialogContent = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAlertDialog, children, ...contentProps } = props;
-    const dialogScope = useDialogScope(__scopeAlertDialog);
-    const contentRef = React2.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, contentRef);
-    const cancelRef = React2.useRef(null);
-    return (0, import_jsx_runtime2.jsx)(
-      WarningProvider,
-      {
-        contentName: CONTENT_NAME,
-        titleName: TITLE_NAME,
-        docsSlug: "alert-dialog",
-        children: (0, import_jsx_runtime2.jsx)(AlertDialogContentProvider, { scope: __scopeAlertDialog, cancelRef, children: (0, import_jsx_runtime2.jsxs)(
-          Content,
-          {
-            role: "alertdialog",
-            ...dialogScope,
-            ...contentProps,
-            ref: composedRefs,
-            onOpenAutoFocus: composeEventHandlers(contentProps.onOpenAutoFocus, (event) => {
-              event.preventDefault();
-              cancelRef.current?.focus({ preventScroll: true });
-            }),
-            onPointerDownOutside: (event) => event.preventDefault(),
-            onInteractOutside: (event) => event.preventDefault(),
-            children: [
-              (0, import_jsx_runtime2.jsx)(Slottable2, { children }),
-              (0, import_jsx_runtime2.jsx)(DescriptionWarning, { contentRef })
-            ]
-          }
-        ) })
-      }
-    );
-  }
-);
+var AlertDialogContent = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeAlertDialog, children, ...contentProps } = props;
+  const dialogScope = useDialogScope(__scopeAlertDialog);
+  const contentRef = React2.useRef(null);
+  const composedRefs = useComposedRefs(forwardedRef, contentRef);
+  const cancelRef = React2.useRef(null);
+  return (0, import_jsx_runtime2.jsx)(WarningProvider, {
+    contentName: CONTENT_NAME,
+    titleName: TITLE_NAME,
+    docsSlug: "alert-dialog",
+    children: (0, import_jsx_runtime2.jsx)(AlertDialogContentProvider, {
+      scope: __scopeAlertDialog,
+      cancelRef,
+      children: (0, import_jsx_runtime2.jsxs)(Content, {
+        role: "alertdialog",
+        ...dialogScope,
+        ...contentProps,
+        ref: composedRefs,
+        onOpenAutoFocus: composeEventHandlers(contentProps.onOpenAutoFocus, (event) => {
+          event.preventDefault();
+          cancelRef.current?.focus({ preventScroll: true });
+        }),
+        onPointerDownOutside: (event) => event.preventDefault(),
+        onInteractOutside: (event) => event.preventDefault(),
+        children: [
+          (0, import_jsx_runtime2.jsx)(Slottable2, { children }),
+          (0, import_jsx_runtime2.jsx)(DescriptionWarning, { contentRef }),
+        ],
+      }),
+    }),
+  });
+});
 AlertDialogContent.displayName = CONTENT_NAME;
 var TITLE_NAME = "AlertDialogTitle";
-var AlertDialogTitle = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAlertDialog, ...titleProps } = props;
-    const dialogScope = useDialogScope(__scopeAlertDialog);
-    return (0, import_jsx_runtime2.jsx)(Title, { ...dialogScope, ...titleProps, ref: forwardedRef });
-  }
-);
+var AlertDialogTitle = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeAlertDialog, ...titleProps } = props;
+  const dialogScope = useDialogScope(__scopeAlertDialog);
+  return (0, import_jsx_runtime2.jsx)(Title, { ...dialogScope, ...titleProps, ref: forwardedRef });
+});
 AlertDialogTitle.displayName = TITLE_NAME;
 var DESCRIPTION_NAME = "AlertDialogDescription";
 var AlertDialogDescription = React2.forwardRef((props, forwardedRef) => {
   const { __scopeAlertDialog, ...descriptionProps } = props;
   const dialogScope = useDialogScope(__scopeAlertDialog);
-  return (0, import_jsx_runtime2.jsx)(Description, { ...dialogScope, ...descriptionProps, ref: forwardedRef });
+  return (0, import_jsx_runtime2.jsx)(Description, {
+    ...dialogScope,
+    ...descriptionProps,
+    ref: forwardedRef,
+  });
 });
 AlertDialogDescription.displayName = DESCRIPTION_NAME;
 var ACTION_NAME = "AlertDialogAction";
-var AlertDialogAction = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAlertDialog, ...actionProps } = props;
-    const dialogScope = useDialogScope(__scopeAlertDialog);
-    return (0, import_jsx_runtime2.jsx)(Close, { ...dialogScope, ...actionProps, ref: forwardedRef });
-  }
-);
+var AlertDialogAction = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeAlertDialog, ...actionProps } = props;
+  const dialogScope = useDialogScope(__scopeAlertDialog);
+  return (0, import_jsx_runtime2.jsx)(Close, { ...dialogScope, ...actionProps, ref: forwardedRef });
+});
 AlertDialogAction.displayName = ACTION_NAME;
 var CANCEL_NAME = "AlertDialogCancel";
-var AlertDialogCancel = React2.forwardRef(
-  (props, forwardedRef) => {
-    const { __scopeAlertDialog, ...cancelProps } = props;
-    const { cancelRef } = useAlertDialogContentContext(CANCEL_NAME, __scopeAlertDialog);
-    const dialogScope = useDialogScope(__scopeAlertDialog);
-    const ref = useComposedRefs(forwardedRef, cancelRef);
-    return (0, import_jsx_runtime2.jsx)(Close, { ...dialogScope, ...cancelProps, ref });
-  }
-);
+var AlertDialogCancel = React2.forwardRef((props, forwardedRef) => {
+  const { __scopeAlertDialog, ...cancelProps } = props;
+  const { cancelRef } = useAlertDialogContentContext(CANCEL_NAME, __scopeAlertDialog);
+  const dialogScope = useDialogScope(__scopeAlertDialog);
+  const ref = useComposedRefs(forwardedRef, cancelRef);
+  return (0, import_jsx_runtime2.jsx)(Close, { ...dialogScope, ...cancelProps, ref });
+});
 AlertDialogCancel.displayName = CANCEL_NAME;
 var DescriptionWarning = ({ contentRef }) => {
   const MESSAGE = `\`${CONTENT_NAME}\` requires a description for the component to be accessible for screen reader users.
@@ -258,7 +256,7 @@ Alternatively, you can use your own component as a description by assigning it a
 For more information, see https://radix-ui.com/primitives/docs/components/alert-dialog`;
   React2.useEffect(() => {
     const hasDescription = document.getElementById(
-      contentRef.current?.getAttribute("aria-describedby")
+      contentRef.current?.getAttribute("aria-describedby"),
     );
     if (!hasDescription) console.warn(MESSAGE);
   }, [MESSAGE, contentRef]);
@@ -292,6 +290,6 @@ export {
   Root2 as Root,
   Title2 as Title,
   Trigger2 as Trigger,
-  createAlertDialogScope
+  createAlertDialogScope,
 };
 //# sourceMappingURL=@radix-ui_react-alert-dialog.js.map

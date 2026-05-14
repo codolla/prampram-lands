@@ -303,6 +303,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           current_owner_id: string | null;
+          family: string | null;
           gps_lat: number | null;
           gps_lng: number | null;
           id: string;
@@ -325,6 +326,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           current_owner_id?: string | null;
+          family?: string | null;
           gps_lat?: number | null;
           gps_lng?: number | null;
           id?: string;
@@ -347,6 +349,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           current_owner_id?: string | null;
+          family?: string | null;
           gps_lat?: number | null;
           gps_lng?: number | null;
           id?: string;

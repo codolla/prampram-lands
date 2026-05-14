@@ -2,19 +2,18 @@ import "./chunk-PR4QN5HX.js";
 
 // node_modules/h3-v2/dist/h3-DagAgogP.mjs
 function definePlugin(def) {
-  return ((opts) => (h3) => def(h3, opts));
+  return (opts) => (h3) => def(h3, opts);
 }
 
 // node_modules/rou3/dist/index.mjs
 var NullProtoObj = (() => {
-  const e = function() {
-  };
-  return e.prototype = /* @__PURE__ */ Object.create(null), Object.freeze(e.prototype), e;
+  const e = function () {};
+  return ((e.prototype = /* @__PURE__ */ Object.create(null)), Object.freeze(e.prototype), e);
 })();
 function createRouter() {
   return {
     root: { key: "" },
-    static: new NullProtoObj()
+    static: new NullProtoObj(),
   };
 }
 function expandGroupDelimiters(path) {
@@ -124,10 +123,17 @@ function normalizeUnnamedGroupKey(key) {
   return key.startsWith("__rou3_unnamed_") ? key.slice(_unnamedGroupPrefixLength) : key;
 }
 function encodeEscapes(path) {
-  return path.replace(/\\:/g, "�A").replace(/\\\(/g, "�B").replace(/\\\)/g, "�C").replace(/\\\{/g, "�D").replace(/\\\}/g, "�E");
+  return path
+    .replace(/\\:/g, "�A")
+    .replace(/\\\(/g, "�B")
+    .replace(/\\\)/g, "�C")
+    .replace(/\\\{/g, "�D")
+    .replace(/\\\}/g, "�E");
 }
 function decodeEscaped(segment) {
-  return segment.replace(/\uFFFD([A-E])/g, (_, c) => c === "A" ? ":" : c === "B" ? "(" : c === "C" ? ")" : c === "D" ? "{" : "}");
+  return segment.replace(/\uFFFD([A-E])/g, (_, c) =>
+    c === "A" ? ":" : c === "B" ? "(" : c === "C" ? ")" : c === "D" ? "{" : "}",
+  );
 }
 function expandModifiers(segments) {
   for (let i = 0; i < segments.length; i++) {
@@ -135,13 +141,10 @@ function expandModifiers(segments) {
     if (!m) continue;
     const pre = segments.slice(0, i);
     const suf = segments.slice(i + 1);
-    if (m[2] === "?") return ["/" + pre.concat(m[1]).concat(suf).join("/"), "/" + pre.concat(suf).join("/")];
+    if (m[2] === "?")
+      return ["/" + pre.concat(m[1]).concat(suf).join("/"), "/" + pre.concat(suf).join("/")];
     const name = m[1].match(/:([\w-]+)/)?.[1] || "_";
-    const wc = "/" + [
-      ...pre,
-      `**:${name}`,
-      ...suf
-    ].join("/");
+    const wc = "/" + [...pre, `**:${name}`, ...suf].join("/");
     const without = "/" + [...pre, ...suf].join("/");
     return m[2] === "+" ? [wc] : [wc, without];
   }
@@ -149,9 +152,10 @@ function expandModifiers(segments) {
 function normalizePath(path) {
   if (!path.includes("/.")) return path;
   const r = [];
-  for (const s of path.split("/")) if (s === ".") continue;
-  else if (s === ".." && r.length > 1) r.pop();
-  else r.push(s);
+  for (const s of path.split("/"))
+    if (s === ".") continue;
+    else if (s === ".." && r.length > 1) r.pop();
+    else r.push(s);
   return r.join("/") || "/";
 }
 function splitPath(path) {
@@ -165,7 +169,8 @@ function getMatchParams(segments, paramsMap) {
     if (typeof name === "string") params[name] = segment;
     else {
       const match = segment.match(name);
-      if (match) for (const key in match.groups) params[normalizeUnnamedGroupKey(key)] = match.groups[key];
+      if (match)
+        for (const key in match.groups) params[normalizeUnnamedGroupKey(key)] = match.groups[key];
     }
   }
   return params;
@@ -194,36 +199,30 @@ function addRoute(ctx, method = "", path, data) {
     if (segment.startsWith("**")) {
       if (!node.wildcard) node.wildcard = { key: "**" };
       node = node.wildcard;
-      paramsMap.push([
-        -(i + 1),
-        segment.split(":")[1] || "_",
-        segment.length === 2
-      ]);
+      paramsMap.push([-(i + 1), segment.split(":")[1] || "_", segment.length === 2]);
       break;
     }
-    if (segment === "*" || segment.includes(":") || segment.includes("(") || hasSegmentWildcard(segment)) {
+    if (
+      segment === "*" ||
+      segment.includes(":") ||
+      segment.includes("(") ||
+      hasSegmentWildcard(segment)
+    ) {
       if (!node.param) node.param = { key: "*" };
       node = node.param;
-      if (segment === "*") paramsMap.push([
-        i,
-        String(_unnamedParamIndex++),
-        true
-      ]);
-      else if (segment.includes(":", 1) || segment.includes("(") || hasSegmentWildcard(segment) || !/^:[\w-]+$/.test(segment)) {
+      if (segment === "*") paramsMap.push([i, String(_unnamedParamIndex++), true]);
+      else if (
+        segment.includes(":", 1) ||
+        segment.includes("(") ||
+        hasSegmentWildcard(segment) ||
+        !/^:[\w-]+$/.test(segment)
+      ) {
         const [regexp, nextIndex] = getParamRegexp(segment, _unnamedParamIndex);
         _unnamedParamIndex = nextIndex;
         paramsRegexp[i] = regexp;
         node.hasRegexParam = true;
-        paramsMap.push([
-          i,
-          regexp,
-          false
-        ]);
-      } else paramsMap.push([
-        i,
-        segment.slice(1),
-        false
-      ]);
+        paramsMap.push([i, regexp, false]);
+      } else paramsMap.push([i, segment.slice(1), false]);
       continue;
     }
     if (segment === "\\*") segment = segments[i] = "*";
@@ -244,13 +243,14 @@ function addRoute(ctx, method = "", path, data) {
   node.methods[method].push({
     data: data || null,
     paramsRegexp,
-    paramsMap: hasParams ? paramsMap : void 0
+    paramsMap: hasParams ? paramsMap : void 0,
   });
   if (!hasParams) ctx.static["/" + segments.join("/")] = node;
 }
 function getParamRegexp(segment, unnamedStart = 0) {
   let _i = unnamedStart;
-  let _s = "", _d = 0;
+  let _s = "",
+    _d = 0;
   for (let j = 0; j < segment.length; j++) {
     const c = segment.charCodeAt(j);
     if (c === 40) _d++;
@@ -266,7 +266,11 @@ function getParamRegexp(segment, unnamedStart = 0) {
     _s += segment[j];
   }
   [_s, _i] = replaceSegmentWildcards(_s, _i);
-  const regex = _s.replace(/:([\w-]+)(?:\(([^)]*)\))?/g, (_, id, p) => `(?<${id}>${p || "[^/]+"})`).replace(/\((?![?<])/g, () => `(?<${toUnnamedGroupKey(_i++)}>`).replace(/\./g, "\\.").replace(/\uFFFE(.)/g, (_, c) => /[.*+?^${}()|[\]\\]/.test(c) ? `\\${c}` : c);
+  const regex = _s
+    .replace(/:([\w-]+)(?:\(([^)]*)\))?/g, (_, id, p) => `(?<${id}>${p || "[^/]+"})`)
+    .replace(/\((?![?<])/g, () => `(?<${toUnnamedGroupKey(_i++)}>`)
+    .replace(/\./g, "\\.")
+    .replace(/\uFFFE(.)/g, (_, c) => (/[.*+?^${}()|[\]\\]/.test(c) ? `\\${c}` : c));
   return [new RegExp(`^${regex}$`), _i];
 }
 function findRoute(ctx, method = "", path, opts) {
@@ -283,7 +287,7 @@ function findRoute(ctx, method = "", path, opts) {
   if (opts?.params === false) return match;
   return {
     data: match.data,
-    params: match.paramsMap ? getMatchParams(segments, match.paramsMap) : void 0
+    params: match.paramsMap ? getMatchParams(segments, match.paramsMap) : void 0,
   };
 }
 function _lookupTree(node, method, segments, index) {
@@ -320,13 +324,16 @@ function _lookupTree(node, method, segments, index) {
     const match = _lookupTree(node.param, method, segments, index + 1);
     if (match) {
       if (node.param.hasRegexParam) {
-        const exactMatch = match.find((m) => m.paramsRegexp[index]?.test(segment)) || match.find((m) => !m.paramsRegexp[index]);
+        const exactMatch =
+          match.find((m) => m.paramsRegexp[index]?.test(segment)) ||
+          match.find((m) => !m.paramsRegexp[index]);
         return exactMatch ? [exactMatch] : void 0;
       }
       return match;
     }
   }
-  if (node.wildcard && node.wildcard.methods) return node.wildcard.methods[method] || node.wildcard.methods[""];
+  if (node.wildcard && node.wildcard.methods)
+    return node.wildcard.methods[method] || node.wildcard.methods[""];
 }
 function removeRoute(ctx, method, path) {
   const groupExpanded = expandGroupDelimiters(path);
@@ -377,14 +384,22 @@ function _remove(node, method, segments, index) {
   }
 }
 function _isParamSegment(segment) {
-  return segment === "*" || segment.includes(":") || segment.includes("(") || hasSegmentWildcard(segment);
+  return (
+    segment === "*" || segment.includes(":") || segment.includes("(") || hasSegmentWildcard(segment)
+  );
 }
 function _isEmptyNode(node) {
-  return node.methods === void 0 && node.static === void 0 && node.param === void 0 && node.wildcard === void 0;
+  return (
+    node.methods === void 0 &&
+    node.static === void 0 &&
+    node.param === void 0 &&
+    node.wildcard === void 0
+  );
 }
 var _P = "￾";
 function replaceEscapesOutsideGroups(segment) {
-  let r = "", d = 0;
+  let r = "",
+    d = 0;
   for (let i = 0; i < segment.length; i++) {
     const c = segment.charCodeAt(i);
     if (c === 40) d++;
@@ -402,12 +417,14 @@ function replaceEscapesOutsideGroups(segment) {
   return r;
 }
 function resolveEscapePlaceholders(str) {
-  return str.replace(/\uFFFE(.)/g, (_, c) => /[.*+?^${}()|[\]\\]/.test(c) ? `\\${c}` : c);
+  return str.replace(/\uFFFE(.)/g, (_, c) => (/[.*+?^${}()|[\]\\]/.test(c) ? `\\${c}` : c));
 }
 function routeToRegExp(route = "/") {
   const groupExpanded = expandGroupDelimiters(route);
   if (groupExpanded) {
-    const sources = groupExpanded.map((expandedRoute) => routeToRegExp(expandedRoute).source.slice(1, -1));
+    const sources = groupExpanded.map((expandedRoute) =>
+      routeToRegExp(expandedRoute).source.slice(1, -1),
+    );
     return new RegExp(`^(?:${sources.join("|")})$`);
   }
   return _routeToRegExp(route);
@@ -418,14 +435,20 @@ function _routeToRegExp(route) {
   for (const segment of route.split("/")) {
     if (!segment) continue;
     if (segment === "*") reSegments.push(`(?<${toRegExpUnnamedKey(idCtr++)}>[^/]*)`);
-    else if (segment.startsWith("**")) reSegments.push(segment === "**" ? "?(?<_>.*)" : `?(?<${segment.slice(3)}>.+)`);
+    else if (segment.startsWith("**"))
+      reSegments.push(segment === "**" ? "?(?<_>.*)" : `?(?<${segment.slice(3)}>.+)`);
     else if (segment.includes(":") || /(^|[^\\])\(/.test(segment) || hasSegmentWildcard(segment)) {
       const modMatch = segment.match(/^(.*:[\w-]+(?:\([^)]*\))?)([?+*])$/);
       if (modMatch) {
         const [, base, mod] = modMatch;
         const name = base.match(/:([\w-]+)/)?.[1] || `_${idCtr++}`;
         if (mod === "?") {
-          const inner = base.replace(/:([\w-]+)(?:\(([^)]*)\))?/g, (_, id, pattern2) => `(?<${id}>${pattern2 || "[^/]+"})`).replace(/\./g, "\\.");
+          const inner = base
+            .replace(
+              /:([\w-]+)(?:\(([^)]*)\))?/g,
+              (_, id, pattern2) => `(?<${id}>${pattern2 || "[^/]+"})`,
+            )
+            .replace(/\./g, "\\.");
           if (reSegments.length > 0) {
             const prevQ = reSegments.pop();
             reSegments.push(`${prevQ}(?:/${inner})?`);
@@ -437,8 +460,15 @@ function _routeToRegExp(route) {
           const prevMod = reSegments.pop();
           if (pattern) {
             const repeated = `${pattern}(?:/${pattern})*`;
-            reSegments.push(mod === "+" ? `${prevMod}/(?<${name}>${repeated})` : `${prevMod}(?:/(?<${name}>${repeated}))?`);
-          } else reSegments.push(mod === "+" ? `${prevMod}/(?<${name}>.+)` : `${prevMod}(?:/(?<${name}>.*))?`);
+            reSegments.push(
+              mod === "+"
+                ? `${prevMod}/(?<${name}>${repeated})`
+                : `${prevMod}(?:/(?<${name}>${repeated}))?`,
+            );
+          } else
+            reSegments.push(
+              mod === "+" ? `${prevMod}/(?<${name}>.+)` : `${prevMod}(?:/(?<${name}>.*))?`,
+            );
         } else if (pattern) {
           const repeated = `${pattern}(?:/${pattern})*`;
           reSegments.push(mod === "+" ? `?(?<${name}>${repeated})` : `?(?<${name}>${repeated})?`);
@@ -447,7 +477,17 @@ function _routeToRegExp(route) {
       }
       let dynamicSegment = replaceEscapesOutsideGroups(segment);
       [dynamicSegment, idCtr] = replaceSegmentWildcards(dynamicSegment, idCtr, toRegExpUnnamedKey);
-      reSegments.push(resolveEscapePlaceholders(dynamicSegment.replace(/:([\w-]+)(?:\(([^)]*)\))?/g, (_, id, pattern) => `(?<${id}>${pattern || "[^/]+"})`).replace(/(^|[^\\])\((?![?<])/g, (_, p) => `${p}(?<${toRegExpUnnamedKey(idCtr++)}>`).replace(/\./g, "\\.")));
+      reSegments.push(
+        resolveEscapePlaceholders(
+          dynamicSegment
+            .replace(
+              /:([\w-]+)(?:\(([^)]*)\))?/g,
+              (_, id, pattern) => `(?<${id}>${pattern || "[^/]+"})`,
+            )
+            .replace(/(^|[^\\])\((?![?<])/g, (_, p) => `${p}(?<${toRegExpUnnamedKey(idCtr++)}>`)
+            .replace(/\./g, "\\."),
+        ),
+      );
     } else reSegments.push(segment.replace(/\\(.)/g, "$1").replace(/[.*+?^${}()|[\]]/g, "\\$&"));
   }
   return new RegExp(`^/${reSegments.join("/")}/?$`);
@@ -461,7 +501,10 @@ var noColor = (() => {
   const env = globalThis.process?.env ?? {};
   return env.NO_COLOR === "1" || env.TERM === "dumb";
 })();
-var _c = (c, r = 39) => (t) => noColor ? t : `\x1B[${c}m${t}\x1B[${r}m`;
+var _c =
+  (c, r = 39) =>
+  (t) =>
+    noColor ? t : `\x1B[${c}m${t}\x1B[${r}m`;
 var bold = _c(1, 22);
 var red = _c(31);
 var green = _c(32);
@@ -475,11 +518,15 @@ var gray = _c(90);
 function wrapFetch(server) {
   const fetchHandler = server.options.fetch;
   const middleware = server.options.middleware || [];
-  return middleware.length === 0 ? fetchHandler : (request) => callMiddleware(request, fetchHandler, middleware, 0);
+  return middleware.length === 0
+    ? fetchHandler
+    : (request) => callMiddleware(request, fetchHandler, middleware, 0);
 }
 function callMiddleware(request, fetchHandler, middleware, index) {
   if (index === middleware.length) return fetchHandler(request);
-  return middleware[index](request, () => callMiddleware(request, fetchHandler, middleware, index + 1));
+  return middleware[index](request, () =>
+    callMiddleware(request, fetchHandler, middleware, index + 1),
+  );
 }
 var errorPlugin = (server) => {
   const errorHandler = server.options.error;
@@ -511,37 +558,46 @@ var ServiceWorkerServer = class {
   constructor(options) {
     this.options = {
       ...options,
-      middleware: [...options.middleware || []]
+      middleware: [...(options.middleware || [])],
     };
     for (const plugin of options.plugins || []) plugin(this);
     errorPlugin(this);
     const fetchHandler = wrapFetch(this);
     this.fetch = (request, event) => {
-      Object.defineProperties(request, { runtime: {
-        enumerable: true,
-        value: {
-          name: "service-worker",
-          serviceWorker: { event }
-        }
-      } });
+      Object.defineProperties(request, {
+        runtime: {
+          enumerable: true,
+          value: {
+            name: "service-worker",
+            serviceWorker: { event },
+          },
+        },
+      });
       return Promise.resolve(fetchHandler(request));
     };
     if (!options.manual) this.serve();
   }
   serve() {
     if (isBrowserWindow) {
-      if (!navigator.serviceWorker) throw new Error("Service worker is not supported in the current window.");
+      if (!navigator.serviceWorker)
+        throw new Error("Service worker is not supported in the current window.");
       const swURL = this.options.serviceWorker?.url;
-      if (!swURL) throw new Error("Service worker URL is not provided. Please set the `serviceWorker.url` serve option or manually register.");
-      this.#listeningPromise = navigator.serviceWorker.register(swURL, {
-        type: "module",
-        scope: this.options.serviceWorker?.scope
-      }).then((registration) => {
-        if (registration.active) location.replace(location.href);
-        else registration.addEventListener("updatefound", () => {
-          location.replace(location.href);
+      if (!swURL)
+        throw new Error(
+          "Service worker URL is not provided. Please set the `serviceWorker.url` serve option or manually register.",
+        );
+      this.#listeningPromise = navigator.serviceWorker
+        .register(swURL, {
+          type: "module",
+          scope: this.options.serviceWorker?.scope,
+        })
+        .then((registration) => {
+          if (registration.active) location.replace(location.href);
+          else
+            registration.addEventListener("updatefound", () => {
+              location.replace(location.href);
+            });
         });
-      });
     } else if (isServiceWorker) {
       this.#fetchListener = async (event) => {
         if (/\/[^/]*\.[a-zA-Z0-9]+$/.test(new URL(event.request.url).pathname)) return;
@@ -565,7 +621,8 @@ var ServiceWorkerServer = class {
     if (this.#fetchListener) removeEventListener("fetch", this.#fetchListener);
     if (isBrowserWindow) {
       const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) if (registration.active) await registration.unregister();
+      for (const registration of registrations)
+        if (registration.active) await registration.unregister();
     } else if (isServiceWorker) await self.registration.unregister();
   }
 };
@@ -588,7 +645,8 @@ function withoutTrailingSlash(path) {
 function withoutBase(input = "", base = "") {
   if (!base || base === "/") return input;
   const _base = withoutTrailingSlash(base);
-  if (!input.startsWith(_base) || input.length > _base.length && input[_base.length] !== "/") return input;
+  if (!input.startsWith(_base) || (input.length > _base.length && input[_base.length] !== "/"))
+    return input;
   const trimmed = input.slice(_base.length);
   return trimmed[0] === "/" ? trimmed : "/" + trimmed;
 }
@@ -627,7 +685,7 @@ var H3Event = class {
     this.url = url;
   }
   get res() {
-    return this[kEventRes] ||= new H3EventResponse();
+    return (this[kEventRes] ||= new H3EventResponse());
   }
   get runtime() {
     return this.req.runtime;
@@ -658,10 +716,10 @@ var H3EventResponse = class {
   status;
   statusText;
   get headers() {
-    return this[kEventResHeaders] ||= new Headers();
+    return (this[kEventResHeaders] ||= new Headers());
   }
   get errHeaders() {
-    return this[kEventResErrHeaders] ||= new Headers();
+    return (this[kEventResErrHeaders] ||= new Headers());
   }
 };
 var DISALLOWED_STATUS_CHARS = /[^\u0009\u0020-\u007E]/g;
@@ -692,7 +750,7 @@ var HTTPError = class HTTPError2 extends Error {
     return new HTTPError2({
       ...details,
       statusText,
-      status
+      status,
     });
   }
   constructor(arg1, arg2) {
@@ -702,13 +760,26 @@ var HTTPError = class HTTPError2 extends Error {
       messageInput = arg1;
       details = arg2;
     } else details = arg1;
-    const status = sanitizeStatusCode(details?.status || details?.statusCode || details?.cause?.status || details?.cause?.statusCode, 500);
-    const statusText = sanitizeStatusMessage(details?.statusText || details?.statusMessage || details?.cause?.statusText || details?.cause?.statusMessage);
-    const message = messageInput || details?.message || details?.cause?.message || details?.statusText || details?.statusMessage || [
-      "HTTPError",
-      status,
-      statusText
-    ].filter(Boolean).join(" ");
+    const status = sanitizeStatusCode(
+      details?.status ||
+        details?.statusCode ||
+        details?.cause?.status ||
+        details?.cause?.statusCode,
+      500,
+    );
+    const statusText = sanitizeStatusMessage(
+      details?.statusText ||
+        details?.statusMessage ||
+        details?.cause?.statusText ||
+        details?.cause?.statusMessage,
+    );
+    const message =
+      messageInput ||
+      details?.message ||
+      details?.cause?.message ||
+      details?.statusText ||
+      details?.statusMessage ||
+      ["HTTPError", status, statusText].filter(Boolean).join(" ");
     super(message, { cause: details });
     this.cause = details;
     this.status = status;
@@ -733,7 +804,7 @@ var HTTPError = class HTTPError2 extends Error {
       unhandled,
       message: unhandled ? "HTTPError" : this.message,
       data: unhandled ? void 0 : this.data,
-      ...unhandled ? void 0 : this.body
+      ...(unhandled ? void 0 : this.body),
     };
   }
 };
@@ -757,11 +828,16 @@ function isJSONSerializable(value, _type) {
 var kNotFound = /* @__PURE__ */ Symbol.for("h3.notFound");
 var kHandled = /* @__PURE__ */ Symbol.for("h3.handled");
 function toResponse(val, event, config = {}) {
-  if (typeof val?.then === "function") return (val.catch?.((error) => error) || Promise.resolve(val)).then((resolvedVal) => toResponse(resolvedVal, event, config));
+  if (typeof val?.then === "function")
+    return (val.catch?.((error) => error) || Promise.resolve(val)).then((resolvedVal) =>
+      toResponse(resolvedVal, event, config),
+    );
   const response = prepareResponse(val, event, config);
   if (typeof response?.then === "function") return toResponse(response, event, config);
   const { onResponse: onResponse2 } = config;
-  return onResponse2 ? Promise.resolve(onResponse2(response, event)).then(() => response) : response;
+  return onResponse2
+    ? Promise.resolve(onResponse2(response, event)).then(() => response)
+    : response;
 }
 var HTTPResponse = class {
   #headers;
@@ -778,15 +854,16 @@ var HTTPResponse = class {
     return this.#init?.statusText || "OK";
   }
   get headers() {
-    return this.#headers ||= new Headers(this.#init?.headers);
+    return (this.#headers ||= new Headers(this.#init?.headers));
   }
 };
 function prepareResponse(val, event, config, nested) {
   if (val === kHandled) return new FastResponse(null);
-  if (val === kNotFound) val = new HTTPError({
-    status: 404,
-    message: `Cannot find any route matching [${event.req.method}] ${event.url}`
-  });
+  if (val === kNotFound)
+    val = new HTTPError({
+      status: 404,
+      message: `Cannot find any route matching [${event.req.method}] ${event.url}`,
+    });
   if (val && val instanceof Error) {
     const isHTTPError = HTTPError.isError(val);
     const error = isHTTPError ? val : new HTTPError(val);
@@ -797,7 +874,11 @@ function prepareResponse(val, event, config, nested) {
     if (error.unhandled && !config.silent) console.error(error);
     const { onError: onError2 } = config;
     const errHeaders = event[kEventRes]?.[kEventResErrHeaders];
-    return onError2 && !nested ? Promise.resolve(onError2(error, event)).catch((error2) => error2).then((newVal) => prepareResponse(newVal ?? val, event, config, true)) : errorResponse(error, config.debug, errHeaders);
+    return onError2 && !nested
+      ? Promise.resolve(onError2(error, event))
+          .catch((error2) => error2)
+          .then((newVal) => prepareResponse(newVal ?? val, event, config, true))
+      : errorResponse(error, config.debug, errHeaders);
   }
   const preparedRes = event[kEventRes];
   const preparedHeaders = preparedRes?.[kEventResHeaders];
@@ -808,7 +889,10 @@ function prepareResponse(val, event, config, nested) {
     return new FastResponse(nullBody(event.req.method, status) ? null : res.body, {
       status,
       statusText: res.statusText || preparedRes?.statusText,
-      headers: res.headers && preparedHeaders ? mergeHeaders$1(res.headers, preparedHeaders) : res.headers || preparedHeaders
+      headers:
+        res.headers && preparedHeaders
+          ? mergeHeaders$1(res.headers, preparedHeaders)
+          : res.headers || preparedHeaders,
     });
   }
   if (!preparedHeaders || nested || !val.ok) return val;
@@ -819,18 +903,21 @@ function prepareResponse(val, event, config, nested) {
     return new FastResponse(nullBody(event.req.method, val.status) ? null : val.body, {
       status: val.status,
       statusText: val.statusText,
-      headers: mergeHeaders$1(val.headers, preparedHeaders)
+      headers: mergeHeaders$1(val.headers, preparedHeaders),
     });
   }
 }
 function mergeHeaders$1(base, overrides, target = new Headers(base)) {
-  for (const [name, value] of overrides) if (name === "set-cookie") target.append(name, value);
-  else target.set(name, value);
+  for (const [name, value] of overrides)
+    if (name === "set-cookie") target.append(name, value);
+    else target.set(name, value);
   return target;
 }
-var frozen = (name) => (...args) => {
-  throw new Error(`Headers are frozen (${name} ${args.join(", ")})`);
-};
+var frozen =
+  (name) =>
+  (...args) => {
+    throw new Error(`Headers are frozen (${name} ${args.join(", ")})`);
+  };
 var FrozenHeaders = class extends Headers {
   set = frozen("set");
   append = frozen("append");
@@ -839,10 +926,11 @@ var FrozenHeaders = class extends Headers {
 var emptyHeaders = new FrozenHeaders({ "content-length": "0" });
 var jsonHeaders = new FrozenHeaders({ "content-type": "application/json;charset=UTF-8" });
 function prepareResponseBody(val, event, config) {
-  if (val === null || val === void 0) return {
-    body: "",
-    headers: emptyHeaders
-  };
+  if (val === null || val === void 0)
+    return {
+      body: "",
+      headers: emptyHeaders,
+    };
   const valType = typeof val;
   if (valType === "string") return { body: val };
   if (val instanceof Uint8Array) {
@@ -850,18 +938,20 @@ function prepareResponseBody(val, event, config) {
     return { body: val };
   }
   if (val instanceof HTTPResponse || val?.constructor?.name === "HTTPResponse") return val;
-  if (isJSONSerializable(val, valType)) return {
-    body: JSON.stringify(val, void 0, config.debug ? 2 : void 0),
-    headers: jsonHeaders
-  };
-  if (valType === "bigint") return {
-    body: val.toString(),
-    headers: jsonHeaders
-  };
+  if (isJSONSerializable(val, valType))
+    return {
+      body: JSON.stringify(val, void 0, config.debug ? 2 : void 0),
+      headers: jsonHeaders,
+    };
+  if (valType === "bigint")
+    return {
+      body: val.toString(),
+      headers: jsonHeaders,
+    };
   if (val instanceof Blob) {
     const headers = new Headers({
       "content-type": val.type,
-      "content-length": val.size.toString()
+      "content-length": val.size.toString(),
     });
     let filename = val.name;
     if (filename) {
@@ -870,7 +960,7 @@ function prepareResponseBody(val, event, config) {
     }
     return {
       body: val.stream(),
-      headers
+      headers,
     };
   }
   if (valType === "symbol") return { body: val.toString() };
@@ -878,19 +968,36 @@ function prepareResponseBody(val, event, config) {
   return { body: val };
 }
 function nullBody(method, status) {
-  return method === "HEAD" || status === 100 || status === 101 || status === 102 || status === 204 || status === 205 || status === 304;
+  return (
+    method === "HEAD" ||
+    status === 100 ||
+    status === 101 ||
+    status === 102 ||
+    status === 204 ||
+    status === 205 ||
+    status === 304
+  );
 }
 function errorResponse(error, debug, errHeaders) {
-  let headers = error.headers ? mergeHeaders$1(jsonHeaders, error.headers) : new Headers(jsonHeaders);
+  let headers = error.headers
+    ? mergeHeaders$1(jsonHeaders, error.headers)
+    : new Headers(jsonHeaders);
   if (errHeaders) headers = mergeHeaders$1(headers, errHeaders);
-  return new FastResponse(JSON.stringify({
-    ...error.toJSON(),
-    stack: debug && error.stack ? error.stack.split("\n").map((l) => l.trim()) : void 0
-  }, void 0, debug ? 2 : void 0), {
-    status: error.status,
-    statusText: error.statusText,
-    headers
-  });
+  return new FastResponse(
+    JSON.stringify(
+      {
+        ...error.toJSON(),
+        stack: debug && error.stack ? error.stack.split("\n").map((l) => l.trim()) : void 0,
+      },
+      void 0,
+      debug ? 2 : void 0,
+    ),
+    {
+      status: error.status,
+      statusText: error.statusText,
+      headers,
+    },
+  );
 }
 function defineMiddleware(input) {
   return input;
@@ -914,10 +1021,11 @@ function createMatcher(opts) {
     if (!routeMatcher) return true;
     const match = event.url.pathname.match(routeMatcher);
     if (!match) return false;
-    if (match.groups) event.context.middlewareParams = {
-      ...event.context.middlewareParams,
-      ...match.groups
-    };
+    if (match.groups)
+      event.context.middlewareParams = {
+        ...event.context.middlewareParams,
+        ...match.groups,
+      };
     return true;
   };
 }
@@ -933,7 +1041,11 @@ function callMiddleware2(event, middleware, handler, index = 0) {
     return nextResult;
   };
   const ret = fn(event, next);
-  return isUnhandledResponse(ret) ? next() : typeof ret?.then === "function" ? ret.then((resolved) => isUnhandledResponse(resolved) ? next() : resolved) : ret;
+  return isUnhandledResponse(ret)
+    ? next()
+    : typeof ret?.then === "function"
+      ? ret.then((resolved) => (isUnhandledResponse(resolved) ? next() : resolved))
+      : ret;
 }
 function isUnhandledResponse(val) {
   return val === void 0 || val === kNotFound;
@@ -947,19 +1059,24 @@ function toMiddleware(input) {
       return input.fetch(event.req);
     };
   }
-  if (!isFunction) return function noopMiddleware(event, next) {
-    return next();
-  };
+  if (!isFunction)
+    return function noopMiddleware(event, next) {
+      return next();
+    };
   if (h.length === 2) return h;
   return function _middlewareHandler(event, next) {
     const res = h(event);
-    return typeof res?.then === "function" ? res.then((r) => {
-      return is404(r) ? next() : r;
-    }) : is404(res) ? next() : res;
+    return typeof res?.then === "function"
+      ? res.then((r) => {
+          return is404(r) ? next() : r;
+        })
+      : is404(res)
+        ? next()
+        : res;
   };
 }
 function is404(val) {
-  return isUnhandledResponse(val) || val?.status === 404 && val instanceof Response;
+  return isUnhandledResponse(val) || (val?.status === 404 && val instanceof Response);
 }
 var plusRegex = /\+/g;
 function parseQuery(input) {
@@ -985,17 +1102,17 @@ function parseQuery(input) {
         key = input.slice(startingIndex + 1, equalityIndex);
         if (hasBothKeyValuePair || key.length > 0) {
           if (keyHasPlus) key = key.replace(plusRegex, " ");
-          if (shouldDecodeKey) try {
-            key = decodeURIComponent(key);
-          } catch {
-          }
+          if (shouldDecodeKey)
+            try {
+              key = decodeURIComponent(key);
+            } catch {}
           if (hasBothKeyValuePair) {
             value = input.slice(equalityIndex + 1, i);
             if (valueHasPlus) value = value.replace(plusRegex, " ");
-            if (shouldDecodeValue) try {
-              value = decodeURIComponent(value);
-            } catch {
-            }
+            if (shouldDecodeValue)
+              try {
+                value = decodeURIComponent(value);
+              } catch {}
           }
           const currentValue = params[key];
           if (currentValue === void 0) params[key] = value;
@@ -1030,81 +1147,112 @@ var VALIDATION_FAILED = "Validation failed";
 async function validateData(data, fn, options) {
   if ("~standard" in fn) {
     const result = await fn["~standard"].validate(data);
-    if (result.issues) throw createValidationError(options?.onError?.(result) || {
-      message: VALIDATION_FAILED,
-      issues: result.issues
-    });
+    if (result.issues)
+      throw createValidationError(
+        options?.onError?.(result) || {
+          message: VALIDATION_FAILED,
+          issues: result.issues,
+        },
+      );
     return result.value;
   }
   try {
     const res = await fn(data);
-    if (res === false) throw createValidationError(options?.onError?.({ issues: [{ message: VALIDATION_FAILED }] }) || { message: VALIDATION_FAILED });
+    if (res === false)
+      throw createValidationError(
+        options?.onError?.({ issues: [{ message: VALIDATION_FAILED }] }) || {
+          message: VALIDATION_FAILED,
+        },
+      );
     if (res === true) return data;
     return res ?? data;
   } catch (error) {
     throw createValidationError(error);
   }
 }
-var reqBodyKeys = /* @__PURE__ */ new Set([
-  "body",
-  "text",
-  "formData",
-  "arrayBuffer"
-]);
+var reqBodyKeys = /* @__PURE__ */ new Set(["body", "text", "formData", "arrayBuffer"]);
 function validatedRequest(req, validate) {
   if (validate.headers) {
-    const validatedheaders = syncValidate("headers", Object.fromEntries(req.headers.entries()), validate.headers, validate.onError);
+    const validatedheaders = syncValidate(
+      "headers",
+      Object.fromEntries(req.headers.entries()),
+      validate.headers,
+      validate.onError,
+    );
     for (const [key, value] of Object.entries(validatedheaders)) req.headers.set(key, value);
   }
   if (!validate.body) return req;
-  return new Proxy(req, { get(_target, prop) {
-    if (validate.body) {
-      if (prop === "json") return function _validatedJson() {
-        return req.json().then((data) => validate.body["~standard"].validate(data)).then((result) => {
-          if (result.issues) throw createValidationError(validate.onError?.({
-            _source: "body",
-            ...result
-          }) || {
-            message: VALIDATION_FAILED,
-            issues: result.issues
-          });
-          return result.value;
-        });
-      };
-      else if (reqBodyKeys.has(prop)) throw new TypeError(`Cannot access .${prop} on request with JSON validation enabled. Use .json() instead.`);
-    }
-    return Reflect.get(req, prop);
-  } });
+  return new Proxy(req, {
+    get(_target, prop) {
+      if (validate.body) {
+        if (prop === "json")
+          return function _validatedJson() {
+            return req
+              .json()
+              .then((data) => validate.body["~standard"].validate(data))
+              .then((result) => {
+                if (result.issues)
+                  throw createValidationError(
+                    validate.onError?.({
+                      _source: "body",
+                      ...result,
+                    }) || {
+                      message: VALIDATION_FAILED,
+                      issues: result.issues,
+                    },
+                  );
+                return result.value;
+              });
+          };
+        else if (reqBodyKeys.has(prop))
+          throw new TypeError(
+            `Cannot access .${prop} on request with JSON validation enabled. Use .json() instead.`,
+          );
+      }
+      return Reflect.get(req, prop);
+    },
+  });
 }
 function validatedURL(url, validate) {
   if (!validate.query) return url;
-  const validatedQuery = syncValidate("query", Object.fromEntries(url.searchParams.entries()), validate.query, validate.onError);
+  const validatedQuery = syncValidate(
+    "query",
+    Object.fromEntries(url.searchParams.entries()),
+    validate.query,
+    validate.onError,
+  );
   for (const [key, value] of Object.entries(validatedQuery)) url.searchParams.set(key, value);
   return url;
 }
 function syncValidate(source, data, fn, onError2) {
   const result = fn["~standard"].validate(data);
-  if (result instanceof Promise) throw new TypeError(`Asynchronous validation is not supported for ${source}`);
-  if (result.issues) throw createValidationError(onError2?.({
-    _source: source,
-    ...result
-  }) || {
-    message: VALIDATION_FAILED,
-    issues: result.issues
-  });
+  if (result instanceof Promise)
+    throw new TypeError(`Asynchronous validation is not supported for ${source}`);
+  if (result.issues)
+    throw createValidationError(
+      onError2?.({
+        _source: source,
+        ...result,
+      }) || {
+        message: VALIDATION_FAILED,
+        issues: result.issues,
+      },
+    );
   return result.value;
 }
 function createValidationError(cause) {
-  return HTTPError.isError(cause) ? cause : new HTTPError({
-    cause,
-    status: cause?.status || 400,
-    statusText: cause?.statusText || VALIDATION_FAILED,
-    message: cause?.message || VALIDATION_FAILED,
-    data: {
-      issues: cause?.issues,
-      message: cause instanceof Error ? VALIDATION_FAILED : cause?.message || VALIDATION_FAILED
-    }
-  });
+  return HTTPError.isError(cause)
+    ? cause
+    : new HTTPError({
+        cause,
+        status: cause?.status || 400,
+        statusText: cause?.statusText || VALIDATION_FAILED,
+        message: cause?.message || VALIDATION_FAILED,
+        data: {
+          issues: cause?.issues,
+          message: cause instanceof Error ? VALIDATION_FAILED : cause?.message || VALIDATION_FAILED,
+        },
+      });
 }
 function isEvent(input) {
   return input instanceof H3Event || input?.constructor?.__is_event__;
@@ -1130,12 +1278,14 @@ function mockEvent(_request, options) {
 }
 function requestWithURL(req, url) {
   const cache = { url };
-  return new Proxy(req, { get(target, prop) {
-    if (prop in cache) return cache[prop];
-    const value = Reflect.get(target, prop);
-    cache[prop] = typeof value === "function" ? value.bind(target) : value;
-    return cache[prop];
-  } });
+  return new Proxy(req, {
+    get(target, prop) {
+      if (prop in cache) return cache[prop];
+      const value = Reflect.get(target, prop);
+      cache[prop] = typeof value === "function" ? value.bind(target) : value;
+      return cache[prop];
+    },
+  });
 }
 function requestWithBaseURL(req, base) {
   const url = new URL(req.url);
@@ -1187,13 +1337,16 @@ function assertMethod(event, expected, allowHead) {
     const allowed = Array.isArray(expected) ? expected : [expected];
     throw new HTTPError({
       status: 405,
-      headers: { Allow: allowHead ? [...allowed, "HEAD"].join(", ") : allowed.join(", ") }
+      headers: { Allow: allowHead ? [...allowed, "HEAD"].join(", ") : allowed.join(", ") },
     });
   }
 }
 function getRequestHost(event, opts = {}) {
   if (opts.xForwardedHost) {
-    const xForwardedHost = (event.req.headers.get("x-forwarded-host") || "").split(",").shift()?.trim();
+    const xForwardedHost = (event.req.headers.get("x-forwarded-host") || "")
+      .split(",")
+      .shift()
+      ?.trim();
     if (xForwardedHost) return xForwardedHost;
   }
   return event.req.headers.get("host") || "";
@@ -1230,12 +1383,23 @@ function getRequestIP(event, opts = {}) {
 }
 function defineHandler(input) {
   if (typeof input === "function") return handlerWithFetch(input);
-  const handler = input.handler || (input.fetch ? function _fetchHandler(event) {
-    return input.fetch(event.req);
-  } : NoHandler);
-  return Object.assign(handlerWithFetch(input.middleware?.length ? function _handlerMiddleware(event) {
-    return callMiddleware2(event, input.middleware, handler);
-  } : handler), input);
+  const handler =
+    input.handler ||
+    (input.fetch
+      ? function _fetchHandler(event) {
+          return input.fetch(event.req);
+        }
+      : NoHandler);
+  return Object.assign(
+    handlerWithFetch(
+      input.middleware?.length
+        ? function _handlerMiddleware(event) {
+            return callMiddleware2(event, input.middleware, handler);
+          }
+        : handler,
+    ),
+    input,
+  );
 }
 function defineValidatedHandler(def) {
   if (!def.validate) return defineHandler(def);
@@ -1245,47 +1409,58 @@ function defineValidatedHandler(def) {
       event.req = validatedRequest(event.req, def.validate);
       event.url = validatedURL(event.url, def.validate);
       return def.handler(event);
-    }
+    },
   });
 }
 function handlerWithFetch(handler) {
   if ("fetch" in handler) return handler;
-  return Object.assign(handler, { fetch: (req) => {
-    if (typeof req === "string") req = new URL(req, "http://_");
-    if (req instanceof URL) req = new Request(req);
-    const event = new H3Event(req);
-    try {
-      return Promise.resolve(toResponse(handler(event), event));
-    } catch (error) {
-      return Promise.resolve(toResponse(error, event));
-    }
-  } });
+  return Object.assign(handler, {
+    fetch: (req) => {
+      if (typeof req === "string") req = new URL(req, "http://_");
+      if (req instanceof URL) req = new Request(req);
+      const event = new H3Event(req);
+      try {
+        return Promise.resolve(toResponse(handler(event), event));
+      } catch (error) {
+        return Promise.resolve(toResponse(error, event));
+      }
+    },
+  });
 }
 function dynamicEventHandler(initial) {
   let current = toEventHandler(initial);
-  return Object.assign(defineHandler(function _dynamicEventHandler(event) {
-    return current?.(event);
-  }), { set: (handler) => {
-    current = toEventHandler(handler);
-  } });
+  return Object.assign(
+    defineHandler(function _dynamicEventHandler(event) {
+      return current?.(event);
+    }),
+    {
+      set: (handler) => {
+        current = toEventHandler(handler);
+      },
+    },
+  );
 }
 function defineLazyEventHandler(loader) {
   let handler;
   let promise;
   return defineHandler(function lazyHandler(event) {
-    return handler ? handler(event) : (promise ??= Promise.resolve(loader()).then(function resolveLazyHandler(r) {
-      handler = toEventHandler(r) || toEventHandler(r.default);
-      if (typeof handler !== "function") throw new TypeError("Invalid lazy handler", { cause: { resolved: r } });
-      return handler;
-    })).then((r) => r(event));
+    return handler
+      ? handler(event)
+      : (promise ??= Promise.resolve(loader()).then(function resolveLazyHandler(r) {
+          handler = toEventHandler(r) || toEventHandler(r.default);
+          if (typeof handler !== "function")
+            throw new TypeError("Invalid lazy handler", { cause: { resolved: r } });
+          return handler;
+        })).then((r) => r(event));
   });
 }
 function toEventHandler(handler) {
   if (typeof handler === "function") return handler;
   if (typeof handler?.handler === "function") return handler.handler;
-  if (typeof handler?.fetch === "function") return function _fetchHandler(event) {
-    return handler.fetch(event.req);
-  };
+  if (typeof handler?.fetch === "function")
+    return function _fetchHandler(event) {
+      return handler.fetch(event.req);
+    };
 }
 var NoHandler = () => kNotFound;
 var H3Core = class {
@@ -1309,7 +1484,9 @@ var H3Core = class {
     }
     const routeHandler = route?.data.handler || NoHandler;
     const middleware = this["~getMiddleware"](event, route);
-    return middleware.length > 0 ? callMiddleware2(event, middleware, routeHandler) : routeHandler(event);
+    return middleware.length > 0
+      ? callMiddleware2(event, middleware, routeHandler)
+      : routeHandler(event);
   }
   "~request"(request, context) {
     const event = new H3Event(request, context, this);
@@ -1317,15 +1494,17 @@ var H3Core = class {
     try {
       if (this.config.onRequest) {
         const hookRes = this.config.onRequest(event);
-        handlerRes = typeof hookRes?.then === "function" ? hookRes.then(() => this.handler(event)) : this.handler(event);
+        handlerRes =
+          typeof hookRes?.then === "function"
+            ? hookRes.then(() => this.handler(event))
+            : this.handler(event);
       } else handlerRes = this.handler(event);
     } catch (error) {
       handlerRes = Promise.reject(error);
     }
     return toResponse(handlerRes, event, this.config);
   }
-  "~findRoute"(_event) {
-  }
+  "~findRoute"(_event) {}
   "~addRoute"(_route) {
     this["~routes"].push(_route);
   }
@@ -1353,19 +1532,25 @@ var H3 = (() => {
     }
     mount(base, input) {
       if ("handler" in input) {
-        if (input["~middleware"].length > 0) this["~middleware"].push((event, next) => {
-          const originalPathname = event.url.pathname;
-          if (!originalPathname.startsWith(base) || originalPathname.length > base.length && originalPathname[base.length] !== "/") return next();
-          event.url.pathname = event.url.pathname.slice(base.length) || "/";
-          return callMiddleware2(event, input["~middleware"], () => {
-            event.url.pathname = originalPathname;
-            return next();
+        if (input["~middleware"].length > 0)
+          this["~middleware"].push((event, next) => {
+            const originalPathname = event.url.pathname;
+            if (
+              !originalPathname.startsWith(base) ||
+              (originalPathname.length > base.length && originalPathname[base.length] !== "/")
+            )
+              return next();
+            event.url.pathname = event.url.pathname.slice(base.length) || "/";
+            return callMiddleware2(event, input["~middleware"], () => {
+              event.url.pathname = originalPathname;
+              return next();
+            });
           });
-        });
-        for (const r of input["~routes"]) this["~addRoute"]({
-          ...r,
-          route: base + r.route
-        });
+        for (const r of input["~routes"])
+          this["~addRoute"]({
+            ...r,
+            route: base + r.route,
+          });
       } else {
         const fetchHandler = "fetch" in input ? input.fetch : input;
         this.all(`${base}/**`, function _mountedMiddleware(event) {
@@ -1384,8 +1569,8 @@ var H3 = (() => {
         middleware: opts?.middleware,
         meta: {
           ...handler.meta,
-          ...opts?.meta
-        }
+          ...opts?.meta,
+        },
       });
       return this;
     }
@@ -1412,10 +1597,12 @@ var H3 = (() => {
         opts = arg2;
       }
       if (typeof fn !== "function" && "handler" in fn) return this.mount(route || "", fn);
-      this["~middleware"].push(normalizeMiddleware(fn, {
-        ...opts,
-        route
-      }));
+      this["~middleware"].push(
+        normalizeMiddleware(fn, {
+          ...opts,
+          route,
+        }),
+      );
       return this;
     }
   }
@@ -1428,10 +1615,11 @@ var H3 = (() => {
     "HEAD",
     "OPTIONS",
     "CONNECT",
-    "TRACE"
-  ]) H3Core.prototype[method.toLowerCase()] = function(route, handler, opts) {
-    return this.on(method, route, handler, opts);
-  };
+    "TRACE",
+  ])
+    H3Core.prototype[method.toLowerCase()] = function (route, handler, opts) {
+      return this.on(method, route, handler, opts);
+    };
   return H32;
 })();
 function toWebHandler(app) {
@@ -1445,9 +1633,11 @@ function fromWebHandler(handler) {
   };
 }
 function fromNodeHandler(handler) {
-  if (typeof handler !== "function") throw new TypeError(`Invalid handler. It should be a function: ${handler}`);
+  if (typeof handler !== "function")
+    throw new TypeError(`Invalid handler. It should be a function: ${handler}`);
   return function _nodeHandler(event) {
-    if (!event.runtime?.node?.res) throw new Error("[h3] Executing Node.js middleware is not supported in this server!");
+    if (!event.runtime?.node?.res)
+      throw new Error("[h3] Executing Node.js middleware is not supported in this server!");
     return callNodeHandler(handler, event.runtime?.node.req, event.runtime?.node.res);
   };
 }
@@ -1464,31 +1654,55 @@ function callNodeHandler(handler, req, res) {
     res.once("finish", () => resolve(kHandled));
     res.once("error", (error) => reject(error));
     res.once("pipe", (stream) => {
-      resolve(new Promise((resolve2, reject2) => {
-        stream.once("close", () => resolve2(kHandled));
-        stream.once("error", (error) => {
-          console.error("[h3] Stream error in Node.js handler", { cause: error });
-          reject2(kHandled);
-        });
-      }));
+      resolve(
+        new Promise((resolve2, reject2) => {
+          stream.once("close", () => resolve2(kHandled));
+          stream.once("error", (error) => {
+            console.error("[h3] Stream error in Node.js handler", { cause: error });
+            reject2(kHandled);
+          });
+        }),
+      );
     });
     try {
-      if (isMiddleware) Promise.resolve(handler(req, res, (error) => error ? reject(new HTTPError({
-        cause: error,
-        unhandled: true
-      })) : resolve(void 0))).catch((error) => reject(new HTTPError({
-        cause: error,
-        unhandled: true
-      })));
-      else return Promise.resolve(handler(req, res)).then(() => resolve(kHandled)).catch((error) => reject(new HTTPError({
-        cause: error,
-        unhandled: true
-      })));
+      if (isMiddleware)
+        Promise.resolve(
+          handler(req, res, (error) =>
+            error
+              ? reject(
+                  new HTTPError({
+                    cause: error,
+                    unhandled: true,
+                  }),
+                )
+              : resolve(void 0),
+          ),
+        ).catch((error) =>
+          reject(
+            new HTTPError({
+              cause: error,
+              unhandled: true,
+            }),
+          ),
+        );
+      else
+        return Promise.resolve(handler(req, res))
+          .then(() => resolve(kHandled))
+          .catch((error) =>
+            reject(
+              new HTTPError({
+                cause: error,
+                unhandled: true,
+              }),
+            ),
+          );
     } catch (error) {
-      reject(new HTTPError({
-        cause: error,
-        unhandled: true
-      }));
+      reject(
+        new HTTPError({
+          cause: error,
+          unhandled: true,
+        }),
+      );
     }
   });
 }
@@ -1502,76 +1716,17 @@ function removeRoute$1(app, method, route) {
   const _method = method ? method.toUpperCase() : void 0;
   route = new URL(route, "http://_").pathname;
   removeRoute(app["~rou3"], _method || "", route);
-  const idx = app["~routes"].findIndex((r) => r.route === route && (_method == null || r.method === _method));
+  const idx = app["~routes"].findIndex(
+    (r) => r.route === route && (_method == null || r.method === _method),
+  );
   if (idx !== -1) app["~routes"].splice(idx, 1);
 }
 var textEncoder = new TextEncoder();
 var textDecoder = new TextDecoder();
 var base64Code = [
-  65,
-  66,
-  67,
-  68,
-  69,
-  70,
-  71,
-  72,
-  73,
-  74,
-  75,
-  76,
-  77,
-  78,
-  79,
-  80,
-  81,
-  82,
-  83,
-  84,
-  85,
-  86,
-  87,
-  88,
-  89,
-  90,
-  97,
-  98,
-  99,
-  100,
-  101,
-  102,
-  103,
-  104,
-  105,
-  106,
-  107,
-  108,
-  109,
-  110,
-  111,
-  112,
-  113,
-  114,
-  115,
-  116,
-  117,
-  118,
-  119,
-  120,
-  121,
-  122,
-  48,
-  49,
-  50,
-  51,
-  52,
-  53,
-  54,
-  55,
-  56,
-  57,
-  45,
-  95
+  65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+  89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
+  115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 45, 95,
 ];
 function base64Encode(data) {
   const buff = validateBinaryLike(data);
@@ -1579,9 +1734,20 @@ function base64Encode(data) {
   const bytes = [];
   let i;
   const len = buff.length;
-  for (i = 2; i < len; i += 3) bytes.push(base64Code[buff[i - 2] >> 2], base64Code[(buff[i - 2] & 3) << 4 | buff[i - 1] >> 4], base64Code[(buff[i - 1] & 15) << 2 | buff[i] >> 6], base64Code[buff[i] & 63]);
+  for (i = 2; i < len; i += 3)
+    bytes.push(
+      base64Code[buff[i - 2] >> 2],
+      base64Code[((buff[i - 2] & 3) << 4) | (buff[i - 1] >> 4)],
+      base64Code[((buff[i - 1] & 15) << 2) | (buff[i] >> 6)],
+      base64Code[buff[i] & 63],
+    );
   if (i === len + 1) bytes.push(base64Code[buff[i - 2] >> 2], base64Code[(buff[i - 2] & 3) << 4]);
-  if (i === len) bytes.push(base64Code[buff[i - 2] >> 2], base64Code[(buff[i - 2] & 3) << 4 | buff[i - 1] >> 4], base64Code[(buff[i - 1] & 15) << 2]);
+  if (i === len)
+    bytes.push(
+      base64Code[buff[i - 2] >> 2],
+      base64Code[((buff[i - 2] & 3) << 4) | (buff[i - 1] >> 4)],
+      base64Code[(buff[i - 1] & 15) << 2],
+    );
   return String.fromCharCode(...bytes);
 }
 function base64Decode(b64Url) {
@@ -1623,23 +1789,30 @@ function coerceIterable(iterable2) {
 function noContent(status = 204) {
   return new HTTPResponse(null, {
     status,
-    statusText: "No Content"
+    statusText: "No Content",
   });
 }
 function redirect(location2, status = 302, statusText) {
-  return new HTTPResponse(`<html><head><meta http-equiv="refresh" content="0; url=${location2.replace(/[&"<>]/g, (c) => ({
-    "&": "&amp;",
-    '"': "&quot;",
-    "<": "&lt;",
-    ">": "&gt;"
-  })[c])}" /></head></html>`, {
-    status,
-    statusText: statusText || (status === 301 ? "Moved Permanently" : "Found"),
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      location: location2
-    }
-  });
+  return new HTTPResponse(
+    `<html><head><meta http-equiv="refresh" content="0; url=${location2.replace(
+      /[&"<>]/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          '"': "&quot;",
+          "<": "&lt;",
+          ">": "&gt;",
+        })[c],
+    )}" /></head></html>`,
+    {
+      status,
+      statusText: statusText || (status === 301 ? "Moved Permanently" : "Found"),
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        location: location2,
+      },
+    },
+  );
 }
 function redirectBack(event, opts = {}) {
   const referer = event.req.headers.get("referer");
@@ -1655,9 +1828,10 @@ function redirectBack(event, opts = {}) {
   return redirect(location2, opts.status);
 }
 function writeEarlyHints(event, hints) {
-  if (event.runtime?.node?.res?.writeEarlyHints) return new Promise((resolve) => {
-    event.runtime?.node?.res?.writeEarlyHints(hints, () => resolve());
-  });
+  if (event.runtime?.node?.res?.writeEarlyHints)
+    return new Promise((resolve) => {
+      event.runtime?.node?.res?.writeEarlyHints(hints, () => resolve());
+    });
   for (const [name, value] of Object.entries(hints)) {
     if (name.toLowerCase() !== "link") continue;
     if (Array.isArray(value)) for (const v of value) event.res.headers.append("link", v);
@@ -1667,43 +1841,52 @@ function writeEarlyHints(event, hints) {
 function iterable(iterable2, options) {
   const serializer = options?.serializer ?? serializeIterableValue;
   const iterator = coerceIterable(iterable2);
-  return new HTTPResponse(new ReadableStream({
-    async pull(controller) {
-      const { value, done } = await iterator.next();
-      if (value !== void 0) {
-        const chunk = serializer(value);
-        if (chunk !== void 0) controller.enqueue(chunk);
-      }
-      if (done) controller.close();
-    },
-    cancel() {
-      iterator.return?.();
-    }
-  }));
+  return new HTTPResponse(
+    new ReadableStream({
+      async pull(controller) {
+        const { value, done } = await iterator.next();
+        if (value !== void 0) {
+          const chunk = serializer(value);
+          if (chunk !== void 0) controller.enqueue(chunk);
+        }
+        if (done) controller.close();
+      },
+      cancel() {
+        iterator.return?.();
+      },
+    }),
+  );
 }
 function html(first, ...values) {
-  return new HTTPResponse(typeof first === "string" ? first : first.reduce((out, str, i) => out + str + (values[i] ?? ""), ""), { headers: { "content-type": "text/html; charset=utf-8" } });
+  return new HTTPResponse(
+    typeof first === "string"
+      ? first
+      : first.reduce((out, str, i) => out + str + (values[i] ?? ""), ""),
+    { headers: { "content-type": "text/html; charset=utf-8" } },
+  );
 }
 function parseURLEncodedBody(body) {
   const form = new URLSearchParams(body);
   const parsedForm = new NullProtoObj();
-  for (const [key, value] of form.entries()) if (hasProp(parsedForm, key)) {
-    if (!Array.isArray(parsedForm[key])) parsedForm[key] = [parsedForm[key]];
-    parsedForm[key].push(value);
-  } else parsedForm[key] = value;
+  for (const [key, value] of form.entries())
+    if (hasProp(parsedForm, key)) {
+      if (!Array.isArray(parsedForm[key])) parsedForm[key] = [parsedForm[key]];
+      parsedForm[key].push(value);
+    } else parsedForm[key] = value;
   return parsedForm;
 }
 async function readBody(event) {
   const text = await event.req.text();
   if (!text) return;
-  if ((event.req.headers.get("content-type") || "").startsWith("application/x-www-form-urlencoded")) return parseURLEncodedBody(text);
+  if ((event.req.headers.get("content-type") || "").startsWith("application/x-www-form-urlencoded"))
+    return parseURLEncodedBody(text);
   try {
     return JSON.parse(text);
   } catch {
     throw new HTTPError({
       status: 400,
       statusText: "Bad Request",
-      message: "Invalid JSON body"
+      message: "Invalid JSON body",
     });
   }
 }
@@ -1711,11 +1894,12 @@ async function readValidatedBody(event, validate, options) {
   return validateData(await readBody(event), validate, options);
 }
 async function assertBodySize(event, limit) {
-  if (!await isBodySizeWithin(event, limit)) throw new HTTPError({
-    status: 413,
-    statusText: "Request Entity Too Large",
-    message: `Request body size exceeds the limit of ${limit} bytes`
-  });
+  if (!(await isBodySizeWithin(event, limit)))
+    throw new HTTPError({
+      status: 413,
+      statusText: "Request Entity Too Large",
+      message: `Request body size exceeds the limit of ${limit} bytes`,
+    });
 }
 async function isBodySizeWithin(event, limit) {
   const req = event.req;
@@ -1746,7 +1930,7 @@ function onRequest(hook) {
 function onResponse(hook) {
   return async function _onResponseMiddleware(event, next) {
     const response = await toResponse(await next(), event);
-    return await hook(response, event) || response;
+    return (await hook(response, event)) || response;
   };
 }
 function onError(hook) {
@@ -1772,12 +1956,7 @@ function bodyLimit(limit) {
     return next();
   };
 }
-var PayloadMethods = /* @__PURE__ */ new Set([
-  "PATCH",
-  "POST",
-  "PUT",
-  "DELETE"
-]);
+var PayloadMethods = /* @__PURE__ */ new Set(["PATCH", "POST", "PUT", "DELETE"]);
 var ignoredHeaders = /* @__PURE__ */ new Set([
   "transfer-encoding",
   "connection",
@@ -1785,24 +1964,31 @@ var ignoredHeaders = /* @__PURE__ */ new Set([
   "upgrade",
   "expect",
   "host",
-  "accept"
+  "accept",
 ]);
 function rewriteCookieProperty(header, map, property) {
   const _map = typeof map === "string" ? { "*": map } : map;
-  return header.replace(new RegExp(`(;\\s*${property}=)([^;]+)`, "gi"), (match, prefix, previousValue) => {
-    let newValue;
-    if (previousValue in _map) newValue = _map[previousValue];
-    else if ("*" in _map) newValue = _map["*"];
-    else return match;
-    return newValue ? prefix + newValue : "";
-  });
+  return header.replace(
+    new RegExp(`(;\\s*${property}=)([^;]+)`, "gi"),
+    (match, prefix, previousValue) => {
+      let newValue;
+      if (previousValue in _map) newValue = _map[previousValue];
+      else if ("*" in _map) newValue = _map["*"];
+      else return match;
+      return newValue ? prefix + newValue : "";
+    },
+  );
 }
 function mergeHeaders(defaults2, ...inputs) {
   const _inputs = inputs.filter(Boolean);
   if (_inputs.length === 0) return defaults2;
   const merged = new Headers(defaults2);
   for (const input of _inputs) {
-    const entries = Array.isArray(input) ? input : typeof input.entries === "function" ? input.entries() : Object.entries(input);
+    const entries = Array.isArray(input)
+      ? input
+      : typeof input.entries === "function"
+        ? input.entries()
+        : Object.entries(input);
     for (const [key, value] of entries) if (value !== void 0) merged.set(key, value);
   }
   return merged;
@@ -1810,11 +1996,15 @@ function mergeHeaders(defaults2, ...inputs) {
 async function proxyRequest(event, target, opts = {}) {
   const requestBody = PayloadMethods.has(event.req.method) ? event.req.body : void 0;
   const method = opts.fetchOptions?.method || event.req.method;
-  const fetchHeaders = mergeHeaders(getProxyRequestHeaders(event, {
-    host: target.startsWith("/"),
-    forwardHeaders: opts.forwardHeaders,
-    filterHeaders: opts.filterHeaders
-  }), opts.fetchOptions?.headers, opts.headers);
+  const fetchHeaders = mergeHeaders(
+    getProxyRequestHeaders(event, {
+      host: target.startsWith("/"),
+      forwardHeaders: opts.forwardHeaders,
+      filterHeaders: opts.filterHeaders,
+    }),
+    opts.fetchOptions?.headers,
+    opts.headers,
+  );
   return proxy(event, target, {
     ...opts,
     fetchOptions: {
@@ -1822,28 +2012,32 @@ async function proxyRequest(event, target, opts = {}) {
       body: requestBody,
       duplex: requestBody ? "half" : void 0,
       ...opts.fetchOptions,
-      headers: fetchHeaders
-    }
+      headers: fetchHeaders,
+    },
   });
 }
 async function proxy(event, target, opts = {}) {
   const fetchOptions = {
     headers: opts.headers,
-    ...opts.fetchOptions
+    ...opts.fetchOptions,
   };
   let response;
   try {
-    response = target[0] === "/" ? await event.app.fetch(createSubRequest(event, target, fetchOptions)) : await fetch(target, fetchOptions);
+    response =
+      target[0] === "/"
+        ? await event.app.fetch(createSubRequest(event, target, fetchOptions))
+        : await fetch(target, fetchOptions);
   } catch (error) {
     throw new HTTPError({
       status: 502,
-      cause: error
+      cause: error,
     });
   }
   const headers = new Headers();
   const cookies = [];
   for (const [key, value] of response.headers.entries()) {
-    if (key === "content-encoding" || key === "content-length" || key === "transfer-encoding") continue;
+    if (key === "content-encoding" || key === "content-length" || key === "transfer-encoding")
+      continue;
     if (key === "set-cookie") {
       cookies.push(value);
       continue;
@@ -1852,8 +2046,10 @@ async function proxy(event, target, opts = {}) {
   }
   if (cookies.length > 0) {
     const _cookies = cookies.map((cookie) => {
-      if (opts.cookieDomainRewrite) cookie = rewriteCookieProperty(cookie, opts.cookieDomainRewrite, "domain");
-      if (opts.cookiePathRewrite) cookie = rewriteCookieProperty(cookie, opts.cookiePathRewrite, "path");
+      if (opts.cookieDomainRewrite)
+        cookie = rewriteCookieProperty(cookie, opts.cookieDomainRewrite, "domain");
+      if (opts.cookiePathRewrite)
+        cookie = rewriteCookieProperty(cookie, opts.cookiePathRewrite, "path");
       return cookie;
     });
     for (const cookie of _cookies) headers.append("set-cookie", cookie);
@@ -1862,7 +2058,7 @@ async function proxy(event, target, opts = {}) {
   return new HTTPResponse(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers
+    headers,
   });
 }
 function getProxyRequestHeaders(event, opts) {
@@ -1873,7 +2069,7 @@ function getProxyRequestHeaders(event, opts) {
       headers[name] = value;
       continue;
     }
-    if (!ignoredHeaders.has(name) || name === "host" && opts?.host) {
+    if (!ignoredHeaders.has(name) || (name === "host" && opts?.host)) {
       headers[name] = value;
       continue;
     }
@@ -1882,10 +2078,12 @@ function getProxyRequestHeaders(event, opts) {
 }
 async function fetchWithEvent(event, url, init) {
   if (url[0] !== "/") return fetch(url, init);
-  return event.app.fetch(createSubRequest(event, url, {
-    ...init,
-    headers: mergeHeaders(getProxyRequestHeaders(event, { host: true }), init?.headers)
-  }));
+  return event.app.fetch(
+    createSubRequest(event, url, {
+      ...init,
+      headers: mergeHeaders(getProxyRequestHeaders(event, { host: true }), init?.headers),
+    }),
+  );
 }
 function createSubRequest(event, path, init) {
   const url = new URL(path, event.url);
@@ -1920,8 +2118,7 @@ function valueSlice(str, min, max) {
   return str.slice(start, end);
 }
 var NullObject = (() => {
-  const C = function() {
-  };
+  const C = function () {};
   C.prototype = /* @__PURE__ */ Object.create(null);
   return C;
 })();
@@ -1966,81 +2163,104 @@ function decode(str) {
 }
 var cookieNameRegExp = /^[\u0021-\u003A\u003C\u003E-\u007E]+$/;
 var cookieValueRegExp = /^[\u0021-\u003A\u003C-\u007E]*$/;
-var domainValueRegExp = /^([.]?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
+var domainValueRegExp =
+  /^([.]?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
 var pathValueRegExp = /^[\u0020-\u003A\u003C-\u007E]*$/;
 var __toString = Object.prototype.toString;
 function serialize(_a0, _a1, _a2) {
   const isObj = typeof _a0 === "object" && _a0 !== null;
   const options = isObj ? _a1 : _a2;
   const stringify = options?.stringify || JSON.stringify;
-  const cookie = isObj ? _a0 : {
-    ..._a2,
-    name: _a0,
-    value: _a1 == void 0 ? "" : typeof _a1 === "string" ? _a1 : stringify(_a1)
-  };
+  const cookie = isObj
+    ? _a0
+    : {
+        ..._a2,
+        name: _a0,
+        value: _a1 == void 0 ? "" : typeof _a1 === "string" ? _a1 : stringify(_a1),
+      };
   const enc = options?.encode || encodeURIComponent;
-  if (!cookieNameRegExp.test(cookie.name)) throw new TypeError(`argument name is invalid: ${cookie.name}`);
+  if (!cookieNameRegExp.test(cookie.name))
+    throw new TypeError(`argument name is invalid: ${cookie.name}`);
   const value = cookie.value ? enc(cookie.value) : "";
-  if (!cookieValueRegExp.test(value)) throw new TypeError(`argument val is invalid: ${cookie.value}`);
+  if (!cookieValueRegExp.test(value))
+    throw new TypeError(`argument val is invalid: ${cookie.value}`);
   if (!cookie.secure) {
-    if (cookie.partitioned) throw new TypeError(`Partitioned cookies must have the Secure attribute`);
-    if (cookie.sameSite && String(cookie.sameSite).toLowerCase() === "none") throw new TypeError(`SameSite=None cookies must have the Secure attribute`);
-    if (cookie.name.length > 9 && cookie.name.charCodeAt(0) === 95 && cookie.name.charCodeAt(1) === 95) {
+    if (cookie.partitioned)
+      throw new TypeError(`Partitioned cookies must have the Secure attribute`);
+    if (cookie.sameSite && String(cookie.sameSite).toLowerCase() === "none")
+      throw new TypeError(`SameSite=None cookies must have the Secure attribute`);
+    if (
+      cookie.name.length > 9 &&
+      cookie.name.charCodeAt(0) === 95 &&
+      cookie.name.charCodeAt(1) === 95
+    ) {
       const nameLower = cookie.name.toLowerCase();
-      if (nameLower.startsWith("__secure-") || nameLower.startsWith("__host-")) throw new TypeError(`${cookie.name} cookies must have the Secure attribute`);
+      if (nameLower.startsWith("__secure-") || nameLower.startsWith("__host-"))
+        throw new TypeError(`${cookie.name} cookies must have the Secure attribute`);
     }
   }
-  if (cookie.name.length > 7 && cookie.name.charCodeAt(0) === 95 && cookie.name.charCodeAt(1) === 95 && cookie.name.toLowerCase().startsWith("__host-")) {
+  if (
+    cookie.name.length > 7 &&
+    cookie.name.charCodeAt(0) === 95 &&
+    cookie.name.charCodeAt(1) === 95 &&
+    cookie.name.toLowerCase().startsWith("__host-")
+  ) {
     if (cookie.path !== "/") throw new TypeError(`__Host- cookies must have Path=/`);
     if (cookie.domain) throw new TypeError(`__Host- cookies must not have a Domain attribute`);
   }
   let str = cookie.name + "=" + value;
   if (cookie.maxAge !== void 0) {
-    if (!Number.isInteger(cookie.maxAge)) throw new TypeError(`option maxAge is invalid: ${cookie.maxAge}`);
+    if (!Number.isInteger(cookie.maxAge))
+      throw new TypeError(`option maxAge is invalid: ${cookie.maxAge}`);
     str += "; Max-Age=" + Math.max(0, Math.min(cookie.maxAge, COOKIE_MAX_AGE_LIMIT));
   }
   if (cookie.domain) {
-    if (!domainValueRegExp.test(cookie.domain)) throw new TypeError(`option domain is invalid: ${cookie.domain}`);
+    if (!domainValueRegExp.test(cookie.domain))
+      throw new TypeError(`option domain is invalid: ${cookie.domain}`);
     str += "; Domain=" + cookie.domain;
   }
   if (cookie.path) {
-    if (!pathValueRegExp.test(cookie.path)) throw new TypeError(`option path is invalid: ${cookie.path}`);
+    if (!pathValueRegExp.test(cookie.path))
+      throw new TypeError(`option path is invalid: ${cookie.path}`);
     str += "; Path=" + cookie.path;
   }
   if (cookie.expires) {
-    if (!isDate(cookie.expires) || !Number.isFinite(cookie.expires.valueOf())) throw new TypeError(`option expires is invalid: ${cookie.expires}`);
+    if (!isDate(cookie.expires) || !Number.isFinite(cookie.expires.valueOf()))
+      throw new TypeError(`option expires is invalid: ${cookie.expires}`);
     str += "; Expires=" + cookie.expires.toUTCString();
   }
   if (cookie.httpOnly) str += "; HttpOnly";
   if (cookie.secure) str += "; Secure";
   if (cookie.partitioned) str += "; Partitioned";
-  if (cookie.priority) switch (typeof cookie.priority === "string" ? cookie.priority.toLowerCase() : void 0) {
-    case "low":
-      str += "; Priority=Low";
-      break;
-    case "medium":
-      str += "; Priority=Medium";
-      break;
-    case "high":
-      str += "; Priority=High";
-      break;
-    default:
-      throw new TypeError(`option priority is invalid: ${cookie.priority}`);
-  }
-  if (cookie.sameSite) switch (typeof cookie.sameSite === "string" ? cookie.sameSite.toLowerCase() : cookie.sameSite) {
-    case true:
-    case "strict":
-      str += "; SameSite=Strict";
-      break;
-    case "lax":
-      str += "; SameSite=Lax";
-      break;
-    case "none":
-      str += "; SameSite=None";
-      break;
-    default:
-      throw new TypeError(`option sameSite is invalid: ${cookie.sameSite}`);
-  }
+  if (cookie.priority)
+    switch (typeof cookie.priority === "string" ? cookie.priority.toLowerCase() : void 0) {
+      case "low":
+        str += "; Priority=Low";
+        break;
+      case "medium":
+        str += "; Priority=Medium";
+        break;
+      case "high":
+        str += "; Priority=High";
+        break;
+      default:
+        throw new TypeError(`option priority is invalid: ${cookie.priority}`);
+    }
+  if (cookie.sameSite)
+    switch (typeof cookie.sameSite === "string" ? cookie.sameSite.toLowerCase() : cookie.sameSite) {
+      case true:
+      case "strict":
+        str += "; SameSite=Strict";
+        break;
+      case "lax":
+        str += "; SameSite=Lax";
+        break;
+      case "none":
+        str += "; SameSite=None";
+        break;
+      default:
+        throw new TypeError(`option sameSite is invalid: ${cookie.sameSite}`);
+    }
   return str;
 }
 function isDate(val) {
@@ -2069,7 +2289,7 @@ function parseSetCookie(str, options) {
   if (options?.decode !== false) value = _decode(value, options?.decode);
   const setCookie2 = {
     name,
-    value
+    value,
   };
   let index = _endIdx + 1;
   while (index < len) {
@@ -2086,52 +2306,57 @@ function parseSetCookie(str, options) {
     if (attrEqIdx >= endIdx) attrEqIdx = -1;
     const attr = attrEqIdx === -1 ? _trim(str, index, endIdx) : _trim(str, index, attrEqIdx);
     const val = attrEqIdx === -1 ? void 0 : _trim(str, attrEqIdx + 1, endIdx);
-    if (val === void 0 || val.length <= 1024) switch (attr.toLowerCase()) {
-      case "httponly":
-        setCookie2.httpOnly = true;
-        break;
-      case "secure":
-        setCookie2.secure = true;
-        break;
-      case "partitioned":
-        setCookie2.partitioned = true;
-        break;
-      case "domain":
-        if (val) setCookie2.domain = (val.charCodeAt(0) === 46 ? val.slice(1) : val).toLowerCase();
-        break;
-      case "path":
-        setCookie2.path = val;
-        break;
-      case "max-age":
-        if (val && maxAgeRegExp.test(val)) setCookie2.maxAge = Math.min(Number(val), COOKIE_MAX_AGE_LIMIT);
-        break;
-      case "expires": {
-        if (!val) break;
-        const date = new Date(val);
-        if (Number.isFinite(date.valueOf())) {
-          const maxDate = new Date(Date.now() + COOKIE_MAX_AGE_LIMIT * 1e3);
-          setCookie2.expires = date > maxDate ? maxDate : date;
+    if (val === void 0 || val.length <= 1024)
+      switch (attr.toLowerCase()) {
+        case "httponly":
+          setCookie2.httpOnly = true;
+          break;
+        case "secure":
+          setCookie2.secure = true;
+          break;
+        case "partitioned":
+          setCookie2.partitioned = true;
+          break;
+        case "domain":
+          if (val)
+            setCookie2.domain = (val.charCodeAt(0) === 46 ? val.slice(1) : val).toLowerCase();
+          break;
+        case "path":
+          setCookie2.path = val;
+          break;
+        case "max-age":
+          if (val && maxAgeRegExp.test(val))
+            setCookie2.maxAge = Math.min(Number(val), COOKIE_MAX_AGE_LIMIT);
+          break;
+        case "expires": {
+          if (!val) break;
+          const date = new Date(val);
+          if (Number.isFinite(date.valueOf())) {
+            const maxDate = new Date(Date.now() + COOKIE_MAX_AGE_LIMIT * 1e3);
+            setCookie2.expires = date > maxDate ? maxDate : date;
+          }
+          break;
         }
-        break;
+        case "priority": {
+          if (!val) break;
+          const priority = val.toLowerCase();
+          if (priority === "low" || priority === "medium" || priority === "high")
+            setCookie2.priority = priority;
+          break;
+        }
+        case "samesite": {
+          if (!val) break;
+          const sameSite = val.toLowerCase();
+          if (sameSite === "lax" || sameSite === "strict" || sameSite === "none")
+            setCookie2.sameSite = sameSite;
+          else setCookie2.sameSite = "lax";
+          break;
+        }
+        default: {
+          const attrLower = attr.toLowerCase();
+          if (attrLower && !(attrLower in _nullProto)) setCookie2[attrLower] = val;
+        }
       }
-      case "priority": {
-        if (!val) break;
-        const priority = val.toLowerCase();
-        if (priority === "low" || priority === "medium" || priority === "high") setCookie2.priority = priority;
-        break;
-      }
-      case "samesite": {
-        if (!val) break;
-        const sameSite = val.toLowerCase();
-        if (sameSite === "lax" || sameSite === "strict" || sameSite === "none") setCookie2.sameSite = sameSite;
-        else setCookie2.sameSite = "lax";
-        break;
-      }
-      default: {
-        const attrLower = attr.toLowerCase();
-        if (attrLower && !(attrLower in _nullProto)) setCookie2[attrLower] = val;
-      }
-    }
     index = endIdx + 1;
   }
   return setCookie2;
@@ -2168,7 +2393,7 @@ function setCookie(event, name, value, options) {
     name,
     value,
     path: "/",
-    ...options
+    ...options,
   });
   const currentCookies = event.res.headers.getSetCookie();
   if (currentCookies.length === 0) {
@@ -2188,7 +2413,7 @@ function setCookie(event, name, value, options) {
 function deleteCookie(event, name, serializeOptions) {
   setCookie(event, name, "", {
     ...serializeOptions,
-    maxAge: 0
+    maxAge: 0,
   });
 }
 function getChunkedCookie(event, name) {
@@ -2210,7 +2435,9 @@ function setChunkedCookie(event, name, value, options) {
   const previousCookie = getCookie(event, name);
   if (previousCookie?.startsWith(CHUNKED_COOKIE)) {
     const previousChunkCount = getChunkedCookieCount(previousCookie);
-    if (previousChunkCount > chunkCount) for (let i = chunkCount; i <= previousChunkCount; i++) deleteCookie(event, chunkCookieName(name, i), options);
+    if (previousChunkCount > chunkCount)
+      for (let i = chunkCount; i <= previousChunkCount; i++)
+        deleteCookie(event, chunkCookieName(name, i), options);
   }
   if (chunkCount <= 1) {
     setCookie(event, name, value, options);
@@ -2228,14 +2455,12 @@ function deleteChunkedCookie(event, name, serializeOptions) {
   const mainCookie = getCookie(event, name);
   deleteCookie(event, name, serializeOptions);
   const chunksCount = getChunkedCookieCount(mainCookie);
-  if (chunksCount >= 0) for (let i = 0; i < chunksCount; i++) deleteCookie(event, chunkCookieName(name, i + 1), serializeOptions);
+  if (chunksCount >= 0)
+    for (let i = 0; i < chunksCount; i++)
+      deleteCookie(event, chunkCookieName(name, i + 1), serializeOptions);
 }
 function _getDistinctCookieKey(name, options) {
-  return [
-    name,
-    options.domain || "",
-    options.path || "/"
-  ].join(";");
+  return [name, options.domain || "", options.path || "/"].join(";");
 }
 var MAX_CHUNKED_COOKIE_COUNT = 100;
 function getChunkedCookieCount(cookie) {
@@ -2247,8 +2472,7 @@ function getChunkedCookieCount(cookie) {
 function chunkCookieName(name, chunkNumber) {
   return `${name}.${chunkNumber}`;
 }
-var _noop = () => {
-};
+var _noop = () => {};
 var EventStream = class {
   _event;
   _transformStream = new TransformStream();
@@ -2349,10 +2573,10 @@ var EventStream = class {
   }
   async close() {
     if (this._disposed) return;
-    if (!this._writerIsClosed) try {
-      await this._writer.close();
-    } catch {
-    }
+    if (!this._writerIsClosed)
+      try {
+        await this._writer.close();
+      } catch {}
     this._disposed = true;
   }
   onClosed(cb) {
@@ -2366,19 +2590,30 @@ var EventStream = class {
   }
 };
 function formatEventStreamComment(comment) {
-  return comment.split(/\r\n|\r|\n/).map((l) => `: ${l}
-`).join("") + "\n";
+  return (
+    comment
+      .split(/\r\n|\r|\n/)
+      .map(
+        (l) => `: ${l}
+`,
+      )
+      .join("") + "\n"
+  );
 }
 function formatEventStreamMessage(message) {
   let result = "";
-  if (message.id) result += `id: ${_sanitizeSingleLine(message.id)}
+  if (message.id)
+    result += `id: ${_sanitizeSingleLine(message.id)}
 `;
-  if (message.event) result += `event: ${_sanitizeSingleLine(message.event)}
+  if (message.event)
+    result += `event: ${_sanitizeSingleLine(message.event)}
 `;
-  if (typeof message.retry === "number" && Number.isInteger(message.retry)) result += `retry: ${message.retry}
+  if (typeof message.retry === "number" && Number.isInteger(message.retry))
+    result += `retry: ${message.retry}
 `;
   const data = typeof message.data === "string" ? message.data : "";
-  for (const line of data.split(/\r\n|\r|\n/)) result += `data: ${line}
+  for (const line of data.split(/\r\n|\r|\n/))
+    result += `data: ${line}
 `;
   result += "\n";
   return result;
@@ -2393,23 +2628,31 @@ function formatEventStreamMessages(messages) {
 }
 function setEventStreamHeaders(event) {
   event.res.headers.set("content-type", "text/event-stream");
-  event.res.headers.set("cache-control", "private, no-cache, no-store, no-transform, must-revalidate, max-age=0");
+  event.res.headers.set(
+    "cache-control",
+    "private, no-cache, no-store, no-transform, must-revalidate, max-age=0",
+  );
   event.res.headers.set("x-accel-buffering", "no");
-  if (event.req.headers.get("connection") === "keep-alive") event.res.headers.set("connection", "keep-alive");
+  if (event.req.headers.get("connection") === "keep-alive")
+    event.res.headers.set("connection", "keep-alive");
 }
 function createEventStream(event, opts) {
   return new EventStream(event, opts);
 }
 function setServerTiming(event, name, opts) {
   if (!_isValidToken(name)) throw new TypeError(`Invalid Server-Timing metric name: ${name}`);
-  if (opts?.dur !== void 0 && (!Number.isFinite(opts.dur) || opts.dur < 0)) throw new TypeError(`Invalid Server-Timing duration: ${opts.dur}`);
-  const value = name + (opts?.desc ? `;desc="${_escapeDesc(opts.desc)}"` : "") + (opts?.dur !== void 0 ? `;dur=${opts.dur}` : "");
+  if (opts?.dur !== void 0 && (!Number.isFinite(opts.dur) || opts.dur < 0))
+    throw new TypeError(`Invalid Server-Timing duration: ${opts.dur}`);
+  const value =
+    name +
+    (opts?.desc ? `;desc="${_escapeDesc(opts.desc)}"` : "") +
+    (opts?.dur !== void 0 ? `;dur=${opts.dur}` : "");
   event.res.headers.append("server-timing", value);
   const ctx = event.context;
   if (!Array.isArray(ctx.timing)) ctx.timing = [];
   ctx.timing.push({
     name,
-    ...opts
+    ...opts,
   });
 }
 async function withServerTiming(event, name, fn) {
@@ -2428,9 +2671,10 @@ function _escapeDesc(value) {
   return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 }
 function handleCacheHeaders(event, opts) {
-  const cacheControls = ["public", ...opts.cacheControls || []];
+  const cacheControls = ["public", ...(opts.cacheControls || [])];
   let cacheMatched = false;
-  if (opts.maxAge !== void 0) cacheControls.push(`max-age=${+opts.maxAge}`, `s-maxage=${+opts.maxAge}`);
+  if (opts.maxAge !== void 0)
+    cacheControls.push(`max-age=${+opts.maxAge}`, `s-maxage=${+opts.maxAge}`);
   if (opts.modifiedTime) {
     const modifiedTime = new Date(opts.modifiedTime);
     modifiedTime.setMilliseconds(0);
@@ -2469,7 +2713,7 @@ var COMMON_MIME_TYPES = {
   ".mp4": "video/mp4",
   ".webm": "video/webm",
   ".zip": "application/zip",
-  ".pdf": "application/pdf"
+  ".pdf": "application/pdf",
 };
 function getExtension(path) {
   const filename = path.split("/").pop();
@@ -2482,7 +2726,11 @@ function getType(ext) {
 }
 async function serveStatic(event, options) {
   if (options.headers) {
-    const entries = Array.isArray(options.headers) ? options.headers : typeof options.headers.entries === "function" ? options.headers.entries() : Object.entries(options.headers);
+    const entries = Array.isArray(options.headers)
+      ? options.headers
+      : typeof options.headers.entries === "function"
+        ? options.headers.entries()
+        : Object.entries(options.headers);
     for (const [key, value] of entries) event.res.headers.set(key, value);
   }
   if (event.req.method !== "GET" && event.req.method !== "HEAD") {
@@ -2490,8 +2738,13 @@ async function serveStatic(event, options) {
     event.res.headers.set("allow", "GET, HEAD");
     throw new HTTPError({ status: 405 });
   }
-  const originalId = resolveDotSegments(decodeURI(withLeadingSlash(withoutTrailingSlash(event.url.pathname))));
-  const acceptEncodings = parseAcceptEncoding(event.req.headers.get("accept-encoding") || "", options.encodings);
+  const originalId = resolveDotSegments(
+    decodeURI(withLeadingSlash(withoutTrailingSlash(event.url.pathname))),
+  );
+  const acceptEncodings = parseAcceptEncoding(
+    event.req.headers.get("accept-encoding") || "",
+    options.encodings,
+  );
   if (acceptEncodings.length > 1) event.res.headers.set("vary", "accept-encoding");
   let id = originalId;
   let meta;
@@ -2511,35 +2764,45 @@ async function serveStatic(event, options) {
   if (meta.mtime) {
     const mtimeDate = new Date(meta.mtime);
     const ifModifiedSinceH = event.req.headers.get("if-modified-since");
-    if (ifModifiedSinceH && new Date(ifModifiedSinceH) >= mtimeDate) return new HTTPResponse(null, {
-      status: 304,
-      statusText: "Not Modified"
-    });
-    if (!event.res.headers.get("last-modified")) event.res.headers.set("last-modified", mtimeDate.toUTCString());
+    if (ifModifiedSinceH && new Date(ifModifiedSinceH) >= mtimeDate)
+      return new HTTPResponse(null, {
+        status: 304,
+        statusText: "Not Modified",
+      });
+    if (!event.res.headers.get("last-modified"))
+      event.res.headers.set("last-modified", mtimeDate.toUTCString());
   }
   if (meta.etag && !event.res.headers.has("etag")) event.res.headers.set("etag", meta.etag);
-  if (meta.etag && event.req.headers.get("if-none-match") === meta.etag) return new HTTPResponse(null, {
-    status: 304,
-    statusText: "Not Modified"
-  });
-  if (!event.res.headers.get("content-type")) if (meta.type) event.res.headers.set("content-type", meta.type);
-  else {
-    const ext = getExtension(id);
-    const type = ext ? options.getType?.(ext) ?? getType(ext) : void 0;
-    if (type) event.res.headers.set("content-type", type);
-  }
-  if (meta.encoding && !event.res.headers.get("content-encoding")) event.res.headers.set("content-encoding", meta.encoding);
-  if (meta.size !== void 0 && meta.size > 0 && !event.req.headers.get("content-length")) event.res.headers.set("content-length", meta.size + "");
+  if (meta.etag && event.req.headers.get("if-none-match") === meta.etag)
+    return new HTTPResponse(null, {
+      status: 304,
+      statusText: "Not Modified",
+    });
+  if (!event.res.headers.get("content-type"))
+    if (meta.type) event.res.headers.set("content-type", meta.type);
+    else {
+      const ext = getExtension(id);
+      const type = ext ? (options.getType?.(ext) ?? getType(ext)) : void 0;
+      if (type) event.res.headers.set("content-type", type);
+    }
+  if (meta.encoding && !event.res.headers.get("content-encoding"))
+    event.res.headers.set("content-encoding", meta.encoding);
+  if (meta.size !== void 0 && meta.size > 0 && !event.req.headers.get("content-length"))
+    event.res.headers.set("content-length", meta.size + "");
   if (event.req.method === "HEAD") return new HTTPResponse(null, { status: 200 });
-  return new HTTPResponse(await options.getContents(id) || null, { status: 200 });
+  return new HTTPResponse((await options.getContents(id)) || null, { status: 200 });
 }
 function parseAcceptEncoding(header, encodingMap) {
   if (!encodingMap || !header) return [];
-  return String(header || "").split(",").map((e) => encodingMap[e.trim()]).filter(Boolean);
+  return String(header || "")
+    .split(",")
+    .map((e) => encodingMap[e.trim()])
+    .filter(Boolean);
 }
 function idSearchPaths(id, encodings, indexNames) {
   const ids = [];
-  for (const suffix of ["", ...indexNames]) for (const encoding of [...encodings, ""]) ids.push(`${id}${suffix}${encoding}`);
+  for (const suffix of ["", ...indexNames])
+    for (const encoding of [...encodings, ""]) ids.push(`${id}${suffix}${encoding}`);
   return ids;
 }
 function withBase(base, input) {
@@ -2564,31 +2827,31 @@ var defaults = Object.freeze({
     saltBits: 256,
     algorithm: "aes-256-cbc",
     iterations: 1,
-    minPasswordlength: 32
+    minPasswordlength: 32,
   }),
   integrity: Object.freeze({
     saltBits: 256,
     algorithm: "sha256",
     iterations: 1,
-    minPasswordlength: 32
-  })
+    minPasswordlength: 32,
+  }),
 });
 var algorithms = Object.freeze({
   "aes-128-ctr": Object.freeze({
     keyBits: 128,
     ivBits: 128,
-    name: "AES-CTR"
+    name: "AES-CTR",
   }),
   "aes-256-cbc": Object.freeze({
     keyBits: 256,
     ivBits: 128,
-    name: "AES-CBC"
+    name: "AES-CBC",
   }),
   sha256: Object.freeze({
     keyBits: 256,
     ivBits: 128,
-    name: "SHA-256"
-  })
+    name: "SHA-256",
+  }),
 });
 var macPrefix = "Fe26.2";
 async function seal(object, password, opts) {
@@ -2609,12 +2872,22 @@ async function unseal(sealed, password, opts) {
   if (!password) throw new Error("Empty password");
   const parts = sealed.split("*");
   if (parts.length !== 8) throw new Error("Incorrect number of sealed components");
-  const [prefix, passwordId, encryptionSalt, encryptionIv, encryptedB64, expiration, hmacSalt, hmac] = parts;
+  const [
+    prefix,
+    passwordId,
+    encryptionSalt,
+    encryptionIv,
+    encryptedB64,
+    expiration,
+    hmacSalt,
+    hmac,
+  ] = parts;
   const macBaseString = `${prefix}*${passwordId}*${encryptionSalt}*${encryptionIv}*${encryptedB64}*${expiration}`;
   if ("Fe26.2" !== prefix) throw new Error("Wrong mac prefix");
   if (expiration) {
     if (!/^\d+$/.test(expiration)) throw new Error("Invalid expiration");
-    if (Number.parseInt(expiration, 10) <= now - opts.timestampSkewSec * 1e3) throw new Error("Expired seal");
+    if (Number.parseInt(expiration, 10) <= now - opts.timestampSkewSec * 1e3)
+      throw new Error("Expired seal");
   }
   let pass = "";
   const _passwordId = passwordId || "default";
@@ -2622,15 +2895,27 @@ async function unseal(sealed, password, opts) {
   else if (_passwordId in password) pass = password[_passwordId];
   else throw new Error(`Cannot find password: ${_passwordId}`);
   pass = normalizePassword(pass);
-  if (!fixedTimeComparison((await hmacWithPassword(pass.integrity, {
-    ...opts.integrity,
-    salt: hmacSalt
-  }, macBaseString)).digest, hmac)) throw new Error("Bad hmac value");
+  if (
+    !fixedTimeComparison(
+      (
+        await hmacWithPassword(
+          pass.integrity,
+          {
+            ...opts.integrity,
+            salt: hmacSalt,
+          },
+          macBaseString,
+        )
+      ).digest,
+      hmac,
+    )
+  )
+    throw new Error("Bad hmac value");
   const encrypted = base64Decode(encryptedB64);
   const decryptOptions = {
     ...opts.encryption,
     salt: encryptionSalt,
-    iv: base64Decode(encryptionIv)
+    iv: base64Decode(encryptionIv),
   };
   const decrypted = await decrypt(pass.encryption, decryptOptions, encrypted);
   return decrypted ? JSON.parse(decrypted) : null;
@@ -2638,31 +2923,37 @@ async function unseal(sealed, password, opts) {
 async function hmacWithPassword(password, options, data) {
   const key = await generateKey(password, {
     ...options,
-    hmac: true
+    hmac: true,
   });
   const textBuffer = textEncoder.encode(data);
   const signed = await crypto.subtle.sign({ name: "HMAC" }, key.key, textBuffer);
   return {
     digest: base64Encode(new Uint8Array(signed)),
-    salt: key.salt
+    salt: key.salt,
   };
 }
 async function generateKey(password, options) {
   if (!password?.length) throw new Error("Empty password");
   if (options == null || typeof options !== "object") throw new Error("Bad options");
-  if (!(options.algorithm in algorithms)) throw new Error(`Unknown algorithm: ${options.algorithm}`);
+  if (!(options.algorithm in algorithms))
+    throw new Error(`Unknown algorithm: ${options.algorithm}`);
   const algorithm = algorithms[options.algorithm];
   let resultKey;
   let resultSalt;
   let resultIV;
   const hmac = options.hmac ?? false;
-  const id = hmac ? {
-    name: "HMAC",
-    hash: algorithm.name
-  } : { name: algorithm.name };
+  const id = hmac
+    ? {
+        name: "HMAC",
+        hash: algorithm.name,
+      }
+    : { name: algorithm.name };
   const usage = hmac ? ["sign", "verify"] : ["encrypt", "decrypt"];
   if (typeof password === "string") {
-    if (password.length < options.minPasswordlength) throw new Error(`Password string too short (min ${options.minPasswordlength} characters required)`);
+    if (password.length < options.minPasswordlength)
+      throw new Error(
+        `Password string too short (min ${options.minPasswordlength} characters required)`,
+      );
     let { salt = "" } = options;
     if (!salt) {
       const { saltBits = 0 } = options;
@@ -2670,7 +2961,13 @@ async function generateKey(password, options) {
       const randomSalt = randomBits(saltBits);
       salt = [...new Uint8Array(randomSalt)].map((x) => x.toString(16).padStart(2, "0")).join("");
     }
-    const derivedKey = await pbkdf2(password, salt, options.iterations, algorithm.keyBits / 8, "SHA-1");
+    const derivedKey = await pbkdf2(
+      password,
+      salt,
+      options.iterations,
+      algorithm.keyBits / 8,
+      "SHA-1",
+    );
     resultKey = await crypto.subtle.importKey("raw", derivedKey, id, false, usage);
     resultSalt = salt;
   } else {
@@ -2684,17 +2981,23 @@ async function generateKey(password, options) {
   return {
     key: resultKey,
     salt: resultSalt,
-    iv: resultIV
+    iv: resultIV,
   };
 }
 async function pbkdf2(password, salt, iterations, keyLength, hash) {
   const passwordBuffer = textEncoder.encode(password);
-  const importedKey = await crypto.subtle.importKey("raw", passwordBuffer, { name: "PBKDF2" }, false, ["deriveBits"]);
+  const importedKey = await crypto.subtle.importKey(
+    "raw",
+    passwordBuffer,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
   const params = {
     name: "PBKDF2",
     hash,
     salt: textEncoder.encode(salt),
-    iterations
+    iterations,
   };
   return await crypto.subtle.deriveBits(params, importedKey, keyLength * 8);
 }
@@ -2703,7 +3006,7 @@ async function encrypt(password, options, data) {
   const encrypted = await crypto.subtle.encrypt(...getEncryptParams(options.algorithm, key, data));
   return {
     encrypted: new Uint8Array(encrypted),
-    key
+    key,
   };
 }
 async function decrypt(password, options, data) {
@@ -2713,16 +3016,18 @@ async function decrypt(password, options, data) {
 }
 function getEncryptParams(algorithm, key, data) {
   return [
-    algorithm === "aes-128-ctr" ? {
-      name: "AES-CTR",
-      counter: key.iv,
-      length: 128
-    } : {
-      name: "AES-CBC",
-      iv: key.iv
-    },
+    algorithm === "aes-128-ctr"
+      ? {
+          name: "AES-CTR",
+          counter: key.iv,
+          length: 128,
+        }
+      : {
+          name: "AES-CBC",
+          iv: key.iv,
+        },
     key.key,
-    typeof data === "string" ? textEncoder.encode(data) : data
+    typeof data === "string" ? textEncoder.encode(data) : data,
   ];
 }
 function fixedTimeComparison(a, b) {
@@ -2732,19 +3037,21 @@ function fixedTimeComparison(a, b) {
   return mismatch === 0;
 }
 function normalizePassword(password) {
-  if (typeof password === "string" || password instanceof Uint8Array) return {
-    encryption: password,
-    integrity: password
-  };
-  if ("secret" in password) return {
-    id: password.id,
-    encryption: password.secret,
-    integrity: password.secret
-  };
+  if (typeof password === "string" || password instanceof Uint8Array)
+    return {
+      encryption: password,
+      integrity: password,
+    };
+  if ("secret" in password)
+    return {
+      id: password.id,
+      encryption: password.secret,
+      integrity: password.secret,
+    };
   return {
     id: password.id,
     encryption: password.encryption,
-    integrity: password.integrity
+    integrity: password.integrity,
   };
 }
 function randomBits(bits) {
@@ -2760,7 +3067,7 @@ var kGetSession = /* @__PURE__ */ Symbol.for("h3.internal.session.promise");
 var DEFAULT_SESSION_COOKIE = {
   path: "/",
   secure: true,
-  httpOnly: true
+  httpOnly: true,
 };
 async function useSession(event, config) {
   const sessionName = config.name || "h3";
@@ -2779,7 +3086,7 @@ async function useSession(event, config) {
     clear: () => {
       clearSession(event, config);
       return Promise.resolve(sessionManager);
-    }
+    },
   };
   return sessionManager;
 }
@@ -2792,23 +3099,27 @@ async function getSession(event, config) {
   const session = {
     id: "",
     createdAt: 0,
-    data: new NullProtoObj()
+    data: new NullProtoObj(),
   };
   context.sessions[sessionName] = session;
   let sealedSession;
   if (config.sessionHeader !== false) {
-    const headerName = typeof config.sessionHeader === "string" ? config.sessionHeader.toLowerCase() : `x-${sessionName.toLowerCase()}-session`;
+    const headerName =
+      typeof config.sessionHeader === "string"
+        ? config.sessionHeader.toLowerCase()
+        : `x-${sessionName.toLowerCase()}-session`;
     const headerValue = event.req.headers.get(headerName);
     if (typeof headerValue === "string") sealedSession = headerValue;
   }
   if (!sealedSession) sealedSession = getChunkedCookie(event, sessionName);
   if (sealedSession) {
-    const promise = unsealSession(event, config, sealedSession).catch(() => {
-    }).then((unsealed) => {
-      Object.assign(session, unsealed);
-      delete context.sessions[sessionName][kGetSession];
-      return session;
-    });
+    const promise = unsealSession(event, config, sealedSession)
+      .catch(() => {})
+      .then((unsealed) => {
+        Object.assign(session, unsealed);
+        delete context.sessions[sessionName][kGetSession];
+        return session;
+      });
     context.sessions[sessionName][kGetSession] = promise;
     await promise;
   }
@@ -2821,32 +3132,39 @@ async function getSession(event, config) {
 }
 async function updateSession(event, config, update) {
   const sessionName = config.name || "h3";
-  const session = getEventContext(event).sessions?.[sessionName] || await getSession(event, config);
+  const session =
+    getEventContext(event).sessions?.[sessionName] || (await getSession(event, config));
   if (typeof update === "function") update = update(session.data);
   if (update) Object.assign(session.data, update);
-  if (config.cookie !== false && event.res) setChunkedCookie(event, sessionName, await sealSession(event, config), {
-    ...DEFAULT_SESSION_COOKIE,
-    expires: config.maxAge ? new Date(session.createdAt + config.maxAge * 1e3) : void 0,
-    ...config.cookie
-  });
+  if (config.cookie !== false && event.res)
+    setChunkedCookie(event, sessionName, await sealSession(event, config), {
+      ...DEFAULT_SESSION_COOKIE,
+      expires: config.maxAge ? new Date(session.createdAt + config.maxAge * 1e3) : void 0,
+      ...config.cookie,
+    });
   return session;
 }
 async function sealSession(event, config) {
   const sessionName = config.name || "h3";
-  return await seal(getEventContext(event).sessions?.[sessionName] || await getSession(event, config), config.password, {
-    ...defaults,
-    ttl: config.maxAge ? config.maxAge * 1e3 : 0,
-    ...config.seal
-  });
+  return await seal(
+    getEventContext(event).sessions?.[sessionName] || (await getSession(event, config)),
+    config.password,
+    {
+      ...defaults,
+      ttl: config.maxAge ? config.maxAge * 1e3 : 0,
+      ...config.seal,
+    },
+  );
 }
 async function unsealSession(_event, config, sealed) {
   const unsealed = await unseal(sealed, config.password, {
     ...defaults,
     ttl: config.maxAge ? config.maxAge * 1e3 : 0,
-    ...config.seal
+    ...config.seal,
   });
   if (config.maxAge) {
-    if (Date.now() - (unsealed.createdAt || Number.NEGATIVE_INFINITY) > config.maxAge * 1e3) throw new Error("Session expired!");
+    if (Date.now() - (unsealed.createdAt || Number.NEGATIVE_INFINITY) > config.maxAge * 1e3)
+      throw new Error("Session expired!");
   }
   return unsealed;
 }
@@ -2854,10 +3172,11 @@ function clearSession(event, config) {
   const context = getEventContext(event);
   const sessionName = config.name || "h3";
   if (context.sessions?.[sessionName]) delete context.sessions[sessionName];
-  if (event.res && config.cookie !== false) deleteChunkedCookie(event, sessionName, {
-    ...DEFAULT_SESSION_COOKIE,
-    ...config.cookie
-  });
+  if (event.res && config.cookie !== false)
+    deleteChunkedCookie(event, sessionName, {
+      ...DEFAULT_SESSION_COOKIE,
+      ...config.cookie,
+    });
   return Promise.resolve();
 }
 function resolveCorsOptions(options = {}) {
@@ -2868,17 +3187,20 @@ function resolveCorsOptions(options = {}) {
     exposeHeaders: "*",
     credentials: false,
     maxAge: false,
-    preflight: { statusCode: 204 }
+    preflight: { statusCode: 204 },
   };
   const resolved = {
     ...defaultOptions,
     ...options,
     preflight: {
       ...defaultOptions.preflight,
-      ...options.preflight
-    }
+      ...options.preflight,
+    },
   };
-  if (resolved.credentials && (!options.origin || options.origin === "*")) console.warn("[h3] CORS: `credentials: true` with wildcard origin is not allowed. Browsers will reject the response.");
+  if (resolved.credentials && (!options.origin || options.origin === "*"))
+    console.warn(
+      "[h3] CORS: `credentials: true` with wildcard origin is not allowed. Browsers will reject the response.",
+    );
   return resolved;
 }
 function isCorsOriginAllowed(origin, options) {
@@ -2886,24 +3208,27 @@ function isCorsOriginAllowed(origin, options) {
   if (!origin) return false;
   if (!originOption || originOption === "*") return true;
   if (typeof originOption === "function") return originOption(origin);
-  if (Array.isArray(originOption)) return originOption.some((_origin) => {
-    if (_origin instanceof RegExp) return _origin.test(origin);
-    return origin === _origin;
-  });
+  if (Array.isArray(originOption))
+    return originOption.some((_origin) => {
+      if (_origin instanceof RegExp) return _origin.test(origin);
+      return origin === _origin;
+    });
   return originOption === origin;
 }
 function createOriginHeaders(event, options) {
   const { origin: originOption } = options;
   const origin = event.req.headers.get("origin");
   if (!originOption || originOption === "*") return { "access-control-allow-origin": "*" };
-  if (originOption === "null") return {
-    "access-control-allow-origin": "null",
-    vary: "origin"
-  };
-  if (isCorsOriginAllowed(origin, options)) return {
-    "access-control-allow-origin": origin,
-    vary: "origin"
-  };
+  if (originOption === "null")
+    return {
+      "access-control-allow-origin": "null",
+      vary: "origin",
+    };
+  if (isCorsOriginAllowed(origin, options))
+    return {
+      "access-control-allow-origin": origin,
+      vary: "origin",
+    };
   return {};
 }
 function createMethodsHeaders(options) {
@@ -2921,14 +3246,16 @@ function createAllowHeaderHeaders(event, options) {
   const { allowHeaders } = options;
   if (!allowHeaders || allowHeaders === "*" || allowHeaders.length === 0) {
     const header = event.req.headers.get("access-control-request-headers");
-    return header ? {
-      "access-control-allow-headers": header,
-      vary: "access-control-request-headers"
-    } : {};
+    return header
+      ? {
+          "access-control-allow-headers": header,
+          vary: "access-control-request-headers",
+        }
+      : {};
   }
   return {
     "access-control-allow-headers": allowHeaders.join(","),
-    vary: "access-control-request-headers"
+    vary: "access-control-request-headers",
   };
 }
 function createExposeHeaders(options) {
@@ -2953,7 +3280,7 @@ function appendCorsPreflightHeaders(event, options) {
     ...createCredentialsHeaders(options),
     ...createMethodsHeaders(options),
     ...createAllowHeaderHeaders(event, options),
-    ...createMaxAgeHeader(options)
+    ...createMaxAgeHeader(options),
   };
   for (const [key, value] of Object.entries(headers)) {
     event.res.headers.append(key, value);
@@ -2964,7 +3291,7 @@ function appendCorsHeaders(event, options) {
   const headers = {
     ...createOriginHeaders(event, options),
     ...createCredentialsHeaders(options),
-    ...createExposeHeaders(options)
+    ...createExposeHeaders(options),
   };
   for (const [key, value] of Object.entries(headers)) {
     event.res.headers.append(key, value);
@@ -2998,10 +3325,11 @@ function randomJitter() {
   return new Promise((resolve) => setTimeout(resolve, jitter));
 }
 async function requireBasicAuth(event, opts) {
-  if (!opts.validate && !opts.password) throw new HTTPError({
-    message: "Either 'password' or 'validate' option must be provided",
-    status: 500
-  });
+  if (!opts.validate && !opts.password)
+    throw new HTTPError({
+      message: "Either 'password' or 'validate' option must be provided",
+      status: 500,
+    });
   const authHeader = event.req.headers.get("authorization");
   if (!authHeader) throw authFailed(event);
   const [authType, b64auth] = authHeader.split(" ");
@@ -3016,7 +3344,11 @@ async function requireBasicAuth(event, opts) {
   const username = authDecoded.slice(0, colonIndex);
   const password = authDecoded.slice(colonIndex + 1);
   if (!username || !password) throw authFailed(event, opts?.realm);
-  if (opts.username && !timingSafeEqual(username, opts.username) || opts.password && !timingSafeEqual(password, opts.password) || opts.validate && !await opts.validate(username, password)) {
+  if (
+    (opts.username && !timingSafeEqual(username, opts.username)) ||
+    (opts.password && !timingSafeEqual(password, opts.password)) ||
+    (opts.validate && !(await opts.validate(username, password)))
+  ) {
     await randomJitter();
     throw authFailed(event, opts?.realm);
   }
@@ -3024,7 +3356,7 @@ async function requireBasicAuth(event, opts) {
   context.basicAuth = {
     username,
     password,
-    realm: opts.realm
+    realm: opts.realm,
   };
   return true;
 }
@@ -3038,19 +3370,23 @@ function authFailed(event, realm = "") {
   return new HTTPError({
     status: 401,
     statusText: "Authentication required",
-    headers: { "www-authenticate": `Basic realm=${JSON.stringify(realm)}` }
+    headers: { "www-authenticate": `Basic realm=${JSON.stringify(realm)}` },
   });
 }
 async function getRequestFingerprint(event, opts = {}) {
   const fingerprint = [];
-  if (opts.ip !== false) fingerprint.push(getRequestIP(event, { xForwardedFor: opts.xForwardedFor }));
+  if (opts.ip !== false)
+    fingerprint.push(getRequestIP(event, { xForwardedFor: opts.xForwardedFor }));
   if (opts.method === true) fingerprint.push(event.req.method);
   if (opts.url === true) fingerprint.push(event.req.url);
   if (opts.userAgent === true) fingerprint.push(event.req.headers.get("user-agent"));
   const fingerprintString = fingerprint.filter(Boolean).join("|");
   if (!fingerprintString) return null;
   if (opts.hash === false) return fingerprintString;
-  const buffer = await crypto.subtle.digest(opts.hash || "SHA-1", new TextEncoder().encode(fingerprintString));
+  const buffer = await crypto.subtle.digest(
+    opts.hash || "SHA-1",
+    new TextEncoder().encode(fingerprintString),
+  );
   return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 function defineWebSocket(hooks) {
@@ -3059,7 +3395,9 @@ function defineWebSocket(hooks) {
 function defineWebSocketHandler(hooks) {
   return defineHandler(function _webSocketHandler(event) {
     const crossws = typeof hooks === "function" ? hooks(event) : hooks;
-    return Object.assign(new Response("WebSocket upgrade is required.", { status: 426 }), { crossws });
+    return Object.assign(new Response("WebSocket upgrade is required.", { status: 426 }), {
+      crossws,
+    });
   });
 }
 var PARSE_ERROR = -32700;
@@ -3081,7 +3419,7 @@ function defineJsonRpcHandler(opts = {}) {
   };
   return defineHandler({
     ...opts,
-    handler
+    handler,
   });
 }
 function defineJsonRpcWebSocketHandler(opts) {
@@ -3098,7 +3436,7 @@ function defineJsonRpcWebSocketHandler(opts) {
       }
       const result = await processJsonRpcBody(body, methodMap, peer);
       if (result !== void 0) peer.send(JSON.stringify(result));
-    }
+    },
   });
 }
 function createMethodMap(methods) {
@@ -3107,48 +3445,84 @@ function createMethodMap(methods) {
   return methodMap;
 }
 async function processJsonRpcBody(body, methodMap, context) {
-  if (!body || typeof body !== "object") return createJsonRpcError(null, PARSE_ERROR, "Parse error");
+  if (!body || typeof body !== "object")
+    return createJsonRpcError(null, PARSE_ERROR, "Parse error");
   const requests = Array.isArray(body) ? body : [body];
   if (requests.length === 0) return createJsonRpcError(null, INVALID_REQUEST, "Invalid Request");
-  const finalResponses = (await Promise.all(requests.map((raw) => processJsonRpcMethod(raw, methodMap, context)))).filter((r) => r !== void 0);
+  const finalResponses = (
+    await Promise.all(requests.map((raw) => processJsonRpcMethod(raw, methodMap, context)))
+  ).filter((r) => r !== void 0);
   if (finalResponses.length === 0) return;
   return Array.isArray(body) ? finalResponses : finalResponses[0];
 }
 async function processJsonRpcMethod(raw, methodMap, context) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return createJsonRpcError(null, INVALID_REQUEST, "Invalid Request");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw))
+    return createJsonRpcError(null, INVALID_REQUEST, "Invalid Request");
   const req = raw;
-  if (req.jsonrpc !== "2.0" || typeof req.method !== "string" || "id" in req && !isValidId(req.id)) return createJsonRpcError("id" in req && isValidId(req.id) ? req.id : null, INVALID_REQUEST, "Invalid Request");
-  if ("params" in req && req.params !== void 0 && (typeof req.params !== "object" || req.params === null)) return isNotification(req) ? void 0 : createJsonRpcError(req.id, INVALID_PARAMS, "Invalid params");
-  if (req.method.startsWith("rpc.")) return isNotification(req) ? void 0 : createJsonRpcError(req.id, METHOD_NOT_FOUND, "Method not found");
+  if (
+    req.jsonrpc !== "2.0" ||
+    typeof req.method !== "string" ||
+    ("id" in req && !isValidId(req.id))
+  )
+    return createJsonRpcError(
+      "id" in req && isValidId(req.id) ? req.id : null,
+      INVALID_REQUEST,
+      "Invalid Request",
+    );
+  if (
+    "params" in req &&
+    req.params !== void 0 &&
+    (typeof req.params !== "object" || req.params === null)
+  )
+    return isNotification(req)
+      ? void 0
+      : createJsonRpcError(req.id, INVALID_PARAMS, "Invalid params");
+  if (req.method.startsWith("rpc."))
+    return isNotification(req)
+      ? void 0
+      : createJsonRpcError(req.id, METHOD_NOT_FOUND, "Method not found");
   const method = req.method;
   const params = req.params;
   const notification = isNotification(req);
   const id = notification ? void 0 : req.id;
   const methodHandler = methodMap[method];
-  if (!methodHandler) return notification ? void 0 : createJsonRpcError(id, METHOD_NOT_FOUND, "Method not found");
+  if (!methodHandler)
+    return notification ? void 0 : createJsonRpcError(id, METHOD_NOT_FOUND, "Method not found");
   try {
     const rpcReq = {
       jsonrpc: "2.0",
       method,
-      params
+      params,
     };
     if (!notification) rpcReq.id = id;
     const result = await methodHandler(rpcReq, context);
-    return notification ? void 0 : {
-      jsonrpc: "2.0",
-      id,
-      result: result ?? null
-    };
+    return notification
+      ? void 0
+      : {
+          jsonrpc: "2.0",
+          id,
+          result: result ?? null,
+        };
   } catch (error_) {
     if (notification) return;
-    const h3Error = HTTPError.isError(error_) ? error_ : {
-      status: 500,
-      message: "Internal error",
-      data: error_ != null && typeof error_ === "object" && "message" in error_ ? error_.message : void 0
-    };
+    const h3Error = HTTPError.isError(error_)
+      ? error_
+      : {
+          status: 500,
+          message: "Internal error",
+          data:
+            error_ != null && typeof error_ === "object" && "message" in error_
+              ? error_.message
+              : void 0,
+        };
     const statusCode = h3Error.status;
     const statusMessage = h3Error.message;
-    return createJsonRpcError(id, mapHttpStatusToJsonRpcError(statusCode), statusMessage, h3Error.data);
+    return createJsonRpcError(
+      id,
+      mapHttpStatusToJsonRpcError(statusCode),
+      statusMessage,
+      h3Error.data,
+    );
   }
 }
 function mapHttpStatusToJsonRpcError(status) {
@@ -3184,13 +3558,13 @@ function isValidId(id) {
 var createJsonRpcError = (id, code, message, data) => {
   const error = {
     code,
-    message
+    message,
   };
   if (data !== void 0) error.data = data;
   return {
     jsonrpc: "2.0",
     id,
-    error
+    error,
   };
 };
 var H3Error = HTTPError;
@@ -3221,17 +3595,21 @@ async function readFormDataBody(event) {
 var readFormData = readFormDataBody;
 async function readMultipartFormData(event) {
   const formData = await event.req.formData();
-  return Promise.all([...formData.entries()].map(async ([key, value]) => {
-    return typeof value === "object" ? {
-      name: key,
-      type: value.type,
-      filename: value.name,
-      data: await value.bytes()
-    } : {
-      name: key,
-      data: new TextEncoder().encode(value)
-    };
-  }));
+  return Promise.all(
+    [...formData.entries()].map(async ([key, value]) => {
+      return typeof value === "object"
+        ? {
+            name: key,
+            type: value.type,
+            filename: value.name,
+            data: await value.bytes(),
+          }
+        : {
+            name: key,
+            data: new TextEncoder().encode(value),
+          };
+    }),
+  );
 }
 function getBodyStream(event) {
   return event.req.body || void 0;
@@ -3251,7 +3629,8 @@ function getResponseStatusText(event) {
   return event.res.statusText || "";
 }
 function appendResponseHeader(event, name, value) {
-  if (Array.isArray(value)) for (const valueItem of value) event.res.headers.append(name, valueItem);
+  if (Array.isArray(value))
+    for (const valueItem of value) event.res.headers.append(name, valueItem);
   else event.res.headers.append(name, value);
 }
 var appendHeader = appendResponseHeader;
@@ -3274,7 +3653,8 @@ function setResponseStatus(event, code, text) {
   if (text) event.res.statusText = sanitizeStatusMessage(text);
 }
 function defaultContentType(event, type) {
-  if (type && event.res.status !== 304 && !event.res.headers.has("content-type")) event.res.headers.set("content-type", type);
+  if (type && event.res.status !== 304 && !event.res.headers.has("content-type"))
+    event.res.headers.set("content-type", type);
 }
 function getResponseHeaders(event) {
   return Object.fromEntries(event.res.headers.entries());
@@ -3290,7 +3670,8 @@ function appendResponseHeaders(event, headers) {
 }
 var appendHeaders = appendResponseHeaders;
 function clearResponseHeaders(event, headerNames) {
-  if (headerNames && headerNames.length > 0) for (const name of headerNames) event.res.headers.delete(name);
+  if (headerNames && headerNames.length > 0)
+    for (const name of headerNames) event.res.headers.delete(name);
   else for (const name of event.res.headers.keys()) event.res.headers.delete(name);
 }
 var defineEventHandler = defineHandler;
@@ -3300,11 +3681,15 @@ var defineNodeListener = defineNodeHandler;
 var fromNodeMiddleware = fromNodeHandler;
 function toNodeHandler(app) {
   if (toNodeHandler._isWarned !== true) {
-    console.warn(`[h3] "toNodeHandler" export from h3 is deprecated. Please import "toNodeHandler" from "h3/node".`);
+    console.warn(
+      `[h3] "toNodeHandler" export from h3 is deprecated. Please import "toNodeHandler" from "h3/node".`,
+    );
     toNodeHandler._isWarned = true;
   }
   return (toNodeHandler._toNodeHandler ??= () => {
-    return globalThis.process.getBuiltinModule("node:module").createRequire(import.meta.url)("srvx/node").toNodeHandler;
+    return globalThis.process.getBuiltinModule("node:module").createRequire(import.meta.url)(
+      "srvx/node",
+    ).toNodeHandler;
   })()(app.fetch);
 }
 var toNodeListener = toNodeHandler;
@@ -3317,7 +3702,7 @@ function serve2(app, options) {
   freezeApp(app);
   return serve({
     fetch: app.fetch,
-    ...options
+    ...options,
   });
 }
 export {
@@ -3459,6 +3844,6 @@ export {
   useSession,
   withBase,
   withServerTiming,
-  writeEarlyHints
+  writeEarlyHints,
 };
 //# sourceMappingURL=h3-v2.js.map

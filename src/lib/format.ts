@@ -1,5 +1,5 @@
 export function formatCurrency(value: number | string | null | undefined): string {
-  const n = typeof value === "string" ? parseFloat(value) : value ?? 0;
+  const n = typeof value === "string" ? parseFloat(value) : (value ?? 0);
   if (Number.isNaN(n)) return "GHS 0.00";
   return new Intl.NumberFormat("en-GH", {
     style: "currency",

@@ -1,9 +1,5 @@
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -12,10 +8,13 @@ function useCallbackRef(callback) {
   React.useEffect(() => {
     callbackRef.current = callback;
   });
-  return React.useMemo(() => (...args) => callbackRef.current?.(...args), []);
+  return React.useMemo(
+    () =>
+      (...args) =>
+        callbackRef.current?.(...args),
+    [],
+  );
 }
 
-export {
-  useCallbackRef
-};
+export { useCallbackRef };
 //# sourceMappingURL=chunk-T5Z3LJQL.js.map

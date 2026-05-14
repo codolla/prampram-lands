@@ -1,59 +1,70 @@
-import {
-  dehydrateSsrMatchId,
-  mergeHeaders
-} from "./chunk-N22YCUSM.js";
+import { dehydrateSsrMatchId, mergeHeaders } from "./chunk-N22YCUSM.js";
 import {
   GLOBAL_TSR,
   TSR_SCRIPT_BARRIER_ID,
   createLRUCache,
   defaultSerovalPlugins,
   makeSsrSerovalPlugin,
-  rootRouteId
+  rootRouteId,
 } from "./chunk-TPESL6GF.js";
-import {
-  decodePath,
-  invariant
-} from "./chunk-CLINTJPG.js";
-import {
-  crossSerializeStream,
-  getCrossReferenceHeader
-} from "./chunk-ZCRLZXAQ.js";
-import {
-  createMemoryHistory
-} from "./chunk-AVKHF3FF.js";
-import {
-  __commonJS,
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { decodePath, invariant } from "./chunk-CLINTJPG.js";
+import { crossSerializeStream, getCrossReferenceHeader } from "./chunk-ZCRLZXAQ.js";
+import { createMemoryHistory } from "./chunk-AVKHF3FF.js";
+import { __commonJS, __toESM } from "./chunk-PR4QN5HX.js";
 
 // browser-external:node:stream/web
 var require_web = __commonJS({
   "browser-external:node:stream/web"(exports, module) {
-    module.exports = Object.create(new Proxy({}, {
-      get(_, key) {
-        if (key !== "__esModule" && key !== "__proto__" && key !== "constructor" && key !== "splice") {
-          console.warn(`Module "node:stream/web" has been externalized for browser compatibility. Cannot access "node:stream/web.${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`);
-        }
-      }
-    }));
-  }
+    module.exports = Object.create(
+      new Proxy(
+        {},
+        {
+          get(_, key) {
+            if (
+              key !== "__esModule" &&
+              key !== "__proto__" &&
+              key !== "constructor" &&
+              key !== "splice"
+            ) {
+              console.warn(
+                `Module "node:stream/web" has been externalized for browser compatibility. Cannot access "node:stream/web.${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
+              );
+            }
+          },
+        },
+      ),
+    );
+  },
 });
 
 // browser-external:node:stream
 var require_node_stream = __commonJS({
   "browser-external:node:stream"(exports, module) {
-    module.exports = Object.create(new Proxy({}, {
-      get(_, key) {
-        if (key !== "__esModule" && key !== "__proto__" && key !== "constructor" && key !== "splice") {
-          console.warn(`Module "node:stream" has been externalized for browser compatibility. Cannot access "node:stream.${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`);
-        }
-      }
-    }));
-  }
+    module.exports = Object.create(
+      new Proxy(
+        {},
+        {
+          get(_, key) {
+            if (
+              key !== "__esModule" &&
+              key !== "__proto__" &&
+              key !== "constructor" &&
+              key !== "splice"
+            ) {
+              console.warn(
+                `Module "node:stream" has been externalized for browser compatibility. Cannot access "node:stream.${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
+              );
+            }
+          },
+        },
+      ),
+    );
+  },
 });
 
 // node_modules/@tanstack/router-core/dist/esm/ssr/tsrScript.js
-var tsrScript_default = "self.$_TSR={h(){this.hydrated=!0,this.c()},e(){this.streamEnded=!0,this.c()},c(){this.hydrated&&this.streamEnded&&(delete self.$_TSR,delete self.$R.tsr)},p(e){this.initialized?e():this.buffer.push(e)},buffer:[]}";
+var tsrScript_default =
+  "self.$_TSR={h(){this.hydrated=!0,this.c()},e(){this.streamEnded=!0,this.c()},c(){this.hydrated&&this.streamEnded&&(delete self.$_TSR,delete self.$R.tsr)},p(e){this.initialized?e():this.buffer.push(e)},buffer:[]}";
 
 // node_modules/@tanstack/router-core/dist/esm/ssr/ssr-server.js
 var SCOPE_ID = "tsr";
@@ -64,14 +75,15 @@ function dehydrateMatch(match) {
   const dehydratedMatch = {
     i: dehydrateSsrMatchId(match.id),
     u: match.updatedAt,
-    s: match.status
+    s: match.status,
   };
   for (const [key, shorthand] of [
     ["__beforeLoadContext", "b"],
     ["loaderData", "l"],
     ["error", "e"],
-    ["ssr", "ssr"]
-  ]) if (match[key] !== void 0) dehydratedMatch[shorthand] = match[key];
+    ["ssr", "ssr"],
+  ])
+    if (match[key] !== void 0) dehydratedMatch[shorthand] = match[key];
   if (match.globalNotFound) dehydratedMatch.g = true;
   return dehydratedMatch;
 }
@@ -107,31 +119,34 @@ var ScriptBuffer = class {
     }
   }
   /**
-  * Flushes any pending scripts synchronously.
-  * Call this before emitting onSerializationFinished to ensure all scripts are injected.
-  *
-  * IMPORTANT: Only injects if the barrier has been lifted. Before the barrier is lifted,
-  * scripts should remain in the queue so takeBufferedScripts() can retrieve them
-  */
+   * Flushes any pending scripts synchronously.
+   * Call this before emitting onSerializationFinished to ensure all scripts are injected.
+   *
+   * IMPORTANT: Only injects if the barrier has been lifted. Before the barrier is lifted,
+   * scripts should remain in the queue so takeBufferedScripts() can retrieve them
+   */
   flush() {
     if (!this._scriptBarrierLifted) return;
     if (this._cleanedUp) return;
     this._pendingMicrotask = false;
     const scriptsToInject = this.takeAll();
-    if (scriptsToInject && this.router?.serverSsr) this.router.serverSsr.injectScript(scriptsToInject);
+    if (scriptsToInject && this.router?.serverSsr)
+      this.router.serverSsr.injectScript(scriptsToInject);
   }
   takeAll() {
     const bufferedScripts = this._queue;
     this._queue = [];
     if (bufferedScripts.length === 0) return;
-    if (bufferedScripts.length === 1) return bufferedScripts[0] + ";document.currentScript.remove()";
+    if (bufferedScripts.length === 1)
+      return bufferedScripts[0] + ";document.currentScript.remove()";
     return bufferedScripts.join(";") + ";document.currentScript.remove()";
   }
   injectBufferedScripts() {
     if (this._cleanedUp) return;
     if (this._queue.length === 0) return;
     const scriptsToInject = this.takeAll();
-    if (scriptsToInject && this.router?.serverSsr) this.router.serverSsr.injectScript(scriptsToInject);
+    if (scriptsToInject && this.router?.serverSsr)
+      this.router.serverSsr.injectScript(scriptsToInject);
   }
   cleanup() {
     this._cleanedUp = true;
@@ -149,21 +164,28 @@ function getManifestCache(manifest) {
   manifestCaches.set(manifest, newCache);
   return newCache;
 }
-function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includeUnmatchedRouteAssets = true }) {
-  router.ssr = { get manifest() {
-    const requestAssets = getRequestAssets?.();
-    if (!requestAssets?.length) return manifest;
-    return {
-      ...manifest,
-      routes: {
-        ...manifest?.routes,
-        [rootRouteId]: {
-          ...manifest?.routes?.[rootRouteId],
-          assets: [...requestAssets, ...manifest?.routes?.["__root__"]?.assets ?? []]
-        }
-      }
-    };
-  } };
+function attachRouterServerSsrUtils({
+  router,
+  manifest,
+  getRequestAssets,
+  includeUnmatchedRouteAssets = true,
+}) {
+  router.ssr = {
+    get manifest() {
+      const requestAssets = getRequestAssets?.();
+      if (!requestAssets?.length) return manifest;
+      return {
+        ...manifest,
+        routes: {
+          ...manifest?.routes,
+          [rootRouteId]: {
+            ...manifest?.routes?.[rootRouteId],
+            assets: [...requestAssets, ...(manifest?.routes?.["__root__"]?.assets ?? [])],
+          },
+        },
+      };
+    },
+  };
   let _dehydrated = false;
   let _serializationFinished = false;
   const renderFinishedListeners = [];
@@ -201,7 +223,12 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includ
           for (const routeId in manifest.routes) {
             const routeManifest = manifest.routes[routeId];
             if (currentRouteIds.has(routeId)) nextFilteredRoutes[routeId] = routeManifest;
-            else if (includeUnmatchedRouteAssets && routeManifest.assets && routeManifest.assets.length > 0) nextFilteredRoutes[routeId] = { assets: routeManifest.assets };
+            else if (
+              includeUnmatchedRouteAssets &&
+              routeManifest.assets &&
+              routeManifest.assets.length > 0
+            )
+              nextFilteredRoutes[routeId] = { assets: routeManifest.assets };
           }
           if (isProd) getManifestCache(manifest).set(manifestCacheKey, nextFilteredRoutes);
           filteredRoutes = nextFilteredRoutes;
@@ -211,13 +238,13 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includ
           const existingRoot = manifestToDehydrate.routes[rootRouteId];
           manifestToDehydrate.routes[rootRouteId] = {
             ...existingRoot,
-            assets: [...opts.requestAssets, ...existingRoot?.assets ?? []]
+            assets: [...opts.requestAssets, ...(existingRoot?.assets ?? [])],
           };
         }
       }
       const dehydratedRouter = {
         manifest: manifestToDehydrate,
-        matches
+        matches,
       };
       const lastMatchId = matchesToDehydrate[matchesToDehydrate.length - 1]?.id;
       if (lastMatchId) dehydratedRouter.lastMatchId = dehydrateSsrMatchId(lastMatchId);
@@ -226,7 +253,11 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includ
       _dehydrated = true;
       const trackPlugins = { didRun: false };
       const serializationAdapters = router.options.serializationAdapters;
-      const plugins = serializationAdapters ? serializationAdapters.map((t) => makeSsrSerovalPlugin(t, trackPlugins)).concat(defaultSerovalPlugins) : defaultSerovalPlugins;
+      const plugins = serializationAdapters
+        ? serializationAdapters
+            .map((t) => makeSsrSerovalPlugin(t, trackPlugins))
+            .concat(defaultSerovalPlugins)
+        : defaultSerovalPlugins;
       const signalSerializationComplete = () => {
         _serializationFinished = true;
         try {
@@ -257,7 +288,7 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includ
           scriptBuffer.enqueue(GLOBAL_TSR + ".e()");
           scriptBuffer.flush();
           signalSerializationComplete();
-        }
+        },
       });
     },
     isDehydrated() {
@@ -285,9 +316,9 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includ
         attrs: {
           nonce: router.options.ssr?.nonce,
           className: "$tsr",
-          id: TSR_SCRIPT_BARRIER_ID
+          id: TSR_SCRIPT_BARRIER_ID,
         },
-        children: scripts
+        children: scripts,
       };
     },
     liftScriptBarrier() {
@@ -306,14 +337,13 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets, includ
       injectedHtmlBuffer = "";
       scriptBuffer.cleanup();
       router.serverSsr = void 0;
-    }
+    },
   };
 }
 function getOrigin(request) {
   try {
     return new URL(request.url).origin;
-  } catch {
-  }
+  } catch {}
   return "http://localhost";
 }
 function getNormalizedURL(url, base) {
@@ -321,10 +351,11 @@ function getNormalizedURL(url, base) {
   const rawUrl = new URL(url, base);
   const { path: decodedPathname, handledProtocolRelativeURL } = decodePath(rawUrl.pathname);
   const searchParams = new URLSearchParams(rawUrl.search);
-  const normalizedHref = decodedPathname + (searchParams.size > 0 ? "?" : "") + searchParams.toString() + rawUrl.hash;
+  const normalizedHref =
+    decodedPathname + (searchParams.size > 0 ? "?" : "") + searchParams.toString() + rawUrl.hash;
   return {
     url: new URL(normalizedHref, rawUrl.origin),
-    handledProtocolRelativeURL
+    handledProtocolRelativeURL,
   };
 }
 
@@ -336,14 +367,14 @@ function createRequestHandler({ createRouter, request, getRouterManifest }) {
     try {
       attachRouterServerSsrUtils({
         router,
-        manifest: await getRouterManifest?.()
+        manifest: await getRouterManifest?.(),
       });
       const { url } = getNormalizedURL(request.url, "http://localhost");
       const origin = getOrigin(request);
       const history = createMemoryHistory({ initialEntries: [url.href.replace(url.origin, "")] });
       router.update({
         history,
-        origin: router.options.origin ?? origin
+        origin: router.options.origin ?? origin,
       });
       await router.load();
       await router.serverSsr?.dehydrate();
@@ -352,7 +383,7 @@ function createRequestHandler({ createRouter, request, getRouterManifest }) {
       return cb({
         request,
         router,
-        responseHeaders
+        responseHeaders,
       });
     } finally {
       if (!cbWillCleanup) router.serverSsr?.cleanup();
@@ -378,7 +409,9 @@ function transformReadableStreamWithRouter(router, routerStream) {
   return transformStreamWithRouter(router, routerStream);
 }
 function transformPipeableStreamWithRouter(router, routerStream) {
-  return import_node_stream.Readable.fromWeb(transformStreamWithRouter(router, import_node_stream.Readable.toWeb(routerStream)));
+  return import_node_stream.Readable.fromWeb(
+    transformStreamWithRouter(router, import_node_stream.Readable.toWeb(routerStream)),
+  );
 }
 var BODY_END_TAG = "</body>";
 var HTML_END_TAG = "</html>";
@@ -395,13 +428,22 @@ function findLastClosingTagEnd(str) {
       let j = i - 1;
       while (j >= 1) {
         const code = str.charCodeAt(j);
-        if (code >= 97 && code <= 122 || code >= 65 && code <= 90 || code >= 48 && code <= 57 || code === 95 || code === 58 || code === 46 || code === 45) j--;
+        if (
+          (code >= 97 && code <= 122) ||
+          (code >= 65 && code <= 90) ||
+          (code >= 48 && code <= 57) ||
+          code === 95 ||
+          code === 58 ||
+          code === 46 ||
+          code === 45
+        )
+          j--;
         else break;
       }
       const tagNameStart = j + 1;
       if (tagNameStart < i) {
         const startCode = str.charCodeAt(tagNameStart);
-        if (startCode >= 97 && startCode <= 122 || startCode >= 65 && startCode <= 90) {
+        if ((startCode >= 97 && startCode <= 122) || (startCode >= 65 && startCode <= 90)) {
           if (j >= 1 && str.charCodeAt(j) === 47 && str.charCodeAt(j - 1) === 60) return i + 1;
         }
       }
@@ -432,21 +474,21 @@ function transformStreamWithRouter(router, appStream, opts) {
       isStreamClosed2 = true;
       try {
         controller2?.close();
-      } catch {
-      }
+      } catch {}
     };
     const safeError2 = (error) => {
       if (isStreamClosed2) return;
       isStreamClosed2 = true;
       try {
         controller2?.error(error);
-      } catch {
-      }
+      } catch {}
     };
     const lifetimeMs2 = opts?.lifetimeMs ?? DEFAULT_LIFETIME_TIMEOUT_MS;
     lifetimeTimeoutHandle2 = setTimeout(() => {
       if (!cleanedUp2 && !isStreamClosed2) {
-        console.warn(`SSR stream transform exceeded maximum lifetime (${lifetimeMs2}ms), forcing cleanup`);
+        console.warn(
+          `SSR stream transform exceeded maximum lifetime (${lifetimeMs2}ms), forcing cleanup`,
+        );
         safeError2(new Error("Stream lifetime exceeded"));
         cleanup2();
       }
@@ -458,7 +500,7 @@ function transformStreamWithRouter(router, appStream, opts) {
       cancel() {
         isStreamClosed2 = true;
         cleanup2();
-      }
+      },
     });
     (async () => {
       const reader = appStream.getReader();
@@ -515,16 +557,14 @@ function transformStreamWithRouter(router, appStream, opts) {
     isStreamClosed = true;
     try {
       controller.close();
-    } catch {
-    }
+    } catch {}
   }
   function safeError(error) {
     if (isStreamClosed) return;
     isStreamClosed = true;
     try {
       controller.error(error);
-    } catch {
-    }
+    } catch {}
   }
   function cleanup() {
     if (cleanedUp) return;
@@ -532,8 +572,7 @@ function transformStreamWithRouter(router, appStream, opts) {
     try {
       stopListeningToInjectedHtml?.();
       stopListeningToSerializationFinished?.();
-    } catch {
-    }
+    } catch {}
     stopListeningToInjectedHtml = void 0;
     stopListeningToSerializationFinished = void 0;
     if (serializationTimeoutHandle !== void 0) {
@@ -556,7 +595,7 @@ function transformStreamWithRouter(router, appStream, opts) {
     cancel() {
       isStreamClosed = true;
       cleanup();
-    }
+    },
   });
   function flushPendingRouterHtml() {
     if (!pendingRouterHtml) return;
@@ -585,7 +624,9 @@ function transformStreamWithRouter(router, appStream, opts) {
   const lifetimeMs = opts?.lifetimeMs ?? DEFAULT_LIFETIME_TIMEOUT_MS;
   lifetimeTimeoutHandle = setTimeout(() => {
     if (!cleanedUp && !isStreamClosed) {
-      console.warn(`SSR stream transform exceeded maximum lifetime (${lifetimeMs}ms), forcing cleanup`);
+      console.warn(
+        `SSR stream transform exceeded maximum lifetime (${lifetimeMs}ms), forcing cleanup`,
+      );
       safeError(new Error("Stream lifetime exceeded"));
       cleanup();
     }
@@ -613,7 +654,8 @@ function transformStreamWithRouter(router, appStream, opts) {
         const { done, value } = await reader.read();
         if (done) break;
         if (cleanedUp || isStreamClosed) return;
-        const text = value instanceof Uint8Array ? textDecoder.decode(value, { stream: true }) : String(value);
+        const text =
+          value instanceof Uint8Array ? textDecoder.decode(value, { stream: true }) : String(value);
         const chunkString = leftover ? leftover + text : text;
         if (!streamBarrierLifted) {
           if (chunkString.includes("$tsr-stream-barrier")) {
@@ -693,6 +735,6 @@ export {
   getOrigin,
   transformPipeableStreamWithRouter,
   transformReadableStreamWithRouter,
-  transformStreamWithRouter
+  transformStreamWithRouter,
 };
 //# sourceMappingURL=@tanstack_router-core_ssr_server.js.map

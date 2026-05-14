@@ -512,12 +512,15 @@ function BillDetail() {
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label>Date</Label>
+                  <Label>Payment date</Label>
                   <Input
                     type="date"
                     value={form.paid_at}
                     onChange={(e) => setForm({ ...form, paid_at: e.target.value })}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    You can backdate payments for past years.
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label>Method</Label>

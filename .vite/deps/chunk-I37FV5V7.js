@@ -1,9 +1,5 @@
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-compose-refs/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -42,8 +38,5 @@ function useComposedRefs(...refs) {
   return React.useCallback(composeRefs(...refs), refs);
 }
 
-export {
-  composeRefs,
-  useComposedRefs
-};
+export { composeRefs, useComposedRefs };
 //# sourceMappingURL=chunk-I37FV5V7.js.map

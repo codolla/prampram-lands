@@ -1,15 +1,7 @@
-import {
-  composeRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { composeRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-slot/dist/index.mjs
 var React = __toESM(require_react(), 1);
@@ -20,7 +12,14 @@ function isPromiseLike(value) {
   return typeof value === "object" && value !== null && "then" in value;
 }
 function isLazyComponent(element) {
-  return element != null && typeof element === "object" && "$$typeof" in element && element.$$typeof === REACT_LAZY_TYPE && "_payload" in element && isPromiseLike(element._payload);
+  return (
+    element != null &&
+    typeof element === "object" &&
+    "$$typeof" in element &&
+    element.$$typeof === REACT_LAZY_TYPE &&
+    "_payload" in element &&
+    isPromiseLike(element._payload)
+  );
 }
 function createSlot(ownerName) {
   const SlotClone = createSlotClone(ownerName);
@@ -41,7 +40,13 @@ function createSlot(ownerName) {
           return child;
         }
       });
-      return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children: React.isValidElement(newElement) ? React.cloneElement(newElement, void 0, newChildren) : null });
+      return (0, import_jsx_runtime.jsx)(SlotClone, {
+        ...slotProps,
+        ref: forwardedRef,
+        children: React.isValidElement(newElement)
+          ? React.cloneElement(newElement, void 0, newChildren)
+          : null,
+      });
     }
     return (0, import_jsx_runtime.jsx)(SlotClone, { ...slotProps, ref: forwardedRef, children });
   });
@@ -79,7 +84,12 @@ function createSlottable(ownerName) {
 }
 var Slottable = createSlottable("Slottable");
 function isSlottable(child) {
-  return React.isValidElement(child) && typeof child.type === "function" && "__radixId" in child.type && child.type.__radixId === SLOTTABLE_IDENTIFIER;
+  return (
+    React.isValidElement(child) &&
+    typeof child.type === "function" &&
+    "__radixId" in child.type &&
+    child.type.__radixId === SLOTTABLE_IDENTIFIER
+  );
 }
 function mergeProps(slotProps, childProps) {
   const overrideProps = { ...childProps };
@@ -119,10 +129,5 @@ function getElementRef(element) {
   return element.props.ref || element.ref;
 }
 
-export {
-  createSlot,
-  Slot,
-  createSlottable,
-  Slottable
-};
+export { createSlot, Slot, createSlottable, Slottable };
 //# sourceMappingURL=chunk-CXPFXTOM.js.map

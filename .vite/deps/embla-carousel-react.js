@@ -1,9 +1,5 @@
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/embla-carousel-react/esm/embla-carousel-react.esm.js
 var import_react = __toESM(require_react());
@@ -34,7 +30,10 @@ function areOptionsEqual(optionsA, optionsB) {
   });
 }
 function sortAndMapPluginToOptions(plugins) {
-  return plugins.concat().sort((a, b) => a.name > b.name ? 1 : -1).map((plugin) => plugin.options);
+  return plugins
+    .concat()
+    .sort((a, b) => (a.name > b.name ? 1 : -1))
+    .map((plugin) => plugin.options);
 }
 function arePluginsEqual(pluginsA, pluginsB) {
   if (pluginsA.length !== pluginsB.length) return false;
@@ -113,7 +112,7 @@ function Alignment(align, viewSize) {
   const predefined = {
     start,
     center,
-    end
+    end,
   };
   function start() {
     return 0;
@@ -129,15 +128,20 @@ function Alignment(align, viewSize) {
     return align(viewSize, n, index);
   }
   const self = {
-    measure
+    measure,
   };
   return self;
 }
 function EventStore() {
   let listeners = [];
-  function add(node, type, handler, options = {
-    passive: true
-  }) {
+  function add(
+    node,
+    type,
+    handler,
+    options = {
+      passive: true,
+    },
+  ) {
     let removeListener;
     if ("addEventListener" in node) {
       node.addEventListener(type, handler, options);
@@ -155,7 +159,7 @@ function EventStore() {
   }
   const self = {
     add,
-    clear
+    clear,
   };
   return self;
 }
@@ -214,7 +218,7 @@ function Animations(ownerDocument, ownerWindow, update, render) {
     start,
     stop,
     update,
-    render
+    render,
   };
   return self;
 }
@@ -227,10 +231,7 @@ function Axis(axis, contentDirection) {
   const startEdge = getStartEdge();
   const endEdge = getEndEdge();
   function measureSize(nodeRect) {
-    const {
-      height,
-      width
-    } = nodeRect;
+    const { height, width } = nodeRect;
     return isVertical ? height : width;
   }
   function getStartEdge() {
@@ -250,7 +251,7 @@ function Axis(axis, contentDirection) {
     startEdge,
     endEdge,
     measureSize,
-    direction
+    direction,
   };
   return self;
 }
@@ -281,14 +282,12 @@ function Limit(min = 0, max = 0) {
     reachedAny,
     reachedMax,
     reachedMin,
-    removeOffset
+    removeOffset,
   };
   return self;
 }
 function Counter(max, start, loop) {
-  const {
-    constrain
-  } = Limit(0, max);
+  const { constrain } = Limit(0, max);
   const loopEnd = max + 1;
   let counter = withinLimit(start);
   function withinLimit(n) {
@@ -311,29 +310,46 @@ function Counter(max, start, loop) {
     get,
     set,
     add,
-    clone
+    clone,
   };
   return self;
 }
-function DragHandler(axis, rootNode, ownerDocument, ownerWindow, target, dragTracker, location, animation, scrollTo, scrollBody, scrollTarget, index, eventHandler, percentOfView, dragFree, dragThreshold, skipSnaps, baseFriction, watchDrag) {
-  const {
-    cross: crossAxis,
-    direction
-  } = axis;
+function DragHandler(
+  axis,
+  rootNode,
+  ownerDocument,
+  ownerWindow,
+  target,
+  dragTracker,
+  location,
+  animation,
+  scrollTo,
+  scrollBody,
+  scrollTarget,
+  index,
+  eventHandler,
+  percentOfView,
+  dragFree,
+  dragThreshold,
+  skipSnaps,
+  baseFriction,
+  watchDrag,
+) {
+  const { cross: crossAxis, direction } = axis;
   const focusNodes = ["INPUT", "SELECT", "TEXTAREA"];
   const nonPassiveEvent = {
-    passive: false
+    passive: false,
   };
   const initEvents = EventStore();
   const dragEvents = EventStore();
   const goToNextThreshold = Limit(50, 225).constrain(percentOfView.measure(20));
   const snapForceBoost = {
     mouse: 300,
-    touch: 400
+    touch: 400,
   };
   const freeForceBoost = {
     mouse: 500,
-    touch: 600
+    touch: 600,
   };
   const baseSpeed = dragFree ? 43 : 25;
   let isMoving = false;
@@ -349,7 +365,15 @@ function DragHandler(axis, rootNode, ownerDocument, ownerWindow, target, dragTra
       if (isBoolean(watchDrag) || watchDrag(emblaApi, evt)) down(evt);
     }
     const node = rootNode;
-    initEvents.add(node, "dragstart", (evt) => evt.preventDefault(), nonPassiveEvent).add(node, "touchmove", () => void 0, nonPassiveEvent).add(node, "touchend", () => void 0).add(node, "touchstart", downIfAllowed).add(node, "mousedown", downIfAllowed).add(node, "touchcancel", up).add(node, "contextmenu", up).add(node, "click", click, true);
+    initEvents
+      .add(node, "dragstart", (evt) => evt.preventDefault(), nonPassiveEvent)
+      .add(node, "touchmove", () => void 0, nonPassiveEvent)
+      .add(node, "touchend", () => void 0)
+      .add(node, "touchstart", downIfAllowed)
+      .add(node, "mousedown", downIfAllowed)
+      .add(node, "touchcancel", up)
+      .add(node, "contextmenu", up)
+      .add(node, "click", click, true);
   }
   function destroy() {
     initEvents.clear();
@@ -357,7 +381,11 @@ function DragHandler(axis, rootNode, ownerDocument, ownerWindow, target, dragTra
   }
   function addDragEvents() {
     const node = isMouse ? ownerDocument : rootNode;
-    dragEvents.add(node, "touchmove", move, nonPassiveEvent).add(node, "touchend", up).add(node, "mousemove", move, nonPassiveEvent).add(node, "mouseup", up);
+    dragEvents
+      .add(node, "touchmove", move, nonPassiveEvent)
+      .add(node, "touchend", up)
+      .add(node, "mousemove", move, nonPassiveEvent)
+      .add(node, "mouseup", up);
   }
   function isFocusNode(node) {
     const nodeName = node.nodeName || "";
@@ -439,7 +467,7 @@ function DragHandler(axis, rootNode, ownerDocument, ownerWindow, target, dragTra
   const self = {
     init,
     destroy,
-    pointerDown
+    pointerDown,
   };
   return self;
 }
@@ -480,30 +508,25 @@ function DragTracker(axis, ownerWindow) {
     pointerDown,
     pointerMove,
     pointerUp,
-    readPoint
+    readPoint,
   };
   return self;
 }
 function NodeRects() {
   function measure(node) {
-    const {
-      offsetTop,
-      offsetLeft,
-      offsetWidth,
-      offsetHeight
-    } = node;
+    const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = node;
     const offset = {
       top: offsetTop,
       right: offsetLeft + offsetWidth,
       bottom: offsetTop + offsetHeight,
       left: offsetLeft,
       width: offsetWidth,
-      height: offsetHeight
+      height: offsetHeight,
     };
     return offset;
   }
   const self = {
-    measure
+    measure,
   };
   return self;
 }
@@ -512,7 +535,7 @@ function PercentOfView(viewSize) {
     return viewSize * (n / 100);
   }
   const self = {
-    measure
+    measure,
   };
   return self;
 }
@@ -559,11 +582,18 @@ function ResizeHandler(container, eventHandler, ownerWindow, slides, axis, watch
   }
   const self = {
     init,
-    destroy
+    destroy,
   };
   return self;
 }
-function ScrollBody(location, offsetLocation, previousLocation, target, baseDuration, baseFriction) {
+function ScrollBody(
+  location,
+  offsetLocation,
+  previousLocation,
+  target,
+  baseDuration,
+  baseFriction,
+) {
   let scrollVelocity = 0;
   let scrollDirection = 0;
   let scrollDuration = baseDuration;
@@ -627,7 +657,7 @@ function ScrollBody(location, offsetLocation, previousLocation, target, baseDura
     useBaseFriction,
     useBaseDuration,
     useFriction,
-    useDuration
+    useDuration,
   };
   return self;
 }
@@ -660,7 +690,7 @@ function ScrollBounds(limit, location, target, scrollBody, percentOfView) {
   const self = {
     shouldConstrain,
     constrain,
-    toggleActive
+    toggleActive,
   };
   return self;
 }
@@ -680,33 +710,29 @@ function ScrollContain(viewSize, contentSize, snapsAligned, containScroll, pixel
     return Limit(min, max);
   }
   function measureBounded() {
-    return snapsAligned.map((snapAligned, index) => {
-      const {
-        min,
-        max
-      } = scrollBounds;
-      const snap = scrollBounds.constrain(snapAligned);
-      const isFirst = !index;
-      const isLast = arrayIsLastIndex(snapsAligned, index);
-      if (isFirst) return max;
-      if (isLast) return min;
-      if (usePixelTolerance(min, snap)) return min;
-      if (usePixelTolerance(max, snap)) return max;
-      return snap;
-    }).map((scrollBound) => parseFloat(scrollBound.toFixed(3)));
+    return snapsAligned
+      .map((snapAligned, index) => {
+        const { min, max } = scrollBounds;
+        const snap = scrollBounds.constrain(snapAligned);
+        const isFirst = !index;
+        const isLast = arrayIsLastIndex(snapsAligned, index);
+        if (isFirst) return max;
+        if (isLast) return min;
+        if (usePixelTolerance(min, snap)) return min;
+        if (usePixelTolerance(max, snap)) return max;
+        return snap;
+      })
+      .map((scrollBound) => parseFloat(scrollBound.toFixed(3)));
   }
   function measureContained() {
     if (contentSize <= viewSize + pixelTolerance) return [scrollBounds.max];
     if (containScroll === "keepSnaps") return snapsBounded;
-    const {
-      min,
-      max
-    } = scrollContainLimit;
+    const { min, max } = scrollContainLimit;
     return snapsBounded.slice(min, max);
   }
   const self = {
     snapsContained,
-    scrollContainLimit
+    scrollContainLimit,
   };
   return self;
 }
@@ -715,7 +741,7 @@ function ScrollLimit(contentSize, scrollSnaps, loop) {
   const min = loop ? max - contentSize : arrayLast(scrollSnaps);
   const limit = Limit(min, max);
   const self = {
-    limit
+    limit,
   };
   return self;
 }
@@ -723,10 +749,7 @@ function ScrollLooper(contentSize, limit, location, vectors) {
   const jointSafety = 0.1;
   const min = limit.min + jointSafety;
   const max = limit.max + jointSafety;
-  const {
-    reachedMin,
-    reachedMax
-  } = Limit(min, max);
+  const { reachedMin, reachedMax } = Limit(min, max);
   function shouldLoop(direction) {
     if (direction === 1) return reachedMax(location.get());
     if (direction === -1) return reachedMin(location.get());
@@ -738,58 +761,58 @@ function ScrollLooper(contentSize, limit, location, vectors) {
     vectors.forEach((v) => v.add(loopDistance));
   }
   const self = {
-    loop
+    loop,
   };
   return self;
 }
 function ScrollProgress(limit) {
-  const {
-    max,
-    length
-  } = limit;
+  const { max, length } = limit;
   function get(n) {
     const currentLocation = n - max;
     return length ? currentLocation / -length : 0;
   }
   const self = {
-    get
+    get,
   };
   return self;
 }
 function ScrollSnaps(axis, alignment, containerRect, slideRects, slidesToScroll) {
-  const {
-    startEdge,
-    endEdge
-  } = axis;
-  const {
-    groupSlides
-  } = slidesToScroll;
+  const { startEdge, endEdge } = axis;
+  const { groupSlides } = slidesToScroll;
   const alignments = measureSizes().map(alignment.measure);
   const snaps = measureUnaligned();
   const snapsAligned = measureAligned();
   function measureSizes() {
-    return groupSlides(slideRects).map((rects) => arrayLast(rects)[endEdge] - rects[0][startEdge]).map(mathAbs);
+    return groupSlides(slideRects)
+      .map((rects) => arrayLast(rects)[endEdge] - rects[0][startEdge])
+      .map(mathAbs);
   }
   function measureUnaligned() {
-    return slideRects.map((rect) => containerRect[startEdge] - rect[startEdge]).map((snap) => -mathAbs(snap));
+    return slideRects
+      .map((rect) => containerRect[startEdge] - rect[startEdge])
+      .map((snap) => -mathAbs(snap));
   }
   function measureAligned() {
-    return groupSlides(snaps).map((g) => g[0]).map((snap, index) => snap + alignments[index]);
+    return groupSlides(snaps)
+      .map((g) => g[0])
+      .map((snap, index) => snap + alignments[index]);
   }
   const self = {
     snaps,
-    snapsAligned
+    snapsAligned,
   };
   return self;
 }
-function SlideRegistry(containSnaps, containScroll, scrollSnaps, scrollContainLimit, slidesToScroll, slideIndexes) {
-  const {
-    groupSlides
-  } = slidesToScroll;
-  const {
-    min,
-    max
-  } = scrollContainLimit;
+function SlideRegistry(
+  containSnaps,
+  containScroll,
+  scrollSnaps,
+  scrollContainLimit,
+  slidesToScroll,
+  slideIndexes,
+) {
+  const { groupSlides } = slidesToScroll;
+  const { min, max } = scrollContainLimit;
   const slideRegistry = createSlideRegistry();
   function createSlideRegistry() {
     const groupedSlideIndexes = groupSlides(slideIndexes);
@@ -811,31 +834,27 @@ function SlideRegistry(containSnaps, containScroll, scrollSnaps, scrollContainLi
     });
   }
   const self = {
-    slideRegistry
+    slideRegistry,
   };
   return self;
 }
 function ScrollTarget(loop, scrollSnaps, contentSize, limit, targetVector) {
-  const {
-    reachedAny,
-    removeOffset,
-    constrain
-  } = limit;
+  const { reachedAny, removeOffset, constrain } = limit;
   function minDistance(distances) {
     return distances.concat().sort((a, b) => mathAbs(a) - mathAbs(b))[0];
   }
   function findTargetSnap(target) {
     const distance = loop ? removeOffset(target) : constrain(target);
-    const ascDiffsToSnaps = scrollSnaps.map((snap, index2) => ({
-      diff: shortcut(snap - distance, 0),
-      index: index2
-    })).sort((d1, d2) => mathAbs(d1.diff) - mathAbs(d2.diff));
-    const {
-      index
-    } = ascDiffsToSnaps[0];
+    const ascDiffsToSnaps = scrollSnaps
+      .map((snap, index2) => ({
+        diff: shortcut(snap - distance, 0),
+        index: index2,
+      }))
+      .sort((d1, d2) => mathAbs(d1.diff) - mathAbs(d2.diff));
+    const { index } = ascDiffsToSnaps[0];
     return {
       index,
-      distance
+      distance,
     };
   }
   function shortcut(target, direction) {
@@ -851,35 +870,41 @@ function ScrollTarget(loop, scrollSnaps, contentSize, limit, targetVector) {
     const distance = shortcut(diffToSnap, direction);
     return {
       index,
-      distance
+      distance,
     };
   }
   function byDistance(distance, snap) {
     const target = targetVector.get() + distance;
-    const {
-      index,
-      distance: targetSnapDistance
-    } = findTargetSnap(target);
+    const { index, distance: targetSnapDistance } = findTargetSnap(target);
     const reachedBound = !loop && reachedAny(target);
-    if (!snap || reachedBound) return {
-      index,
-      distance
-    };
+    if (!snap || reachedBound)
+      return {
+        index,
+        distance,
+      };
     const diffToSnap = scrollSnaps[index] - targetSnapDistance;
     const snapDistance = distance + shortcut(diffToSnap, 0);
     return {
       index,
-      distance: snapDistance
+      distance: snapDistance,
     };
   }
   const self = {
     byDistance,
     byIndex,
-    shortcut
+    shortcut,
   };
   return self;
 }
-function ScrollTo(animation, indexCurrent, indexPrevious, scrollBody, scrollTarget, targetVector, eventHandler) {
+function ScrollTo(
+  animation,
+  indexCurrent,
+  indexPrevious,
+  scrollBody,
+  scrollTarget,
+  targetVector,
+  eventHandler,
+) {
   function scrollTo(target) {
     const distanceDiff = target.distance;
     const indexDiff = target.index !== indexCurrent.get();
@@ -910,20 +935,29 @@ function ScrollTo(animation, indexCurrent, indexPrevious, scrollBody, scrollTarg
   }
   const self = {
     distance,
-    index
+    index,
   };
   return self;
 }
-function SlideFocus(root, slides, slideRegistry, scrollTo, scrollBody, eventStore, eventHandler, watchFocus) {
+function SlideFocus(
+  root,
+  slides,
+  slideRegistry,
+  scrollTo,
+  scrollBody,
+  eventStore,
+  eventHandler,
+  watchFocus,
+) {
   const focusListenerOptions = {
     passive: true,
-    capture: true
+    capture: true,
   };
   let lastTabPressTime = 0;
   function init(emblaApi) {
     if (!watchFocus) return;
     function defaultCallback(index) {
-      const nowTime = (/* @__PURE__ */ new Date()).getTime();
+      const nowTime = /* @__PURE__ */ new Date().getTime();
       const diffTime = nowTime - lastTabPressTime;
       if (diffTime > 10) return;
       eventHandler.emit("slideFocusStart");
@@ -936,18 +970,23 @@ function SlideFocus(root, slides, slideRegistry, scrollTo, scrollBody, eventStor
     }
     eventStore.add(document, "keydown", registerTabPress, false);
     slides.forEach((slide, slideIndex) => {
-      eventStore.add(slide, "focus", (evt) => {
-        if (isBoolean(watchFocus) || watchFocus(emblaApi, evt)) {
-          defaultCallback(slideIndex);
-        }
-      }, focusListenerOptions);
+      eventStore.add(
+        slide,
+        "focus",
+        (evt) => {
+          if (isBoolean(watchFocus) || watchFocus(emblaApi, evt)) {
+            defaultCallback(slideIndex);
+          }
+        },
+        focusListenerOptions,
+      );
     });
   }
   function registerTabPress(event) {
-    if (event.code === "Tab") lastTabPressTime = (/* @__PURE__ */ new Date()).getTime();
+    if (event.code === "Tab") lastTabPressTime = /* @__PURE__ */ new Date().getTime();
   }
   const self = {
-    init
+    init,
   };
   return self;
 }
@@ -972,7 +1011,7 @@ function Vector1D(initialValue) {
     get,
     set,
     add,
-    subtract
+    subtract,
   };
   return self;
 }
@@ -1005,11 +1044,21 @@ function Translate(axis, container) {
   const self = {
     clear,
     to,
-    toggleActive
+    toggleActive,
   };
   return self;
 }
-function SlideLooper(axis, viewSize, contentSize, slideSizes, slideSizesWithGaps, snaps, scrollSnaps, location, slides) {
+function SlideLooper(
+  axis,
+  viewSize,
+  contentSize,
+  slideSizes,
+  slideSizesWithGaps,
+  snaps,
+  scrollSnaps,
+  location,
+  slides,
+) {
   const roundingSafety = 0.5;
   const ascItems = arrayKeys(slideSizesWithGaps);
   const descItems = arrayKeys(slideSizesWithGaps).reverse();
@@ -1028,7 +1077,7 @@ function SlideLooper(axis, viewSize, contentSize, slideSizes, slideSizesWithGaps
   function findSlideBounds(offset) {
     return snaps.map((snap, index) => ({
       start: snap - slideSizes[index] + roundingSafety + offset,
-      end: snap + viewSize - roundingSafety + offset
+      end: snap + viewSize - roundingSafety + offset,
     }));
   }
   function findLoopPoints(indexes, offset, isEndEdge) {
@@ -1043,7 +1092,7 @@ function SlideLooper(axis, viewSize, contentSize, slideSizes, slideSizesWithGaps
         loopPoint,
         slideLocation: Vector1D(-1),
         translate: Translate(axis, slides[index]),
-        target: () => location.get() > loopPoint ? initial : altered
+        target: () => (location.get() > loopPoint ? initial : altered),
       };
     });
   }
@@ -1058,20 +1107,14 @@ function SlideLooper(axis, viewSize, contentSize, slideSizes, slideSizesWithGaps
     return findLoopPoints(indexes, -contentSize, true);
   }
   function canLoop() {
-    return loopPoints.every(({
-      index
-    }) => {
+    return loopPoints.every(({ index }) => {
       const otherIndexes = ascItems.filter((i) => i !== index);
       return removeSlideSizes(otherIndexes, viewSize) <= 0.1;
     });
   }
   function loop() {
     loopPoints.forEach((loopPoint) => {
-      const {
-        target,
-        translate,
-        slideLocation
-      } = loopPoint;
+      const { target, translate, slideLocation } = loopPoint;
       const shiftLocation = target();
       if (shiftLocation === slideLocation.get()) return;
       translate.to(shiftLocation);
@@ -1085,7 +1128,7 @@ function SlideLooper(axis, viewSize, contentSize, slideSizes, slideSizesWithGaps
     canLoop,
     clear,
     loop,
-    loopPoints
+    loopPoints,
   };
   return self;
 }
@@ -1110,7 +1153,7 @@ function SlidesHandler(container, eventHandler, watchSlides) {
       }
     });
     mutationObserver.observe(container, {
-      childList: true
+      childList: true,
     });
   }
   function destroy() {
@@ -1119,7 +1162,7 @@ function SlidesHandler(container, eventHandler, watchSlides) {
   }
   const self = {
     init,
-    destroy
+    destroy,
   };
   return self;
 }
@@ -1130,19 +1173,22 @@ function SlidesInView(container, slides, eventHandler, threshold) {
   let intersectionObserver;
   let destroyed = false;
   function init() {
-    intersectionObserver = new IntersectionObserver((entries) => {
-      if (destroyed) return;
-      entries.forEach((entry) => {
-        const index = slides.indexOf(entry.target);
-        intersectionEntryMap[index] = entry;
-      });
-      inViewCache = null;
-      notInViewCache = null;
-      eventHandler.emit("slidesInView");
-    }, {
-      root: container.parentElement,
-      threshold
-    });
+    intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        if (destroyed) return;
+        entries.forEach((entry) => {
+          const index = slides.indexOf(entry.target);
+          intersectionEntryMap[index] = entry;
+        });
+        inViewCache = null;
+        notInViewCache = null;
+        eventHandler.emit("slidesInView");
+      },
+      {
+        root: container.parentElement,
+        threshold,
+      },
+    );
     slides.forEach((slide) => intersectionObserver.observe(slide));
   }
   function destroy() {
@@ -1152,9 +1198,7 @@ function SlidesInView(container, slides, eventHandler, threshold) {
   function createInViewList(inView) {
     return objectKeys(intersectionEntryMap).reduce((list, slideIndex) => {
       const index = parseInt(slideIndex);
-      const {
-        isIntersecting
-      } = intersectionEntryMap[index];
+      const { isIntersecting } = intersectionEntryMap[index];
       const inViewMatch = inView && isIntersecting;
       const notInViewMatch = !inView && !isIntersecting;
       if (inViewMatch || notInViewMatch) list.push(index);
@@ -1172,16 +1216,12 @@ function SlidesInView(container, slides, eventHandler, threshold) {
   const self = {
     init,
     destroy,
-    get
+    get,
   };
   return self;
 }
 function SlideSizes(axis, containerRect, slideRects, slides, readEdgeGap, ownerWindow) {
-  const {
-    measureSize,
-    startEdge,
-    endEdge
-  } = axis;
+  const { measureSize, startEdge, endEdge } = axis;
   const withEdgeGap = slideRects[0] && readEdgeGap;
   const startGap = measureStartGap();
   const endGap = measureEndGap();
@@ -1198,56 +1238,68 @@ function SlideSizes(axis, containerRect, slideRects, slides, readEdgeGap, ownerW
     return parseFloat(style.getPropertyValue(`margin-${endEdge}`));
   }
   function measureWithGaps() {
-    return slideRects.map((rect, index, rects) => {
-      const isFirst = !index;
-      const isLast = arrayIsLastIndex(rects, index);
-      if (isFirst) return slideSizes[index] + startGap;
-      if (isLast) return slideSizes[index] + endGap;
-      return rects[index + 1][startEdge] - rect[startEdge];
-    }).map(mathAbs);
+    return slideRects
+      .map((rect, index, rects) => {
+        const isFirst = !index;
+        const isLast = arrayIsLastIndex(rects, index);
+        if (isFirst) return slideSizes[index] + startGap;
+        if (isLast) return slideSizes[index] + endGap;
+        return rects[index + 1][startEdge] - rect[startEdge];
+      })
+      .map(mathAbs);
   }
   const self = {
     slideSizes,
     slideSizesWithGaps,
     startGap,
-    endGap
+    endGap,
   };
   return self;
 }
-function SlidesToScroll(axis, viewSize, slidesToScroll, loop, containerRect, slideRects, startGap, endGap, pixelTolerance) {
-  const {
-    startEdge,
-    endEdge,
-    direction
-  } = axis;
+function SlidesToScroll(
+  axis,
+  viewSize,
+  slidesToScroll,
+  loop,
+  containerRect,
+  slideRects,
+  startGap,
+  endGap,
+  pixelTolerance,
+) {
+  const { startEdge, endEdge, direction } = axis;
   const groupByNumber = isNumber(slidesToScroll);
   function byNumber(array, groupSize) {
-    return arrayKeys(array).filter((i) => i % groupSize === 0).map((i) => array.slice(i, i + groupSize));
+    return arrayKeys(array)
+      .filter((i) => i % groupSize === 0)
+      .map((i) => array.slice(i, i + groupSize));
   }
   function bySize(array) {
     if (!array.length) return [];
-    return arrayKeys(array).reduce((groups, rectB, index) => {
-      const rectA = arrayLast(groups) || 0;
-      const isFirst = rectA === 0;
-      const isLast = rectB === arrayLastIndex(array);
-      const edgeA = containerRect[startEdge] - slideRects[rectA][startEdge];
-      const edgeB = containerRect[startEdge] - slideRects[rectB][endEdge];
-      const gapA = !loop && isFirst ? direction(startGap) : 0;
-      const gapB = !loop && isLast ? direction(endGap) : 0;
-      const chunkSize = mathAbs(edgeB - gapB - (edgeA + gapA));
-      if (index && chunkSize > viewSize + pixelTolerance) groups.push(rectB);
-      if (isLast) groups.push(array.length);
-      return groups;
-    }, []).map((currentSize, index, groups) => {
-      const previousSize = Math.max(groups[index - 1] || 0);
-      return array.slice(previousSize, currentSize);
-    });
+    return arrayKeys(array)
+      .reduce((groups, rectB, index) => {
+        const rectA = arrayLast(groups) || 0;
+        const isFirst = rectA === 0;
+        const isLast = rectB === arrayLastIndex(array);
+        const edgeA = containerRect[startEdge] - slideRects[rectA][startEdge];
+        const edgeB = containerRect[startEdge] - slideRects[rectB][endEdge];
+        const gapA = !loop && isFirst ? direction(startGap) : 0;
+        const gapB = !loop && isLast ? direction(endGap) : 0;
+        const chunkSize = mathAbs(edgeB - gapB - (edgeA + gapA));
+        if (index && chunkSize > viewSize + pixelTolerance) groups.push(rectB);
+        if (isLast) groups.push(array.length);
+        return groups;
+      }, [])
+      .map((currentSize, index, groups) => {
+        const previousSize = Math.max(groups[index - 1] || 0);
+        return array.slice(previousSize, currentSize);
+      });
   }
   function groupSlides(array) {
     return groupByNumber ? byNumber(array, slidesToScroll) : bySize(array);
   }
   const self = {
-    groupSlides
+    groupSlides,
   };
   return self;
 }
@@ -1268,7 +1320,7 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
     watchResize,
     watchSlides,
     watchDrag,
-    watchFocus
+    watchFocus,
   } = options;
   const pixelTolerance = 2;
   const nodeRects = NodeRects();
@@ -1280,26 +1332,42 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
   const alignment = Alignment(align, viewSize);
   const containSnaps = !loop && !!containScroll;
   const readEdgeGap = loop || !!containScroll;
-  const {
-    slideSizes,
-    slideSizesWithGaps,
+  const { slideSizes, slideSizesWithGaps, startGap, endGap } = SlideSizes(
+    axis,
+    containerRect,
+    slideRects,
+    slides,
+    readEdgeGap,
+    ownerWindow,
+  );
+  const slidesToScroll = SlidesToScroll(
+    axis,
+    viewSize,
+    groupSlides,
+    loop,
+    containerRect,
+    slideRects,
     startGap,
-    endGap
-  } = SlideSizes(axis, containerRect, slideRects, slides, readEdgeGap, ownerWindow);
-  const slidesToScroll = SlidesToScroll(axis, viewSize, groupSlides, loop, containerRect, slideRects, startGap, endGap, pixelTolerance);
-  const {
-    snaps,
-    snapsAligned
-  } = ScrollSnaps(axis, alignment, containerRect, slideRects, slidesToScroll);
+    endGap,
+    pixelTolerance,
+  );
+  const { snaps, snapsAligned } = ScrollSnaps(
+    axis,
+    alignment,
+    containerRect,
+    slideRects,
+    slidesToScroll,
+  );
   const contentSize = -arrayLast(snaps) + arrayLast(slideSizesWithGaps);
-  const {
-    snapsContained,
-    scrollContainLimit
-  } = ScrollContain(viewSize, contentSize, snapsAligned, containScroll, pixelTolerance);
+  const { snapsContained, scrollContainLimit } = ScrollContain(
+    viewSize,
+    contentSize,
+    snapsAligned,
+    containScroll,
+    pixelTolerance,
+  );
   const scrollSnaps = containSnaps ? snapsContained : snapsAligned;
-  const {
-    limit
-  } = ScrollLimit(contentSize, scrollSnaps, loop);
+  const { limit } = ScrollLimit(contentSize, scrollSnaps, loop);
   const index = Counter(arrayLastIndex(scrollSnaps), startIndex, loop);
   const indexPrevious = index.clone();
   const slideIndexes = arrayKeys(slides);
@@ -1307,29 +1375,28 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
     dragHandler,
     scrollBody: scrollBody2,
     scrollBounds,
-    options: {
-      loop: loop2
-    }
+    options: { loop: loop2 },
   }) => {
     if (!loop2) scrollBounds.constrain(dragHandler.pointerDown());
     scrollBody2.seek();
   };
-  const render = ({
-    scrollBody: scrollBody2,
-    translate,
-    location: location2,
-    offsetLocation: offsetLocation2,
-    previousLocation: previousLocation2,
-    scrollLooper,
-    slideLooper,
-    dragHandler,
-    animation: animation2,
-    eventHandler: eventHandler2,
-    scrollBounds,
-    options: {
-      loop: loop2
-    }
-  }, alpha) => {
+  const render = (
+    {
+      scrollBody: scrollBody2,
+      translate,
+      location: location2,
+      offsetLocation: offsetLocation2,
+      previousLocation: previousLocation2,
+      scrollLooper,
+      slideLooper,
+      dragHandler,
+      animation: animation2,
+      eventHandler: eventHandler2,
+      scrollBounds,
+      options: { loop: loop2 },
+    },
+    alpha,
+  ) => {
     const shouldSettle = scrollBody2.settled();
     const withinBounds = !scrollBounds.shouldConstrain();
     const hasSettled = loop2 ? shouldSettle : shouldSettle && withinBounds;
@@ -1345,23 +1412,57 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
     if (hasSettledAndIdle) eventHandler2.emit("settle");
     if (!hasSettled) eventHandler2.emit("scroll");
   };
-  const animation = Animations(ownerDocument, ownerWindow, () => update(engine), (alpha) => render(engine, alpha));
+  const animation = Animations(
+    ownerDocument,
+    ownerWindow,
+    () => update(engine),
+    (alpha) => render(engine, alpha),
+  );
   const friction = 0.68;
   const startLocation = scrollSnaps[index.get()];
   const location = Vector1D(startLocation);
   const previousLocation = Vector1D(startLocation);
   const offsetLocation = Vector1D(startLocation);
   const target = Vector1D(startLocation);
-  const scrollBody = ScrollBody(location, offsetLocation, previousLocation, target, duration, friction);
+  const scrollBody = ScrollBody(
+    location,
+    offsetLocation,
+    previousLocation,
+    target,
+    duration,
+    friction,
+  );
   const scrollTarget = ScrollTarget(loop, scrollSnaps, contentSize, limit, target);
-  const scrollTo = ScrollTo(animation, index, indexPrevious, scrollBody, scrollTarget, target, eventHandler);
+  const scrollTo = ScrollTo(
+    animation,
+    index,
+    indexPrevious,
+    scrollBody,
+    scrollTarget,
+    target,
+    eventHandler,
+  );
   const scrollProgress = ScrollProgress(limit);
   const eventStore = EventStore();
   const slidesInView = SlidesInView(container, slides, eventHandler, inViewThreshold);
-  const {
-    slideRegistry
-  } = SlideRegistry(containSnaps, containScroll, scrollSnaps, scrollContainLimit, slidesToScroll, slideIndexes);
-  const slideFocus = SlideFocus(root, slides, slideRegistry, scrollTo, scrollBody, eventStore, eventHandler, watchFocus);
+  const { slideRegistry } = SlideRegistry(
+    containSnaps,
+    containScroll,
+    scrollSnaps,
+    scrollContainLimit,
+    slidesToScroll,
+    slideIndexes,
+  );
+  const slideFocus = SlideFocus(
+    root,
+    slides,
+    slideRegistry,
+    scrollTo,
+    scrollBody,
+    eventStore,
+    eventHandler,
+    watchFocus,
+  );
   const engine = {
     ownerDocument,
     ownerWindow,
@@ -1370,7 +1471,27 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
     slideRects,
     animation,
     axis,
-    dragHandler: DragHandler(axis, root, ownerDocument, ownerWindow, target, DragTracker(axis, ownerWindow), location, animation, scrollTo, scrollBody, scrollTarget, index, eventHandler, percentOfView, dragFree, dragThreshold, skipSnaps, friction, watchDrag),
+    dragHandler: DragHandler(
+      axis,
+      root,
+      ownerDocument,
+      ownerWindow,
+      target,
+      DragTracker(axis, ownerWindow),
+      location,
+      animation,
+      scrollTo,
+      scrollBody,
+      scrollTarget,
+      index,
+      eventHandler,
+      percentOfView,
+      dragFree,
+      dragThreshold,
+      skipSnaps,
+      friction,
+      watchDrag,
+    ),
     eventStore,
     percentOfView,
     index,
@@ -1380,16 +1501,39 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
     offsetLocation,
     previousLocation,
     options,
-    resizeHandler: ResizeHandler(container, eventHandler, ownerWindow, slides, axis, watchResize, nodeRects),
+    resizeHandler: ResizeHandler(
+      container,
+      eventHandler,
+      ownerWindow,
+      slides,
+      axis,
+      watchResize,
+      nodeRects,
+    ),
     scrollBody,
     scrollBounds: ScrollBounds(limit, offsetLocation, target, scrollBody, percentOfView),
-    scrollLooper: ScrollLooper(contentSize, limit, offsetLocation, [location, offsetLocation, previousLocation, target]),
+    scrollLooper: ScrollLooper(contentSize, limit, offsetLocation, [
+      location,
+      offsetLocation,
+      previousLocation,
+      target,
+    ]),
     scrollProgress,
     scrollSnapList: scrollSnaps.map(scrollProgress.get),
     scrollSnaps,
     scrollTarget,
     scrollTo,
-    slideLooper: SlideLooper(axis, viewSize, contentSize, slideSizes, slideSizesWithGaps, snaps, scrollSnaps, offsetLocation, slides),
+    slideLooper: SlideLooper(
+      axis,
+      viewSize,
+      contentSize,
+      slideSizes,
+      slideSizesWithGaps,
+      snaps,
+      scrollSnaps,
+      offsetLocation,
+      slides,
+    ),
     slideFocus,
     slidesHandler: SlidesHandler(container, eventHandler, watchSlides),
     slidesInView,
@@ -1397,7 +1541,7 @@ function Engine(root, container, slides, ownerDocument, ownerWindow, options, ev
     slideRegistry,
     slidesToScroll,
     target,
-    translate: Translate(axis, container)
+    translate: Translate(axis, container),
   };
   return engine;
 }
@@ -1430,7 +1574,7 @@ function EventHandler() {
     emit,
     off,
     on,
-    clear
+    clear,
   };
   return self;
 }
@@ -1454,7 +1598,7 @@ var defaultOptions = {
   watchDrag: true,
   watchResize: true,
   watchSlides: true,
-  watchFocus: true
+  watchFocus: true,
 };
 function OptionsHandler(ownerWindow) {
   function mergeOptions(optionsA, optionsB) {
@@ -1462,36 +1606,46 @@ function OptionsHandler(ownerWindow) {
   }
   function optionsAtMedia(options) {
     const optionsAtMedia2 = options.breakpoints || {};
-    const matchedMediaOptions = objectKeys(optionsAtMedia2).filter((media) => ownerWindow.matchMedia(media).matches).map((media) => optionsAtMedia2[media]).reduce((a, mediaOption) => mergeOptions(a, mediaOption), {});
+    const matchedMediaOptions = objectKeys(optionsAtMedia2)
+      .filter((media) => ownerWindow.matchMedia(media).matches)
+      .map((media) => optionsAtMedia2[media])
+      .reduce((a, mediaOption) => mergeOptions(a, mediaOption), {});
     return mergeOptions(options, matchedMediaOptions);
   }
   function optionsMediaQueries(optionsList) {
-    return optionsList.map((options) => objectKeys(options.breakpoints || {})).reduce((acc, mediaQueries) => acc.concat(mediaQueries), []).map(ownerWindow.matchMedia);
+    return optionsList
+      .map((options) => objectKeys(options.breakpoints || {}))
+      .reduce((acc, mediaQueries) => acc.concat(mediaQueries), [])
+      .map(ownerWindow.matchMedia);
   }
   const self = {
     mergeOptions,
     optionsAtMedia,
-    optionsMediaQueries
+    optionsMediaQueries,
   };
   return self;
 }
 function PluginsHandler(optionsHandler) {
   let activePlugins = [];
   function init(emblaApi, plugins) {
-    activePlugins = plugins.filter(({
-      options
-    }) => optionsHandler.optionsAtMedia(options).active !== false);
+    activePlugins = plugins.filter(
+      ({ options }) => optionsHandler.optionsAtMedia(options).active !== false,
+    );
     activePlugins.forEach((plugin) => plugin.init(emblaApi, optionsHandler));
-    return plugins.reduce((map, plugin) => Object.assign(map, {
-      [plugin.name]: plugin
-    }), {});
+    return plugins.reduce(
+      (map, plugin) =>
+        Object.assign(map, {
+          [plugin.name]: plugin,
+        }),
+      {},
+    );
   }
   function destroy() {
     activePlugins = activePlugins.filter((plugin) => plugin.destroy());
   }
   const self = {
     init,
-    destroy
+    destroy,
   };
   return self;
 }
@@ -1502,16 +1656,8 @@ function EmblaCarousel(root, userOptions, userPlugins) {
   const pluginsHandler = PluginsHandler(optionsHandler);
   const mediaHandlers = EventStore();
   const eventHandler = EventHandler();
-  const {
-    mergeOptions,
-    optionsAtMedia,
-    optionsMediaQueries
-  } = optionsHandler;
-  const {
-    on,
-    off,
-    emit
-  } = eventHandler;
+  const { mergeOptions, optionsAtMedia, optionsMediaQueries } = optionsHandler;
+  const { on, off, emit } = eventHandler;
   const reInit = reActivate;
   let destroyed = false;
   let engine;
@@ -1522,20 +1668,27 @@ function EmblaCarousel(root, userOptions, userPlugins) {
   let container;
   let slides;
   function storeElements() {
-    const {
-      container: userContainer,
-      slides: userSlides
-    } = options;
-    const customContainer = isString(userContainer) ? root.querySelector(userContainer) : userContainer;
+    const { container: userContainer, slides: userSlides } = options;
+    const customContainer = isString(userContainer)
+      ? root.querySelector(userContainer)
+      : userContainer;
     container = customContainer || root.children[0];
     const customSlides = isString(userSlides) ? container.querySelectorAll(userSlides) : userSlides;
     slides = [].slice.call(customSlides || container.children);
   }
   function createEngine(options2) {
-    const engine2 = Engine(root, container, slides, ownerDocument, ownerWindow, options2, eventHandler);
+    const engine2 = Engine(
+      root,
+      container,
+      slides,
+      ownerDocument,
+      ownerWindow,
+      options2,
+      eventHandler,
+    );
     if (options2.loop && !engine2.slideLooper.canLoop()) {
       const optionsWithoutLoop = Object.assign({}, options2, {
-        loop: false
+        loop: false,
       });
       return createEngine(optionsWithoutLoop);
     }
@@ -1548,9 +1701,10 @@ function EmblaCarousel(root, userOptions, userPlugins) {
     pluginList = withPlugins || pluginList;
     storeElements();
     engine = createEngine(options);
-    optionsMediaQueries([optionsBase, ...pluginList.map(({
-      options: options2
-    }) => options2)]).forEach((query) => mediaHandlers.add(query, "change", reActivate));
+    optionsMediaQueries([
+      optionsBase,
+      ...pluginList.map(({ options: options2 }) => options2),
+    ]).forEach((query) => mediaHandlers.add(query, "change", reActivate));
     if (!options.active) return;
     engine.translate.to(engine.location.get());
     engine.animation.init();
@@ -1566,9 +1720,15 @@ function EmblaCarousel(root, userOptions, userPlugins) {
   function reActivate(withOptions, withPlugins) {
     const startIndex = selectedScrollSnap();
     deActivate();
-    activate(mergeOptions({
-      startIndex
-    }, withOptions), withPlugins);
+    activate(
+      mergeOptions(
+        {
+          startIndex,
+        },
+        withOptions,
+      ),
+      withPlugins,
+    );
     eventHandler.emit("reInit");
   }
   function deActivate() {
@@ -1666,7 +1826,7 @@ function EmblaCarousel(root, userOptions, userPlugins) {
     selectedScrollSnap,
     slideNodes,
     slidesInView,
-    slidesNotInView
+    slidesNotInView,
   };
   activate(userOptions, userPlugins);
   setTimeout(() => eventHandler.emit("init"), 0);
@@ -1706,7 +1866,5 @@ function useEmblaCarousel(options = {}, plugins = []) {
   return [setViewport, emblaApi];
 }
 useEmblaCarousel.globalOptions = void 0;
-export {
-  useEmblaCarousel as default
-};
+export { useEmblaCarousel as default };
 //# sourceMappingURL=embla-carousel-react.js.map

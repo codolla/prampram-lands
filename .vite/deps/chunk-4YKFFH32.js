@@ -1,29 +1,11 @@
-import {
-  useCallbackRef
-} from "./chunk-T5Z3LJQL.js";
-import {
-  Primitive,
-  composeEventHandlers,
-  dispatchDiscreteCustomEvent
-} from "./chunk-MVQIMK6M.js";
-import {
-  useLayoutEffect2
-} from "./chunk-OJ36KNVJ.js";
-import {
-  useComposedRefs
-} from "./chunk-I37FV5V7.js";
-import {
-  require_jsx_runtime
-} from "./chunk-JHNCVMLM.js";
-import {
-  require_react_dom
-} from "./chunk-FF6GPTLF.js";
-import {
-  require_react
-} from "./chunk-IYNEFVZG.js";
-import {
-  __toESM
-} from "./chunk-PR4QN5HX.js";
+import { useCallbackRef } from "./chunk-T5Z3LJQL.js";
+import { Primitive, composeEventHandlers, dispatchDiscreteCustomEvent } from "./chunk-MVQIMK6M.js";
+import { useLayoutEffect2 } from "./chunk-OJ36KNVJ.js";
+import { useComposedRefs } from "./chunk-I37FV5V7.js";
+import { require_jsx_runtime } from "./chunk-JHNCVMLM.js";
+import { require_react_dom } from "./chunk-FF6GPTLF.js";
+import { require_react } from "./chunk-IYNEFVZG.js";
+import { __toESM } from "./chunk-PR4QN5HX.js";
 
 // node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs
 var React2 = __toESM(require_react(), 1);
@@ -53,104 +35,110 @@ var originalBodyPointerEvents;
 var DismissableLayerContext = React2.createContext({
   layers: /* @__PURE__ */ new Set(),
   layersWithOutsidePointerEventsDisabled: /* @__PURE__ */ new Set(),
-  branches: /* @__PURE__ */ new Set()
+  branches: /* @__PURE__ */ new Set(),
 });
-var DismissableLayer = React2.forwardRef(
-  (props, forwardedRef) => {
-    const {
-      disableOutsidePointerEvents = false,
-      onEscapeKeyDown,
-      onPointerDownOutside,
-      onFocusOutside,
-      onInteractOutside,
-      onDismiss,
-      ...layerProps
-    } = props;
-    const context = React2.useContext(DismissableLayerContext);
-    const [node, setNode] = React2.useState(null);
-    const ownerDocument = node?.ownerDocument ?? globalThis?.document;
-    const [, force] = React2.useState({});
-    const composedRefs = useComposedRefs(forwardedRef, (node2) => setNode(node2));
-    const layers = Array.from(context.layers);
-    const [highestLayerWithOutsidePointerEventsDisabled] = [...context.layersWithOutsidePointerEventsDisabled].slice(-1);
-    const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
-    const index = node ? layers.indexOf(node) : -1;
-    const isBodyPointerEventsDisabled = context.layersWithOutsidePointerEventsDisabled.size > 0;
-    const isPointerEventsEnabled = index >= highestLayerWithOutsidePointerEventsDisabledIndex;
-    const pointerDownOutside = usePointerDownOutside((event) => {
-      const target = event.target;
-      const isPointerDownOnBranch = [...context.branches].some((branch) => branch.contains(target));
-      if (!isPointerEventsEnabled || isPointerDownOnBranch) return;
-      onPointerDownOutside?.(event);
-      onInteractOutside?.(event);
-      if (!event.defaultPrevented) onDismiss?.();
-    }, ownerDocument);
-    const focusOutside = useFocusOutside((event) => {
-      const target = event.target;
-      const isFocusInBranch = [...context.branches].some((branch) => branch.contains(target));
-      if (isFocusInBranch) return;
-      onFocusOutside?.(event);
-      onInteractOutside?.(event);
-      if (!event.defaultPrevented) onDismiss?.();
-    }, ownerDocument);
-    useEscapeKeydown((event) => {
-      const isHighestLayer = index === context.layers.size - 1;
-      if (!isHighestLayer) return;
-      onEscapeKeyDown?.(event);
-      if (!event.defaultPrevented && onDismiss) {
-        event.preventDefault();
-        onDismiss();
+var DismissableLayer = React2.forwardRef((props, forwardedRef) => {
+  const {
+    disableOutsidePointerEvents = false,
+    onEscapeKeyDown,
+    onPointerDownOutside,
+    onFocusOutside,
+    onInteractOutside,
+    onDismiss,
+    ...layerProps
+  } = props;
+  const context = React2.useContext(DismissableLayerContext);
+  const [node, setNode] = React2.useState(null);
+  const ownerDocument = node?.ownerDocument ?? globalThis?.document;
+  const [, force] = React2.useState({});
+  const composedRefs = useComposedRefs(forwardedRef, (node2) => setNode(node2));
+  const layers = Array.from(context.layers);
+  const [highestLayerWithOutsidePointerEventsDisabled] = [
+    ...context.layersWithOutsidePointerEventsDisabled,
+  ].slice(-1);
+  const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(
+    highestLayerWithOutsidePointerEventsDisabled,
+  );
+  const index = node ? layers.indexOf(node) : -1;
+  const isBodyPointerEventsDisabled = context.layersWithOutsidePointerEventsDisabled.size > 0;
+  const isPointerEventsEnabled = index >= highestLayerWithOutsidePointerEventsDisabledIndex;
+  const pointerDownOutside = usePointerDownOutside((event) => {
+    const target = event.target;
+    const isPointerDownOnBranch = [...context.branches].some((branch) => branch.contains(target));
+    if (!isPointerEventsEnabled || isPointerDownOnBranch) return;
+    onPointerDownOutside?.(event);
+    onInteractOutside?.(event);
+    if (!event.defaultPrevented) onDismiss?.();
+  }, ownerDocument);
+  const focusOutside = useFocusOutside((event) => {
+    const target = event.target;
+    const isFocusInBranch = [...context.branches].some((branch) => branch.contains(target));
+    if (isFocusInBranch) return;
+    onFocusOutside?.(event);
+    onInteractOutside?.(event);
+    if (!event.defaultPrevented) onDismiss?.();
+  }, ownerDocument);
+  useEscapeKeydown((event) => {
+    const isHighestLayer = index === context.layers.size - 1;
+    if (!isHighestLayer) return;
+    onEscapeKeyDown?.(event);
+    if (!event.defaultPrevented && onDismiss) {
+      event.preventDefault();
+      onDismiss();
+    }
+  }, ownerDocument);
+  React2.useEffect(() => {
+    if (!node) return;
+    if (disableOutsidePointerEvents) {
+      if (context.layersWithOutsidePointerEventsDisabled.size === 0) {
+        originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;
+        ownerDocument.body.style.pointerEvents = "none";
       }
-    }, ownerDocument);
-    React2.useEffect(() => {
+      context.layersWithOutsidePointerEventsDisabled.add(node);
+    }
+    context.layers.add(node);
+    dispatchUpdate();
+    return () => {
+      if (
+        disableOutsidePointerEvents &&
+        context.layersWithOutsidePointerEventsDisabled.size === 1
+      ) {
+        ownerDocument.body.style.pointerEvents = originalBodyPointerEvents;
+      }
+    };
+  }, [node, ownerDocument, disableOutsidePointerEvents, context]);
+  React2.useEffect(() => {
+    return () => {
       if (!node) return;
-      if (disableOutsidePointerEvents) {
-        if (context.layersWithOutsidePointerEventsDisabled.size === 0) {
-          originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;
-          ownerDocument.body.style.pointerEvents = "none";
-        }
-        context.layersWithOutsidePointerEventsDisabled.add(node);
-      }
-      context.layers.add(node);
+      context.layers.delete(node);
+      context.layersWithOutsidePointerEventsDisabled.delete(node);
       dispatchUpdate();
-      return () => {
-        if (disableOutsidePointerEvents && context.layersWithOutsidePointerEventsDisabled.size === 1) {
-          ownerDocument.body.style.pointerEvents = originalBodyPointerEvents;
-        }
-      };
-    }, [node, ownerDocument, disableOutsidePointerEvents, context]);
-    React2.useEffect(() => {
-      return () => {
-        if (!node) return;
-        context.layers.delete(node);
-        context.layersWithOutsidePointerEventsDisabled.delete(node);
-        dispatchUpdate();
-      };
-    }, [node, context]);
-    React2.useEffect(() => {
-      const handleUpdate = () => force({});
-      document.addEventListener(CONTEXT_UPDATE, handleUpdate);
-      return () => document.removeEventListener(CONTEXT_UPDATE, handleUpdate);
-    }, []);
-    return (0, import_jsx_runtime.jsx)(
-      Primitive.div,
-      {
-        ...layerProps,
-        ref: composedRefs,
-        style: {
-          pointerEvents: isBodyPointerEventsDisabled ? isPointerEventsEnabled ? "auto" : "none" : void 0,
-          ...props.style
-        },
-        onFocusCapture: composeEventHandlers(props.onFocusCapture, focusOutside.onFocusCapture),
-        onBlurCapture: composeEventHandlers(props.onBlurCapture, focusOutside.onBlurCapture),
-        onPointerDownCapture: composeEventHandlers(
-          props.onPointerDownCapture,
-          pointerDownOutside.onPointerDownCapture
-        )
-      }
-    );
-  }
-);
+    };
+  }, [node, context]);
+  React2.useEffect(() => {
+    const handleUpdate = () => force({});
+    document.addEventListener(CONTEXT_UPDATE, handleUpdate);
+    return () => document.removeEventListener(CONTEXT_UPDATE, handleUpdate);
+  }, []);
+  return (0, import_jsx_runtime.jsx)(Primitive.div, {
+    ...layerProps,
+    ref: composedRefs,
+    style: {
+      pointerEvents: isBodyPointerEventsDisabled
+        ? isPointerEventsEnabled
+          ? "auto"
+          : "none"
+        : void 0,
+      ...props.style,
+    },
+    onFocusCapture: composeEventHandlers(props.onFocusCapture, focusOutside.onFocusCapture),
+    onBlurCapture: composeEventHandlers(props.onBlurCapture, focusOutside.onBlurCapture),
+    onPointerDownCapture: composeEventHandlers(
+      props.onPointerDownCapture,
+      pointerDownOutside.onPointerDownCapture,
+    ),
+  });
+});
 DismissableLayer.displayName = DISMISSABLE_LAYER_NAME;
 var BRANCH_NAME = "DismissableLayerBranch";
 var DismissableLayerBranch = React2.forwardRef((props, forwardedRef) => {
@@ -172,17 +160,16 @@ DismissableLayerBranch.displayName = BRANCH_NAME;
 function usePointerDownOutside(onPointerDownOutside, ownerDocument = globalThis?.document) {
   const handlePointerDownOutside = useCallbackRef(onPointerDownOutside);
   const isPointerInsideReactTreeRef = React2.useRef(false);
-  const handleClickRef = React2.useRef(() => {
-  });
+  const handleClickRef = React2.useRef(() => {});
   React2.useEffect(() => {
     const handlePointerDown = (event) => {
       if (event.target && !isPointerInsideReactTreeRef.current) {
-        let handleAndDispatchPointerDownOutsideEvent2 = function() {
+        let handleAndDispatchPointerDownOutsideEvent2 = function () {
           handleAndDispatchCustomEvent(
             POINTER_DOWN_OUTSIDE,
             handlePointerDownOutside,
             eventDetail,
-            { discrete: true }
+            { discrete: true },
           );
         };
         var handleAndDispatchPointerDownOutsideEvent = handleAndDispatchPointerDownOutsideEvent2;
@@ -210,7 +197,7 @@ function usePointerDownOutside(onPointerDownOutside, ownerDocument = globalThis?
   }, [ownerDocument, handlePointerDownOutside]);
   return {
     // ensures we check React component tree (not just DOM tree)
-    onPointerDownCapture: () => isPointerInsideReactTreeRef.current = true
+    onPointerDownCapture: () => (isPointerInsideReactTreeRef.current = true),
   };
 }
 function useFocusOutside(onFocusOutside, ownerDocument = globalThis?.document) {
@@ -221,7 +208,7 @@ function useFocusOutside(onFocusOutside, ownerDocument = globalThis?.document) {
       if (event.target && !isFocusInsideReactTreeRef.current) {
         const eventDetail = { originalEvent: event };
         handleAndDispatchCustomEvent(FOCUS_OUTSIDE, handleFocusOutside, eventDetail, {
-          discrete: false
+          discrete: false,
         });
       }
     };
@@ -229,8 +216,8 @@ function useFocusOutside(onFocusOutside, ownerDocument = globalThis?.document) {
     return () => ownerDocument.removeEventListener("focusin", handleFocus);
   }, [ownerDocument, handleFocusOutside]);
   return {
-    onFocusCapture: () => isFocusInsideReactTreeRef.current = true,
-    onBlurCapture: () => isFocusInsideReactTreeRef.current = false
+    onFocusCapture: () => (isFocusInsideReactTreeRef.current = true),
+    onBlurCapture: () => (isFocusInsideReactTreeRef.current = false),
   };
 }
 function dispatchUpdate() {
@@ -257,13 +244,15 @@ var Portal = React3.forwardRef((props, forwardedRef) => {
   const { container: containerProp, ...portalProps } = props;
   const [mounted, setMounted] = React3.useState(false);
   useLayoutEffect2(() => setMounted(true), []);
-  const container = containerProp || mounted && globalThis?.document?.body;
-  return container ? import_react_dom.default.createPortal((0, import_jsx_runtime2.jsx)(Primitive.div, { ...portalProps, ref: forwardedRef }), container) : null;
+  const container = containerProp || (mounted && globalThis?.document?.body);
+  return container
+    ? import_react_dom.default.createPortal(
+        (0, import_jsx_runtime2.jsx)(Primitive.div, { ...portalProps, ref: forwardedRef }),
+        container,
+      )
+    : null;
 });
 Portal.displayName = PORTAL_NAME;
 
-export {
-  DismissableLayer,
-  Portal
-};
+export { DismissableLayer, Portal };
 //# sourceMappingURL=chunk-4YKFFH32.js.map

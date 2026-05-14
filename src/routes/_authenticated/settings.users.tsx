@@ -172,9 +172,7 @@ function UsersPage() {
           .eq("role", role);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userId, role });
+        const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
         if (error) throw error;
       }
     },

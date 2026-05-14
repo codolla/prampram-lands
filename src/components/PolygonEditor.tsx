@@ -80,11 +80,11 @@ export function PolygonEditor({
     const drawControl = new DrawCtor({
       edit: { featureGroup: drawn },
       draw: {
-        polygon: { allowIntersection: false, showArea: true },
+        polyline: { shapeOptions: { color: "#2563eb", weight: 3 }, finishOnDoubleClick: true },
+        polygon: false,
         marker: false,
         circle: false,
         circlemarker: false,
-        polyline: false,
         rectangle: false,
       },
     });
@@ -104,9 +104,17 @@ export function PolygonEditor({
 
     map.on("draw:created", (e: unknown) => {
       const ev = e as { layer: L.Layer };
-      // single polygon: clear existing first
       drawn.clearLayers();
-      drawn.addLayer(ev.layer);
+      const latlngsRaw = (ev.layer as unknown as { getLatLngs?: () => unknown }).getLatLngs?.();
+      const pts = Array.isArray(latlngsRaw)
+        ? Array.isArray(latlngsRaw[0])
+          ? (latlngsRaw[0] as L.LatLng[])
+          : (latlngsRaw as L.LatLng[])
+        : [];
+      if (pts.length >= 3) {
+        const poly = L.polygon(pts, { color: "#15803d", weight: 3, fillOpacity: 0.2 });
+        drawn.addLayer(poly);
+      }
       emit();
     });
     map.on("draw:edited", emit);

@@ -41,7 +41,9 @@ export const Route = createFileRoute("/_authenticated/lands/")({
     const register =
       registerRaw === true || registerRaw === "true" || registerRaw === "1" || registerRaw === 1;
     const ownerId = typeof search.ownerId === "string" ? search.ownerId : undefined;
-    return register && ownerId ? { register: true, ownerId } : {};
+    if (ownerId && register) return { register: true, ownerId };
+    if (ownerId) return { ownerId };
+    return {};
   },
   component: LandsPage,
 });
@@ -60,12 +62,54 @@ function LandsPage() {
   const canDelete = hasAnyRole(["admin"]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<Status>("all");
+  const [family, setFamily] = useState<string>("all");
   const [page, setPage] = useState(1);
   const openedFromOwnerRef = useRef(false);
 
   useEffect(() => {
     setPage(1);
-  }, [search, status]);
+  }, [search, status, family, routeSearch.ownerId]);
+
+  const families = useQuery<string[]>({
+    queryKey: ["land-families"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lands")
+        .select("family")
+        .not("family", "is", null);
+      if (error) throw error;
+      const out = Array.from(
+        new Set((data ?? []).map((r) => String((r as { family?: string | null }).family ?? ""))),
+      )
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+      return out;
+    },
+  });
+
+  const familyStats = useQuery({
+    queryKey: ["lands-family-stats", family, status, search],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "lands_family_stats" as never,
+        {
+          family_text: family === "all" ? "" : family,
+          status_filter: status,
+          search_text: search,
+        } as never,
+      );
+      if (error) throw error;
+      const row = (data as unknown as Array<Record<string, unknown>> | null)?.[0] ?? {};
+      return {
+        landsCount: Number(row.lands_count ?? 0),
+        totalAnnualRent: Number(row.total_annual_rent ?? 0),
+        activeCount: Number(row.active_count ?? 0),
+        disputedCount: Number(row.disputed_count ?? 0),
+        leasedCount: Number(row.leased_count ?? 0),
+      };
+    },
+  });
 
   const owners = useQuery({
     queryKey: ["landowners-mini"],
@@ -115,19 +159,21 @@ function LandsPage() {
   });
 
   const lands = useQuery({
-    queryKey: ["lands", search, status, page],
+    queryKey: ["lands", search, status, family, routeSearch.ownerId, page],
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("lands")
         .select(
-          "id, land_code, plot_number, size_value, size_unit, status, annual_rent_amount, location_description, current_owner_id, landowners(full_name)",
+          "id, land_code, plot_number, family, size_value, size_unit, status, annual_rent_amount, location_description, current_owner_id, landowners(full_name)",
           { count: "exact" },
         )
         .order("land_code");
       if (search) q = q.or(`land_code.ilike.%${search}%,plot_number.ilike.%${search}%`);
       if (status !== "all") q = q.eq("status", status);
+      if (family !== "all") q = q.eq("family", family);
+      if (routeSearch.ownerId) q = q.eq("current_owner_id", routeSearch.ownerId as string);
       const { data, count, error } = await q.range(from, to);
       if (error) throw error;
       return { rows: data ?? [], count: count ?? 0 };
@@ -656,7 +702,7 @@ function LandsPage() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">All lands</CardTitle>
+          <CardTitle className="text-base">Lands</CardTitle>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -678,9 +724,55 @@ function LandsPage() {
                 <SelectItem value="leased">Leased</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={family} onValueChange={(v) => setFamily(v)}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="All families" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All families</SelectItem>
+                {(families.data ?? []).map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Lands</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading ? "—" : (familyStats.data?.landsCount ?? 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Annual rent</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading
+                  ? "—"
+                  : formatCurrency(familyStats.data?.totalAnnualRent ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Active</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading
+                  ? "—"
+                  : (familyStats.data?.activeCount ?? 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-md border border-border bg-muted/20 p-3">
+              <p className="text-xs text-muted-foreground">Disputed / Leased</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {familyStats.isLoading
+                  ? "—"
+                  : `${(familyStats.data?.disputedCount ?? 0).toLocaleString()} / ${(familyStats.data?.leasedCount ?? 0).toLocaleString()}`}
+              </p>
+            </div>
+          </div>
+
           {lands.isLoading ? (
             <TableSkeleton columns={7} rows={6} />
           ) : (lands.data?.rows ?? []).length === 0 ? (
