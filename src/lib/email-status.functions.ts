@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 export type EmailDomainStatus = {
   configured: boolean;
@@ -12,6 +13,26 @@ export type EmailDomainStatus = {
   detail: string;
 };
 
+type EmailSendLogRow = {
+  id: string;
+  message_id: string | null;
+  status: string;
+  created_at: string;
+};
+
+type EmailDatabase = Database & {
+  public: Database["public"] & {
+    Tables: Database["public"]["Tables"] & {
+      email_send_log: {
+        Row: EmailSendLogRow;
+        Insert: Partial<EmailSendLogRow>;
+        Update: Partial<EmailSendLogRow>;
+        Relationships: [];
+      };
+    };
+  };
+};
+
 export const getEmailDomainStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<EmailDomainStatus> => {
@@ -20,7 +41,7 @@ export const getEmailDomainStatus = createServerFn({ method: "GET" })
     const SERVICE_KEY =
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY!;
 
-    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const admin = createClient<EmailDatabase>(SUPABASE_URL, SERVICE_KEY);
 
     // Probe email_send_log – its presence indicates infra has been set up.
     const { error: probeError } = await admin
@@ -60,11 +81,11 @@ export const getEmailDomainStatus = createServerFn({ method: "GET" })
         .limit(1),
     ]);
 
-    const uniq = (rows: { message_id: string | null }[] | null) =>
+    const uniq = (rows: Array<{ message_id: string | null }> | null) =>
       new Set((rows ?? []).map((r) => r.message_id).filter(Boolean)).size;
 
-    const recentSends = uniq(sentRows as any);
-    const recentFailures = uniq(failedRows as any);
+    const recentSends = uniq(sentRows ?? null);
+    const recentFailures = uniq(failedRows ?? null);
     const lastSendAt = latest?.[0]?.created_at ?? null;
     const verified = recentSends > 0;
 

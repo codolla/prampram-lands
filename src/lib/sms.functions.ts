@@ -4,6 +4,17 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { CONTACT_LINE } from "@/lib/contact";
 
 type Provider = "arkesel" | "hubtel" | "mnotify";
+type AppSettingsRow = {
+  arkesel_api_key: string | null;
+  hubtel_client_id: string | null;
+  hubtel_client_secret: string | null;
+  mnotify_api_key: string | null;
+  payment_template: string;
+  reminder_cooldown_days: number;
+  reminder_template: string;
+  sms_provider: string;
+  sms_sender_id: string;
+};
 
 function normalizePhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -340,190 +351,259 @@ export const sendPaymentNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    const { data: roleRows, error: roleErr } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (roleErr) throw new Error(roleErr.message);
-    const roles = new Set((roleRows ?? []).map((r) => r.role));
-    if (!roles.has("admin") && !roles.has("developer") && !roles.has("finance")) {
-      throw new Error("Only admins, developers and finance can send payment notifications.");
-    }
-
-    if (!data.paymentId) throw new Error("paymentId is required");
-
-    const { data: payment, error: payErr } = await supabase
-      .from("payments")
-      .select(
-        "id, bill_id, amount, paid_at, method, receipt_number, bills(billing_year, lands(land_code, plot_number, landowners(id, full_name, phone, email)))",
-      )
-      .eq("id", data.paymentId)
-      .single();
-    if (payErr || !payment) throw new Error(payErr?.message ?? "Payment not found");
-
-    const bill = payment.bills as unknown as {
-      billing_year: number;
-      lands: {
-        land_code: string;
-        plot_number: string | null;
-        landowners: {
-          id: string;
-          full_name: string | null;
-          phone: string | null;
-          email: string | null;
-        } | null;
-      } | null;
+    const empty = {
+      ok: false,
+      error: "Unknown error",
+      sent: 0,
+      failed: 0,
+      skipped: 0,
+      emailSent: 0,
+      emailFailed: 0,
+      emailSkipped: 0,
     };
 
-    const landCode = bill?.lands?.land_code ?? "Land";
-    const plotNumber = bill?.lands?.plot_number ?? "—";
-    const ownerName = bill?.lands?.landowners?.full_name ?? "Customer";
-
-    const { data: settings, error: sErr } = await supabaseAdmin
-      .from("app_settings")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
-    if (sErr || !settings) {
-      return { ok: false, error: "SMS settings not configured.", sent: 0, failed: 0, skipped: 0 };
-    }
-
-    const provider = settings.sms_provider as Provider;
-    const sender = settings.sms_sender_id || "PLS";
-    const template =
-      settings.payment_template ||
-      "Payment received: {owner} paid GHS {amount} for {land} ({year}). Receipt: {receipt}. Thank you.";
-
-    const credErr = (() => {
-      if (provider === "arkesel" && !settings.arkesel_api_key) return "Arkesel API key is not set.";
-      if (provider === "hubtel" && (!settings.hubtel_client_id || !settings.hubtel_client_secret)) {
-        return "Hubtel client ID/secret is not set.";
-      }
-      if (provider === "mnotify" && !settings.mnotify_api_key) return "mNotify API key is not set.";
-      return null;
-    })();
-    if (credErr) return { ok: false, error: credErr, sent: 0, failed: 0, skipped: 0 };
-
-    const dispatch = async (to: string, message: string) => {
-      if (provider === "arkesel") {
-        return sendArkesel({ apiKey: settings.arkesel_api_key!, sender, to, message });
-      }
-      if (provider === "hubtel") {
-        return sendHubtel({
-          clientId: settings.hubtel_client_id!,
-          clientSecret: settings.hubtel_client_secret!,
-          sender,
-          to,
-          message,
-        });
-      }
-      return sendMnotify({ apiKey: settings.mnotify_api_key!, sender, to, message });
-    };
-
-    const message = renderTemplate(template, {
-      owner: ownerName,
-      amount: Number(payment.amount).toFixed(2),
-      land: `${landCode} · Plot ${plotNumber}`,
-      year: bill?.billing_year ?? "",
-      receipt: payment.receipt_number,
-      method: String(payment.method).toUpperCase(),
-      date: payment.paid_at,
-    });
-
-    const byRole = async (role: "admin" | "manager") => {
-      const { data: rows, error } = await supabase
+    try {
+      const { data: roleRows, error: roleErr } = await supabase
         .from("user_roles")
-        .select("user_id")
-        .eq("role", role);
-      if (error) throw error;
-      const ids = Array.from(new Set((rows ?? []).map((r) => r.user_id)));
-      if (ids.length === 0) return [];
-      const { data: profs, error: pErr } = await supabase
-        .from("profiles")
-        .select("id, phone")
-        .in("id", ids);
-      if (pErr) throw pErr;
-      return (profs ?? []).map((p) => normalizePhone(p.phone)).filter(Boolean) as string[];
-    };
-
-    const recipients = new Map<string, { kind: "customer" | "admin" | "manager" }>();
-
-    const customerPhone = normalizePhone(bill?.lands?.landowners?.phone);
-    if (customerPhone) recipients.set(customerPhone, { kind: "customer" });
-
-    for (const p of await byRole("admin")) {
-      if (!recipients.has(p)) recipients.set(p, { kind: "admin" });
-    }
-
-    const managerThreshold = 1000;
-    const ghHour = Number(
-      new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
-        hourCycle: "h23",
-        timeZone: "Africa/Accra",
-      }).format(new Date()),
-    );
-    const managerQuietHours = ghHour >= 17 || ghHour < 7;
-    if (Number(payment.amount) <= managerThreshold && !managerQuietHours) {
-      for (const p of await byRole("manager")) {
-        if (!recipients.has(p)) recipients.set(p, { kind: "manager" });
+        .select("role")
+        .eq("user_id", userId);
+      if (roleErr) return { ...empty, error: roleErr.message };
+      const roles = new Set(
+        (roleRows ?? []).map((r) => String((r as unknown as { role: string }).role)),
+      );
+      if (
+        !roles.has("admin") &&
+        !roles.has("developer") &&
+        !roles.has("finance") &&
+        !roles.has("manager")
+      ) {
+        return {
+          ...empty,
+          error: "Only admins, developers, finance and managers can send payment notifications.",
+        };
       }
-    }
 
-    let sent = 0;
-    let failed = 0;
-    let skipped = 0;
-    let emailSent = 0;
-    let emailFailed = 0;
-    let emailSkipped = 0;
+      if (!data.paymentId) return { ...empty, error: "paymentId is required" };
 
-    const landownerId = bill?.lands?.landowners?.id ?? null;
+      const { data: payment, error: payErr } = await supabase
+        .from("payments")
+        .select(
+          "id, bill_id, amount, paid_at, method, receipt_number, bills(billing_year, lands(land_code, plot_number, landowners(id, full_name, phone, email)))",
+        )
+        .eq("id", data.paymentId)
+        .single();
+      if (payErr || !payment) return { ...empty, error: payErr?.message ?? "Payment not found" };
 
-    for (const [phone, meta] of recipients.entries()) {
-      const r = await dispatch(phone, message);
-      await supabase.from("sms_logs").insert({
-        bill_id: payment.bill_id,
-        landowner_id: meta.kind === "customer" ? landownerId : null,
-        phone,
-        message,
-        provider,
-        status: r.ok ? "sent" : "failed",
-        provider_response: r.response,
-        sent_by: userId,
+      const bill = payment.bills as unknown as {
+        billing_year: number;
+        lands: {
+          land_code: string;
+          plot_number: string | null;
+          landowners: {
+            id: string;
+            full_name: string | null;
+            phone: string | null;
+            email: string | null;
+          } | null;
+        } | null;
+      };
+
+      const landCode = bill?.lands?.land_code ?? "Land";
+      const plotNumber = bill?.lands?.plot_number ?? "—";
+      const ownerName = bill?.lands?.landowners?.full_name ?? "Customer";
+
+      let settings: AppSettingsRow | null = null;
+      let settingsErr: unknown | null = null;
+      try {
+        const r = await supabaseAdmin.from("app_settings").select("*").limit(1).maybeSingle();
+        settings = (r.data as AppSettingsRow | null) ?? null;
+        settingsErr = r.error ?? null;
+      } catch (e) {
+        settingsErr = e;
+        settings = null;
+      }
+      if (settingsErr || !settings) {
+        const r = await supabase.from("app_settings").select("*").limit(1).maybeSingle();
+        settings = (r.data as AppSettingsRow | null) ?? null;
+        settingsErr = r.error ?? null;
+      }
+      if (settingsErr || !settings) {
+        return {
+          ...empty,
+          error:
+            "SMS settings not configured (or server env missing). Ensure SUPABASE_SERVICE_ROLE_KEY and SMS settings are set.",
+        };
+      }
+
+      const provider = (settings.sms_provider as Provider) ?? "mnotify";
+      const sender = settings.sms_sender_id || "PLS";
+      const template =
+        settings.payment_template ||
+        "Payment received: {owner} paid GHS {amount} for {land} ({year}). Receipt: {receipt}. Thank you.";
+
+      const credErr = (() => {
+        if (provider === "arkesel" && !settings.arkesel_api_key)
+          return "Arkesel API key is not set.";
+        if (
+          provider === "hubtel" &&
+          (!settings.hubtel_client_id || !settings.hubtel_client_secret)
+        ) {
+          return "Hubtel client ID/secret is not set.";
+        }
+        if (provider === "mnotify" && !settings.mnotify_api_key)
+          return "mNotify API key is not set.";
+        return null;
+      })();
+      if (credErr) return { ...empty, error: credErr };
+
+      const dispatch = async (to: string, message: string) => {
+        if (provider === "arkesel") {
+          return sendArkesel({ apiKey: settings.arkesel_api_key!, sender, to, message });
+        }
+        if (provider === "hubtel") {
+          return sendHubtel({
+            clientId: settings.hubtel_client_id!,
+            clientSecret: settings.hubtel_client_secret!,
+            sender,
+            to,
+            message,
+          });
+        }
+        return sendMnotify({ apiKey: settings.mnotify_api_key!, sender, to, message });
+      };
+
+      const message = renderTemplate(template, {
+        owner: ownerName,
+        amount: Number(payment.amount).toFixed(2),
+        land: `${landCode} · Plot ${plotNumber}`,
+        year: bill?.billing_year ?? "",
+        receipt: payment.receipt_number,
+        method: String(payment.method).toUpperCase(),
+        date: payment.paid_at,
       });
-      if (r.ok) sent++;
-      else failed++;
+
+      const byRole = async (role: "admin" | "manager") => {
+        try {
+          const { data: rows, error } = await supabaseAdmin
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", role);
+          if (error) return [];
+          const ids = Array.from(new Set((rows ?? []).map((r) => r.user_id)));
+          if (ids.length === 0) return [];
+          const { data: profs, error: pErr } = await supabaseAdmin
+            .from("profiles")
+            .select("id, phone")
+            .in("id", ids);
+          if (pErr) return [];
+          return (profs ?? []).map((p) => normalizePhone(p.phone)).filter(Boolean) as string[];
+        } catch {
+          const { data: rows, error } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", role);
+          if (error) return [];
+          const ids = Array.from(new Set((rows ?? []).map((r) => r.user_id)));
+          if (ids.length === 0) return [];
+          const { data: profs, error: pErr } = await supabase
+            .from("profiles")
+            .select("id, phone")
+            .in("id", ids);
+          if (pErr) return [];
+          return (profs ?? []).map((p) => normalizePhone(p.phone)).filter(Boolean) as string[];
+        }
+      };
+
+      const recipients = new Map<string, { kind: "customer" | "admin" | "manager" }>();
+
+      const landownerId = bill?.lands?.landowners?.id ?? null;
+      let customerPhone = normalizePhone(bill?.lands?.landowners?.phone);
+      if (!customerPhone && landownerId) {
+        const { data: rows } = await supabase
+          .from("landowner_phones" as never)
+          .select("phone")
+          .filter("landowner_id", "eq", landownerId)
+          .filter("is_primary", "eq", true)
+          .limit(1);
+        const p =
+          ((rows as unknown as Array<{ phone: string | null }> | null) ?? null)?.[0]?.phone ?? null;
+        customerPhone = normalizePhone(p);
+      }
+      if (customerPhone) recipients.set(customerPhone, { kind: "customer" });
+
+      for (const p of await byRole("admin")) {
+        if (!recipients.has(p)) recipients.set(p, { kind: "admin" });
+      }
+
+      const managerThreshold = 1000;
+      const ghHour = Number(
+        new Intl.DateTimeFormat("en-GB", {
+          hour: "2-digit",
+          hourCycle: "h23",
+          timeZone: "Africa/Accra",
+        }).format(new Date()),
+      );
+      const managerQuietHours = ghHour >= 17 || ghHour < 7;
+      if (Number(payment.amount) <= managerThreshold && !managerQuietHours) {
+        for (const p of await byRole("manager")) {
+          if (!recipients.has(p)) recipients.set(p, { kind: "manager" });
+        }
+      }
+
+      let sent = 0;
+      let failed = 0;
+      let skipped = 0;
+      let emailSent = 0;
+      let emailFailed = 0;
+      let emailSkipped = 0;
+
+      for (const [phone, meta] of recipients.entries()) {
+        const r = await dispatch(phone, message);
+        await supabase.from("sms_logs").insert({
+          bill_id: payment.bill_id,
+          landowner_id: meta.kind === "customer" ? landownerId : null,
+          phone,
+          message,
+          provider,
+          status: r.ok ? "sent" : "failed",
+          provider_response: r.response,
+          sent_by: userId,
+        });
+        if (r.ok) sent++;
+        else failed++;
+      }
+
+      if (recipients.size === 0) skipped = 1;
+
+      const toEmail = normalizeEmail(bill?.lands?.landowners?.email);
+      const emailCfg = emailConfig();
+      if (toEmail && emailCfg) {
+        const subject = `Payment received · ${landCode} (${bill?.billing_year ?? ""})`;
+        const text = `${message}\n\nContact: ${CONTACT_LINE}\n`;
+        const er = await sendResendEmail({
+          apiKey: emailCfg.apiKey,
+          from: emailCfg.from,
+          to: toEmail,
+          subject,
+          text,
+        });
+        if (er.ok) emailSent++;
+        else emailFailed++;
+      } else {
+        emailSkipped++;
+      }
+
+      return {
+        ok: failed === 0 && emailFailed === 0,
+        error: failed === 0 && emailFailed === 0 ? null : "Some notifications failed.",
+        sent,
+        failed,
+        skipped,
+        emailSent,
+        emailFailed,
+        emailSkipped,
+      };
+    } catch (e) {
+      return { ...empty, error: e instanceof Error ? e.message : "Unknown error" };
     }
-
-    if (recipients.size === 0) skipped = 1;
-
-    const toEmail = normalizeEmail(bill?.lands?.landowners?.email);
-    const emailCfg = emailConfig();
-    if (toEmail && emailCfg) {
-      const subject = `Payment received · ${landCode} (${bill?.billing_year ?? ""})`;
-      const text = `${message}\n\nContact: ${CONTACT_LINE}\n`;
-      const er = await sendResendEmail({
-        apiKey: emailCfg.apiKey,
-        from: emailCfg.from,
-        to: toEmail,
-        subject,
-        text,
-      });
-      if (er.ok) emailSent++;
-      else emailFailed++;
-    } else {
-      emailSkipped++;
-    }
-
-    return {
-      ok: failed === 0 && emailFailed === 0,
-      error: failed === 0 && emailFailed === 0 ? null : "Some notifications failed.",
-      sent,
-      failed,
-      skipped,
-      emailSent,
-      emailFailed,
-      emailSkipped,
-    };
   });
