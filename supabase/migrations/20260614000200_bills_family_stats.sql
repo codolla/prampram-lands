@@ -28,7 +28,11 @@ AS $$
     JOIN public.lands l ON l.id = b.land_id
     CROSS JOIN params p
     WHERE
-      (p.fam IS NULL OR l.family = p.fam)
+      (
+        p.fam IS NULL
+        OR (p.fam = '__other__' AND (l.family IS NULL OR BTRIM(l.family) = ''))
+        OR (p.fam <> '__other__' AND l.family = p.fam)
+      )
       AND (p.st = 'all' OR b.status::text = p.st)
   ),
   paid AS (

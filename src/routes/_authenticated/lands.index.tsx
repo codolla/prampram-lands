@@ -172,7 +172,10 @@ function LandsPage() {
         .order("land_code");
       if (search) q = q.or(`land_code.ilike.%${search}%,plot_number.ilike.%${search}%`);
       if (status !== "all") q = q.eq("status", status);
-      if (family !== "all") q = q.eq("family", family);
+      if (family !== "all") {
+        if (family === "__other__") q = q.or("family.is.null,family.eq.");
+        else q = q.eq("family", family);
+      }
       if (routeSearch.ownerId) q = q.eq("current_owner_id", routeSearch.ownerId as string);
       const { data, count, error } = await q.range(from, to);
       if (error) throw error;
@@ -730,6 +733,7 @@ function LandsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All families</SelectItem>
+                <SelectItem value="__other__">Others</SelectItem>
                 {(families.data ?? []).map((f) => (
                   <SelectItem key={f} value={f}>
                     {f}

@@ -109,7 +109,13 @@ function BillsPage() {
         )
         .order("issued_at", { ascending: false });
       if (status !== "all") q = q.eq("status", status);
-      if (family !== "all") q = q.eq("lands.family", family);
+      if (family !== "all") {
+        if (family === "__other__") {
+          q = q.or("family.is.null,family.eq.", { foreignTable: "lands" } as never);
+        } else {
+          q = q.eq("lands.family", family);
+        }
+      }
       const { data, count, error } = await q.range(from, to);
       if (error) throw error;
       return { rows: data ?? [], count: count ?? 0 };
@@ -397,6 +403,7 @@ function BillsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All families</SelectItem>
+                <SelectItem value="__other__">Others</SelectItem>
                 {(families.data ?? []).map((f) => (
                   <SelectItem key={f} value={f}>
                     {f}
