@@ -108,6 +108,11 @@ function BillDetail() {
   const totalPaid = (payments.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
   const outstanding = Math.max(0, Number(bill.data?.amount ?? 0) - totalPaid);
   const isFullyPaid = outstanding <= 0 && Number(bill.data?.amount ?? 0) > 0;
+  const canPrint =
+    (payments.data ?? []).length > 0 ||
+    isFullyPaid ||
+    bill.data?.status === "paid" ||
+    bill.data?.status === "partial";
 
   const ownerId = land?.landowners?.id ?? land?.current_owner_id ?? null;
   const advance = useQuery<number>({
@@ -345,9 +350,11 @@ function BillDetail() {
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between">
               <span>Invoice</span>
-              <Button size="sm" variant="outline" onClick={() => window.print()}>
-                <Printer className="mr-1 h-4 w-4" /> Print
-              </Button>
+              {canPrint ? (
+                <Button size="sm" variant="outline" onClick={() => window.print()}>
+                  <Printer className="mr-1 h-4 w-4" /> Print
+                </Button>
+              ) : null}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 print:p-8">

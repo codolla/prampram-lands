@@ -488,6 +488,9 @@ function buildLmcReportPdfElement(opts: {
   from: string;
   to: string;
   total: number;
+  contractor: number;
+  committee: number;
+  family: number;
   rows: ReportPaymentRow[];
 }) {
   const generatedAt = new Date().toISOString().slice(0, 16).replace("T", " ");
@@ -539,6 +542,21 @@ function buildLmcReportPdfElement(opts: {
               <div class="pdf-section-title" style="margin:0 0 6px 0;">Total collected</div>
               <div class="pdf-total-big">${escapeHtml(formatCurrency(opts.total))}</div>
             </div>
+          </div>
+        </div>
+
+        <div class="pdf-metrics">
+          <div class="pdf-metric">
+            <div class="pdf-metric-label">Revenue contractor (30%)</div>
+            <div class="pdf-metric-value">${escapeHtml(formatCurrency(opts.contractor))}</div>
+          </div>
+          <div class="pdf-metric">
+            <div class="pdf-metric-label">Land management committee (20%)</div>
+            <div class="pdf-metric-value">${escapeHtml(formatCurrency(opts.committee))}</div>
+          </div>
+          <div class="pdf-metric">
+            <div class="pdf-metric-label">Family (50%)</div>
+            <div class="pdf-metric-value">${escapeHtml(formatCurrency(opts.family))}</div>
           </div>
         </div>
 
@@ -763,6 +781,14 @@ function ReportsPage() {
     () => (lmcPaymentsQ.data ?? []).reduce((s, p) => s + Number(p.amount ?? 0), 0),
     [lmcPaymentsQ.data],
   );
+
+  const lmcTotals = useMemo(() => {
+    const total = lmcTotal;
+    const contractor = Math.round(total * 0.3 * 100) / 100;
+    const committee = Math.round(total * 0.2 * 100) / 100;
+    const family = Math.round(total * 0.5 * 100) / 100;
+    return { total, contractor, committee, family };
+  }, [lmcTotal]);
 
   useEffect(() => {
     setLmcPage(1);
@@ -1257,7 +1283,10 @@ function ReportsPage() {
                       label: lmcRange.label,
                       from: lmcRange.from,
                       to: lmcRange.to,
-                      total: lmcTotal,
+                      total: lmcTotals.total,
+                      contractor: lmcTotals.contractor,
+                      committee: lmcTotals.committee,
+                      family: lmcTotals.family,
                       rows: lmcPaymentsQ.data ?? [],
                     });
                     document.body.appendChild(exportEl);
@@ -1360,7 +1389,30 @@ function ReportsPage() {
                     Total
                   </div>
                   <div className="mt-1 text-lg font-semibold tabular-nums">
-                    {formatCurrency(lmcTotal)}
+                    {formatCurrency(lmcTotals.total)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">Revenue contractor (30%)</div>
+                  <div className="mt-1 font-semibold tabular-nums">
+                    {formatCurrency(lmcTotals.contractor)}
+                  </div>
+                </div>
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">
+                    Land management committee (20%)
+                  </div>
+                  <div className="mt-1 font-semibold tabular-nums">
+                    {formatCurrency(lmcTotals.committee)}
+                  </div>
+                </div>
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">Family (50%)</div>
+                  <div className="mt-1 font-semibold tabular-nums">
+                    {formatCurrency(lmcTotals.family)}
                   </div>
                 </div>
               </div>
