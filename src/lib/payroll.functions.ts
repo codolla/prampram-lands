@@ -53,6 +53,24 @@ export const generatePayrollRun = createServerFn({ method: "POST" })
       .select("*")
       .eq("active", true);
 
+    const periodStart = new Date(Date.UTC(run.period_year, run.period_month - 1, 1));
+    const periodEnd = new Date(Date.UTC(run.period_year, run.period_month, 1));
+    const { data: assists, error: assistsErr } = await supabase
+      .from("registration_assists" as never)
+      .select("staff_id, amount, created_at" as never)
+      .gte("created_at", periodStart.toISOString() as never)
+      .lt("created_at", periodEnd.toISOString() as never);
+    if (assistsErr) throw assistsErr;
+    const assistSumByStaff = new Map<string, number>();
+    for (const a of (assists ?? []) as unknown as Array<{
+      staff_id: string;
+      amount: number;
+      created_at: string;
+    }>) {
+      const prev = assistSumByStaff.get(a.staff_id) ?? 0;
+      assistSumByStaff.set(a.staff_id, prev + Number(a.amount ?? 0));
+    }
+
     // wipe existing payslips for this run
     await supabase.from("payslips").delete().eq("run_id", runId);
 
@@ -86,6 +104,11 @@ export const generatePayrollRun = createServerFn({ method: "POST" })
         const entry = { name: c.name, amount, code: c.code };
         if (c.type === "earning") earnings.push(entry);
         else deductions.push(entry);
+      }
+
+      const assistAmount = Math.round((assistSumByStaff.get(String(s.id)) ?? 0) * 100) / 100;
+      if (assistAmount > 0) {
+        earnings.push({ name: "Registration assist", amount: assistAmount, code: "REG_ASSIST" });
       }
 
       const totalEarnings = earnings.reduce((a, b) => a + b.amount, 0);

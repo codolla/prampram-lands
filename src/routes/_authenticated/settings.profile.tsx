@@ -42,6 +42,20 @@ function ProfilePage() {
     },
   });
 
+  const staff = useQuery<{ employee_number: string | null } | null>({
+    queryKey: ["my-staff-id", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payroll_staff")
+        .select("employee_number")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as { employee_number: string | null } | null;
+    },
+  });
+
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -178,6 +192,10 @@ function ProfilePage() {
                     Optional — for receipts and notifications. Your phone number is your sign-in
                     identifier.
                   </p>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Staff ID</Label>
+                  <Input value={staff.data?.employee_number ?? "—"} readOnly />
                 </div>
                 <div className="flex justify-end">
                   <Button onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending}>

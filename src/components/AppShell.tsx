@@ -82,7 +82,12 @@ const NAV = [
     roles: ["admin", "manager", "staff", "finance"],
   },
   { to: "/payments", label: "Payments", icon: CreditCard, roles: ["admin", "manager"] },
-  { to: "/payroll", label: "Payroll", icon: Wallet, roles: ["admin", "manager"] },
+  {
+    to: "/payroll",
+    label: "Payroll",
+    icon: Wallet,
+    roles: ["admin", "manager", "finance", "staff"],
+  },
   { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
 ] as const;
 

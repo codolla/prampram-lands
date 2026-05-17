@@ -69,6 +69,7 @@ type UserRow = {
   phone?: string | null;
   avatar_url?: string | null;
   roles: AppRole[];
+  staff_id: string | null;
 };
 
 async function friendlyEdgeFunctionError(error: unknown, response?: Response): Promise<string> {
@@ -154,9 +155,23 @@ function UsersPage() {
         arr.push(r.role as AppRole);
         byUser.set(r.user_id, arr);
       }
+      const staffRes =
+        ids.length === 0
+          ? { data: [], error: null as unknown as null }
+          : await supabase
+              .from("payroll_staff")
+              .select("user_id, employee_number")
+              .in("user_id", ids);
+      if (staffRes.error) throw staffRes.error;
+      const staffByUser = new Map<string, string | null>();
+      for (const s of staffRes.data ?? []) {
+        if (!s.user_id) continue;
+        staffByUser.set(s.user_id, s.employee_number ?? null);
+      }
       const rows = (profilesRes.data ?? []).map((p) => ({
         ...p,
         roles: byUser.get(p.id) ?? [],
+        staff_id: staffByUser.get(p.id) ?? null,
       })) as UserRow[];
       return { rows, count: profilesRes.count ?? 0 };
     },
@@ -223,6 +238,7 @@ function UsersPage() {
                 <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                   <th className="pb-2">User</th>
                   <th className="pb-2">Email</th>
+                  <th className="pb-2">Staff ID</th>
                   <th className="pb-2">Roles</th>
                   <th className="pb-2 text-right">Manage</th>
                 </tr>
@@ -244,6 +260,7 @@ function UsersPage() {
                       </div>
                     </td>
                     <td className="py-2 text-muted-foreground">{u.email ?? "—"}</td>
+                    <td className="py-2 font-mono text-xs">{u.staff_id ?? "—"}</td>
                     <td className="py-2">
                       <div className="flex flex-wrap gap-1">
                         {u.roles.length === 0 ? (

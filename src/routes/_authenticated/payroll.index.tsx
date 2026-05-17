@@ -59,6 +59,45 @@ function PayrollIndex() {
   const [runsPage, setRunsPage] = useState(1);
   const [slipsPage, setSlipsPage] = useState(1);
 
+  const myStaff = useQuery<{ id: string; employee_number: string | null } | null>({
+    queryKey: ["my_payroll_staff", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payroll_staff")
+        .select("id, employee_number")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as { id: string; employee_number: string | null } | null;
+    },
+  });
+
+  const myRegistrationEarnings = useQuery<{
+    totalAmount: number;
+    totalCount: number;
+    monthAmount: number;
+    monthCount: number;
+  } | null>({
+    queryKey: ["my_registration_assists", myStaff.data?.id],
+    enabled: !!myStaff.data?.id,
+    queryFn: async () => {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const { data, error } = await supabase
+        .from("registration_assists" as never)
+        .select("amount, created_at" as never)
+        .eq("staff_id", myStaff.data!.id as never);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as Array<{ amount: number; created_at: string }>;
+      const totalAmount = rows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+      const totalCount = rows.length;
+      const monthRows = rows.filter((r) => new Date(r.created_at) >= monthStart);
+      const monthAmount = monthRows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+      const monthCount = monthRows.length;
+      return { totalAmount, totalCount, monthAmount, monthCount };
+    },
+  });
+
   const { data: runs, isLoading } = useQuery<{ rows: PayrollRunRow[]; count: number }>({
     queryKey: ["payroll_runs", runsPage],
     enabled: canManage,
@@ -292,6 +331,47 @@ function PayrollIndex() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Registration earnings</CardTitle>
+            <CardDescription>
+              {myStaff.data?.employee_number
+                ? `Your staff ID: ${myStaff.data.employee_number}`
+                : "Your staff ID will appear here once it has been assigned."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!myStaff.data?.id ? (
+              <p className="text-sm text-muted-foreground">
+                No staff record is linked to your account yet.
+              </p>
+            ) : myRegistrationEarnings.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">This month</div>
+                  <div className="mt-1 text-lg font-semibold tabular-nums">
+                    {formatCurrency(myRegistrationEarnings.data?.monthAmount ?? 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {myRegistrationEarnings.data?.monthCount ?? 0} registrations
+                  </div>
+                </div>
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">All time</div>
+                  <div className="mt-1 text-lg font-semibold tabular-nums">
+                    {formatCurrency(myRegistrationEarnings.data?.totalAmount ?? 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {myRegistrationEarnings.data?.totalCount ?? 0} registrations
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

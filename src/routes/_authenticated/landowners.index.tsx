@@ -55,28 +55,64 @@ export const Route = createFileRoute("/_authenticated/landowners/")({
 
 const PAGE_SIZE = 25;
 
+const ID_TYPE_LABEL: Record<string, string> = {
+  ghana_card: "Ghana Card",
+  nhis: "Health insurance",
+  drivers_license: "Driver’s license",
+  passport: "Passport",
+};
+
+function formatIdentity(type: string | null, number: string | null): string {
+  if (!number) return "—";
+  const label = type ? (ID_TYPE_LABEL[type] ?? type) : "ID";
+  return `${label}: ${number}`;
+}
+
 type LandownerListRow = {
   id: string;
   full_name: string;
   phone: string | null;
   email: string | null;
   address: string | null;
-  national_id: string | null;
+  identity_type: string | null;
+  identity_number: string | null;
   avatar_url: string | null;
   created_at: string;
   has_land: boolean;
   total_count: number;
 };
 
+type LandownersSearch = {
+  q: string;
+  mode: "unlinked" | "linked" | "all";
+  page: number;
+  pageSize: number;
+};
+
+function normalizeLandownersSearch(
+  prev: unknown,
+  patch: Partial<LandownersSearch>,
+): LandownersSearch {
+  const p = (prev ?? {}) as Partial<LandownersSearch>;
+  const mode: LandownersSearch["mode"] =
+    p.mode === "linked" || p.mode === "all" || p.mode === "unlinked" ? p.mode : "unlinked";
+
+  return {
+    q: typeof p.q === "string" ? p.q : "",
+    mode,
+    page: Number.isFinite(Number(p.page)) && Number(p.page) > 0 ? Number(p.page) : 1,
+    pageSize:
+      Number.isFinite(Number(p.pageSize)) && Number(p.pageSize) > 0
+        ? Number(p.pageSize)
+        : PAGE_SIZE,
+    ...patch,
+  };
+}
+
 function LandownersPage() {
   const qc = useQueryClient();
   const navigate = Route.useNavigate();
-  const routeSearch = Route.useSearch() as unknown as {
-    q: string;
-    mode: "unlinked" | "linked" | "all";
-    page: number;
-    pageSize: number;
-  };
+  const routeSearch = Route.useSearch() as unknown as LandownersSearch;
   const search = routeSearch.q ?? "";
   const filterMode = routeSearch.mode ?? "unlinked";
   const page = routeSearch.page ?? 1;
@@ -131,7 +167,9 @@ function LandownersPage() {
     phone: "",
     email: "",
     address: "",
-    national_id: "",
+    identity_type: "" as "" | "ghana_card" | "nhis" | "drivers_license" | "passport",
+    identity_number: "",
+    staff_id: "",
     notes: "",
     avatar_url: "" as string | null | "",
   });
@@ -141,18 +179,36 @@ function LandownersPage() {
       if (!form.full_name.trim()) throw new Error("Full name is required");
       if (form.phone.trim() && !looksLikePhone(form.phone.trim()))
         throw new Error("Enter a valid phone number");
+      if (!form.identity_type) throw new Error("Select an identity type");
+      if (!form.identity_number.trim()) throw new Error("Identity number is required");
+
+      const staffRef = form.staff_id.trim();
+      let staffRow: { id: string } | null = null;
+      if (staffRef) {
+        const { data, error } = await supabase
+          .from("payroll_staff")
+          .select("id")
+          .eq("employee_number", staffRef)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data?.id) throw new Error("Staff ID not found");
+        staffRow = { id: data.id };
+      }
+
       const payload = {
         full_name: form.full_name.trim(),
         phone: form.phone.trim() ? normalisePhone(form.phone.trim()) : null,
         email: form.email || null,
         address: form.address || null,
-        national_id: form.national_id || null,
+        identity_type: form.identity_type,
+        identity_number: form.identity_number.trim(),
+        national_id: null,
         notes: form.notes || null,
         avatar_url: form.avatar_url || null,
       };
       const { data, error } = await supabase
         .from("landowners")
-        .insert(payload)
+        .insert(payload as never)
         .select("id")
         .single();
       if (error) throw error;
@@ -167,6 +223,13 @@ function LandownersPage() {
         if (phoneErr) throw phoneErr;
       }
 
+      if (staffRow?.id) {
+        const { error: assistErr } = await supabase
+          .from("registration_assists" as never)
+          .insert([{ staff_id: staffRow.id, landowner_id: data.id, amount: 10 }] as never);
+        if (assistErr) throw assistErr;
+      }
+
       return data as { id: string };
     },
     onSuccess: (row) => {
@@ -177,7 +240,9 @@ function LandownersPage() {
         phone: "",
         email: "",
         address: "",
-        national_id: "",
+        identity_type: "",
+        identity_number: "",
+        staff_id: "",
         notes: "",
         avatar_url: "",
       });
@@ -250,7 +315,7 @@ function LandownersPage() {
                 <DialogTitle>Bulk import landowners</DialogTitle>
                 <DialogDescription>
                   Upload a CSV or Excel file with headers: full_name, phone, email, address,
-                  national_id, notes
+                  identity_type, identity_number, notes
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
@@ -301,9 +366,15 @@ function LandownersPage() {
                       if (parsed.length === 0) throw new Error("No rows found in file");
 
                       let skippedNoPhone = 0;
+                      let skippedNoIdentity = 0;
                       const withPhone = parsed.filter((r) => {
                         if (!r.phone) {
                           skippedNoPhone += 1;
+                          return false;
+                        }
+                        const idNum = r.identity_number ?? r.national_id;
+                        if (!idNum) {
+                          skippedNoIdentity += 1;
                           return false;
                         }
                         return true;
@@ -316,23 +387,50 @@ function LandownersPage() {
                       const toInsert = normalized.filter((r) => {
                         const p = phoneKey(r.phone);
                         const e = emailKey(r.email);
-                        const n = nationalIdKey(r.national_id);
+                        const n = identityNumberKey(r.identity_number ?? r.national_id);
                         if (p && existing.phones.has(p)) return false;
                         if (e && existing.emails.has(e)) return false;
-                        if (n && existing.nationalIds.has(n)) return false;
+                        if (n && existing.identityNumbers.has(n)) return false;
                         return true;
                       });
                       const skippedExisting = normalized.length - toInsert.length;
 
                       let created = 0;
                       for (const batch of chunk(toInsert, 200)) {
-                        const { error } = await supabase.from("landowners").insert(batch);
+                        const insertRows = batch.map((r) => {
+                          const idType = r.identity_type;
+                          const idNum = (r.identity_number ?? r.national_id) as string;
+                          return idType
+                            ? {
+                                full_name: r.full_name,
+                                phone: r.phone,
+                                email: r.email,
+                                address: r.address,
+                                identity_type: idType,
+                                identity_number: idNum,
+                                national_id: null,
+                                notes: r.notes,
+                              }
+                            : {
+                                full_name: r.full_name,
+                                phone: r.phone,
+                                email: r.email,
+                                address: r.address,
+                                identity_type: null,
+                                identity_number: null,
+                                national_id: idNum,
+                                notes: r.notes,
+                              };
+                        });
+                        const { error } = await supabase
+                          .from("landowners")
+                          .insert(insertRows as never);
                         if (error) throw error;
                         created += batch.length;
                       }
 
                       toast.success(
-                        `Imported ${created} landowner(s) · skipped ${skippedDuplicates + skippedExisting + skippedNoPhone}`,
+                        `Imported ${created} landowner(s) · skipped ${skippedDuplicates + skippedExisting + skippedNoPhone + skippedNoIdentity}`,
                       );
                       setImportOpen(false);
                       setImportFile(null);
@@ -419,10 +517,43 @@ function LandownersPage() {
                   value={form.address}
                   onChange={(v) => setForm({ ...form, address: v })}
                 />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Identity type *</Label>
+                    <Select
+                      value={form.identity_type}
+                      onValueChange={(v) =>
+                        setForm({
+                          ...form,
+                          identity_type: v as
+                            | "ghana_card"
+                            | "nhis"
+                            | "drivers_license"
+                            | "passport",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ghana_card">Ghana Card</SelectItem>
+                        <SelectItem value="nhis">Health insurance</SelectItem>
+                        <SelectItem value="drivers_license">Driver’s license</SelectItem>
+                        <SelectItem value="passport">Passport</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Field
+                    label="Identity number *"
+                    value={form.identity_number}
+                    onChange={(v) => setForm({ ...form, identity_number: v })}
+                  />
+                </div>
                 <Field
-                  label="National ID"
-                  value={form.national_id}
-                  onChange={(v) => setForm({ ...form, national_id: v })}
+                  label="Staff ID (optional)"
+                  value={form.staff_id}
+                  onChange={(v) => setForm({ ...form, staff_id: v })}
                 />
                 <div className="space-y-1">
                   <Label>Notes</Label>
@@ -452,9 +583,7 @@ function LandownersPage() {
           onClick={() =>
             navigate({
               search: (prev) => ({
-                ...(prev as Record<string, unknown>),
-                mode: "unlinked",
-                page: 1,
+                ...normalizeLandownersSearch(prev, { mode: "unlinked", page: 1 }),
               }),
             })
           }
@@ -480,9 +609,7 @@ function LandownersPage() {
           onClick={() =>
             navigate({
               search: (prev) => ({
-                ...(prev as Record<string, unknown>),
-                mode: "linked",
-                page: 1,
+                ...normalizeLandownersSearch(prev, { mode: "linked", page: 1 }),
               }),
             })
           }
@@ -508,9 +635,7 @@ function LandownersPage() {
           onClick={() =>
             navigate({
               search: (prev) => ({
-                ...(prev as Record<string, unknown>),
-                mode: "all",
-                page: 1,
+                ...normalizeLandownersSearch(prev, { mode: "all", page: 1 }),
               }),
             })
           }
@@ -552,9 +677,7 @@ function LandownersPage() {
                 onChange={(e) =>
                   navigate({
                     search: (prev) => ({
-                      ...(prev as Record<string, unknown>),
-                      q: e.target.value,
-                      page: 1,
+                      ...normalizeLandownersSearch(prev, { q: e.target.value, page: 1 }),
                     }),
                   })
                 }
@@ -565,9 +688,7 @@ function LandownersPage() {
               onValueChange={(v) =>
                 navigate({
                   search: (prev) => ({
-                    ...(prev as Record<string, unknown>),
-                    pageSize: Number(v),
-                    page: 1,
+                    ...normalizeLandownersSearch(prev, { pageSize: Number(v), page: 1 }),
                   }),
                 })
               }
@@ -715,7 +836,7 @@ function LandownersPage() {
                       <th className="pb-2">Name</th>
                       <th className="pb-2">Phone</th>
                       <th className="pb-2">Email</th>
-                      <th className="pb-2">National ID</th>
+                      <th className="pb-2">Identity</th>
                       <th className="pb-2">Added</th>
                       <th className="pb-2"></th>
                     </tr>
@@ -762,7 +883,9 @@ function LandownersPage() {
                             : "—"}
                         </td>
                         <td className="py-2">{o.email || "—"}</td>
-                        <td className="py-2">{o.national_id || "—"}</td>
+                        <td className="py-2">
+                          {formatIdentity(o.identity_type, o.identity_number)}
+                        </td>
                         <td className="py-2 text-muted-foreground">{formatDate(o.created_at)}</td>
                         <td className="py-2 text-right">
                           <Button asChild size="sm" variant="outline" className="mr-2">
@@ -810,8 +933,7 @@ function LandownersPage() {
                     onClick={() =>
                       navigate({
                         search: (prev) => ({
-                          ...(prev as Record<string, unknown>),
-                          page: Math.max(1, page - 1),
+                          ...normalizeLandownersSearch(prev, { page: Math.max(1, page - 1) }),
                         }),
                       })
                     }
@@ -825,8 +947,9 @@ function LandownersPage() {
                     onClick={() =>
                       navigate({
                         search: (prev) => ({
-                          ...(prev as Record<string, unknown>),
-                          page: Math.min(totalPages, page + 1),
+                          ...normalizeLandownersSearch(prev, {
+                            page: Math.min(totalPages, page + 1),
+                          }),
                         }),
                       })
                     }
@@ -876,6 +999,8 @@ type LandownerImportRow = {
   phone: string | null;
   email: string | null;
   address: string | null;
+  identity_type: "ghana_card" | "nhis" | "drivers_license" | "passport" | null;
+  identity_number: string | null;
   national_id: string | null;
   notes: string | null;
 };
@@ -904,8 +1029,8 @@ function toCsv(rows: (string | number | null | undefined)[][]): string {
 
 function downloadCsvTemplate(filename: string) {
   const rows: (string | number)[][] = [
-    ["full_name", "phone", "email", "address", "national_id", "notes"],
-    ["John Doe", "0244000000", "john@example.com", "Tema", "GHA-12345", ""],
+    ["full_name", "phone", "email", "address", "identity_type", "identity_number", "notes"],
+    ["John Doe", "0244000000", "john@example.com", "Tema", "ghana_card", "GHA-12345", ""],
   ];
   const csv = toCsv(rows);
   downloadBlob(filename, new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -914,8 +1039,8 @@ function downloadCsvTemplate(filename: string) {
 async function downloadExcelTemplate(filename: string) {
   const XLSX = await import("xlsx");
   const rows: (string | number)[][] = [
-    ["full_name", "phone", "email", "address", "national_id", "notes"],
-    ["John Doe", "0244000000", "john@example.com", "Tema", "GHA-12345", ""],
+    ["full_name", "phone", "email", "address", "identity_type", "identity_number", "notes"],
+    ["John Doe", "0244000000", "john@example.com", "Tema", "ghana_card", "GHA-12345", ""],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
@@ -945,6 +1070,10 @@ function normalizeHeaderKey(raw: unknown): string {
   if (s === "name") return "full_name";
   if (s === "nationalid") return "national_id";
   if (s === "national_idnumber") return "national_id";
+  if (s === "idtype") return "identity_type";
+  if (s === "identitytype") return "identity_type";
+  if (s === "idnumber") return "identity_number";
+  if (s === "identitynumber") return "identity_number";
   if (s === "phonenumber") return "phone";
   return s;
 }
@@ -952,6 +1081,23 @@ function normalizeHeaderKey(raw: unknown): string {
 function normalizeOptAny(v: unknown): string | null {
   const s = String(v ?? "").trim();
   return s ? s : null;
+}
+
+function normalizeIdentityTypeAny(
+  v: unknown,
+): "ghana_card" | "nhis" | "drivers_license" | "passport" | null {
+  const raw = String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  if (!raw) return null;
+  if (raw === "ghana_card" || raw === "ghanacard" || raw === "ghana") return "ghana_card";
+  if (raw === "nhis" || raw === "health_insurance" || raw === "healthinsurance") return "nhis";
+  if (raw === "drivers_license" || raw === "drivers_licence" || raw === "driverslicence")
+    return "drivers_license";
+  if (raw === "passport") return "passport";
+  return null;
 }
 
 function normalizePhoneOptAny(v: unknown): string | null {
@@ -994,6 +1140,8 @@ async function parseLandownersImportFile(file: File): Promise<LandownerImportRow
         phone: normalizePhoneOptAny(mapped.phone),
         email: normalizeOptAny(mapped.email),
         address: normalizeOptAny(mapped.address),
+        identity_type: normalizeIdentityTypeAny(mapped.identity_type),
+        identity_number: normalizeOptAny(mapped.identity_number),
         national_id: normalizeOptAny(mapped.national_id),
         notes: normalizeOptAny(mapped.notes),
       });
@@ -1020,6 +1168,8 @@ function parseLandownersCsv(text: string): LandownerImportRow[] {
     phone: idx("phone"),
     email: idx("email"),
     address: idx("address"),
+    identity_type: idx("identity_type"),
+    identity_number: idx("identity_number"),
     national_id: idx("national_id"),
     notes: idx("notes"),
   };
@@ -1036,6 +1186,8 @@ function parseLandownersCsv(text: string): LandownerImportRow[] {
       phone: normalizePhoneOpt(r[mapIndex.phone]),
       email: normalizeOpt(r[mapIndex.email]),
       address: normalizeOpt(r[mapIndex.address]),
+      identity_type: normalizeIdentityTypeAny(r[mapIndex.identity_type]),
+      identity_number: normalizeOpt(r[mapIndex.identity_number]),
       national_id: normalizeOpt(r[mapIndex.national_id]),
       notes: normalizeOpt(r[mapIndex.notes]),
     });
@@ -1065,8 +1217,11 @@ function emailKey(email: string | null): string {
   return (email ?? "").replace(/\s+/g, "").toLowerCase();
 }
 
-function nationalIdKey(nationalId: string | null): string {
-  return (nationalId ?? "").replace(/\s+/g, "").toLowerCase();
+function identityNumberKey(identityNumber: string | null | undefined): string {
+  return String(identityNumber ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function nameKey(name: string): string {
@@ -1076,10 +1231,10 @@ function nameKey(name: string): string {
 function dedupeKey(r: LandownerImportRow): string {
   const p = phoneKey(r.phone);
   const e = emailKey(r.email);
-  const n = nationalIdKey(r.national_id);
+  const n = identityNumberKey(r.identity_number ?? r.national_id);
   if (p) return `phone:${p}`;
   if (e) return `email:${e}`;
-  if (n) return `national_id:${n}`;
+  if (n) return `identity:${n}`;
   return `name:${nameKey(r.full_name)}`;
 }
 
@@ -1108,16 +1263,18 @@ function dedupeLandownerRows(rows: LandownerImportRow[]): LandownerImportRow[] {
 async function findExistingLandowners(rows: LandownerImportRow[]): Promise<{
   phones: Set<string>;
   emails: Set<string>;
-  nationalIds: Set<string>;
+  identityNumbers: Set<string>;
 }> {
   const phones = rows.map((r) => r.phone).filter(Boolean) as string[];
   const emails = rows.map((r) => r.email).filter(Boolean) as string[];
-  const nationalIds = rows.map((r) => r.national_id).filter(Boolean) as string[];
+  const identityNumbers = rows
+    .map((r) => identityNumberKey(r.identity_number ?? r.national_id))
+    .filter(Boolean);
 
   const existing = {
     phones: new Set<string>(),
     emails: new Set<string>(),
-    nationalIds: new Set<string>(),
+    identityNumbers: new Set<string>(),
   };
 
   const phoneLookups = Array.from(new Set(phones.flatMap((p) => phoneLookupCandidates(p))));
@@ -1133,13 +1290,16 @@ async function findExistingLandowners(rows: LandownerImportRow[]): Promise<{
     for (const o of data ?? []) existing.emails.add(emailKey(o.email ?? null));
   }
 
-  for (const batch of chunk(nationalIds, 150)) {
+  for (const batch of chunk(identityNumbers, 150)) {
     const { data, error } = await supabase
       .from("landowners")
-      .select("national_id")
-      .in("national_id", batch);
+      .select("identity_number_norm" as never)
+      .in("identity_number_norm" as never, batch as never);
     if (error) throw error;
-    for (const o of data ?? []) existing.nationalIds.add(nationalIdKey(o.national_id ?? null));
+    for (const o of (data ?? []) as unknown as Array<{ identity_number_norm: string | null }>) {
+      const k = identityNumberKey(o.identity_number_norm);
+      if (k) existing.identityNumbers.add(k);
+    }
   }
 
   return existing;

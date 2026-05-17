@@ -29,6 +29,19 @@ export const Route = createFileRoute("/_authenticated/landowners/$ownerId")({
   component: LandownerDetail,
 });
 
+type OwnerRow = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  national_id: string | null;
+  identity_type: string | null;
+  identity_number: string | null;
+  notes: string | null;
+  avatar_url: string | null;
+};
+
 function LandownerDetail() {
   const { ownerId } = Route.useParams();
   const navigate = Route.useNavigate();
@@ -36,7 +49,7 @@ function LandownerDetail() {
   const { hasAnyRole } = useAuth();
   const canDeleteLand = hasAnyRole(["admin", "developer"]);
 
-  const owner = useQuery({
+  const owner = useQuery<OwnerRow>({
     queryKey: ["landowner", ownerId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -45,7 +58,7 @@ function LandownerDetail() {
         .eq("id", ownerId)
         .single();
       if (error) throw error;
-      return data;
+      return data as unknown as OwnerRow;
     },
   });
 
@@ -107,7 +120,8 @@ function LandownerDetail() {
     phone: "",
     email: "",
     address: "",
-    national_id: "",
+    identity_type: "" as "" | "ghana_card" | "nhis" | "drivers_license" | "passport",
+    identity_number: "",
     notes: "",
     avatar_url: "" as string | null | "",
   });
@@ -137,7 +151,13 @@ function LandownerDetail() {
             : (owner.data.phone ?? ""),
         email: owner.data.email ?? "",
         address: owner.data.address ?? "",
-        national_id: owner.data.national_id ?? "",
+        identity_type: (owner.data.identity_type ?? "") as
+          | ""
+          | "ghana_card"
+          | "nhis"
+          | "drivers_license"
+          | "passport",
+        identity_number: (owner.data.identity_number ?? owner.data.national_id ?? "") as string,
         notes: owner.data.notes ?? "",
         avatar_url: owner.data.avatar_url ?? "",
       });
@@ -159,6 +179,9 @@ function LandownerDetail() {
       const primaryRaw = form.phone.trim();
       if (primaryRaw && !looksLikePhone(primaryRaw)) throw new Error("Enter a valid phone number");
       const primary = primaryRaw ? normalisePhone(primaryRaw) : null;
+      const identityNumber = form.identity_number.trim();
+      const identityType = form.identity_type || "";
+      if (!identityNumber) throw new Error("Identity number is required");
 
       const extras = extraPhones
         .map((p) => p.trim())
@@ -170,17 +193,27 @@ function LandownerDetail() {
         .filter((p) => p !== primary);
       const uniqueExtras = Array.from(new Set(extras));
 
+      const updatePayload: Record<string, unknown> = {
+        full_name: form.full_name,
+        phone: primary,
+        email: form.email || null,
+        address: form.address || null,
+        notes: form.notes || null,
+        avatar_url: form.avatar_url || null,
+      };
+      if (identityType && identityNumber) {
+        updatePayload.identity_type = identityType;
+        updatePayload.identity_number = identityNumber;
+        updatePayload.national_id = null;
+      } else {
+        updatePayload.identity_type = null;
+        updatePayload.identity_number = null;
+        updatePayload.national_id = identityNumber;
+      }
+
       const { error } = await supabase
         .from("landowners")
-        .update({
-          full_name: form.full_name,
-          phone: primary,
-          email: form.email || null,
-          address: form.address || null,
-          national_id: form.national_id || null,
-          notes: form.notes || null,
-          avatar_url: form.avatar_url || null,
-        })
+        .update(updatePayload as never)
         .eq("id", ownerId);
       if (error) throw error;
 
@@ -398,11 +431,35 @@ function LandownerDetail() {
               value={form.address}
               onChange={(v) => setForm({ ...form, address: v })}
             />
-            <Field
-              label="National ID"
-              value={form.national_id}
-              onChange={(v) => setForm({ ...form, national_id: v })}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Identity type</Label>
+                <Select
+                  value={form.identity_type}
+                  onValueChange={(v) =>
+                    setForm({
+                      ...form,
+                      identity_type: v as "ghana_card" | "nhis" | "drivers_license" | "passport",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ghana_card">Ghana Card</SelectItem>
+                    <SelectItem value="nhis">Health insurance</SelectItem>
+                    <SelectItem value="drivers_license">Driver’s license</SelectItem>
+                    <SelectItem value="passport">Passport</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Field
+                label="Identity number *"
+                value={form.identity_number}
+                onChange={(v) => setForm({ ...form, identity_number: v })}
+              />
+            </div>
             <div className="space-y-1">
               <Label>Notes</Label>
               <Textarea
